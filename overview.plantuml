@@ -1,0 +1,22 @@
+'Convert to Image using: https://plantuml.com/de/
+@startuml
+
+package "Examples" {
+  package "OpenGL" {
+   object Mapviewer {
+    Access to Google Map
+    }
+  }
+}
+
+package "External libs" {
+object Synapse
+object LNet 
+object MP_Arith
+object DGLOpenGL
+Synapse <|-- Mapviewer 
+DGLOpenGL <|-- Mapviewer 
+}
+
+
+@enduml
