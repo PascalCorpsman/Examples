@@ -4,6 +4,10 @@ This Repository collects a lot of usefull and mostly not trivial examples that c
 ## Overview
 ![](Overview.png)
 
+## Details
+### Mapviewer:
+Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use.
+
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 

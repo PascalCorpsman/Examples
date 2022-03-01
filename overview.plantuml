@@ -3,9 +3,7 @@
 
 package "Examples" {
   package "OpenGL" {
-   object Mapviewer {
-    Access to Google Map
-    }
+   object Mapviewer
   }
 }
 
