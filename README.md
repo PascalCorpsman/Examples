@@ -1,7 +1,7 @@
 # Introduction
 This Repository collects a lot of usefull and mostly not trivial examples that can be used to start a own application.
 
-## Debendencies
+## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 
 | libname | Desctiption | Link |
