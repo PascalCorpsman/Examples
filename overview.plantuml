@@ -6,9 +6,8 @@ package "Examples" {
    object Mapviewer
   }
   package "data_control" {
-   object uvectormath
-   object uJSON
-   object udomxml
+  }
+  package "graphics" {
   }
 }
 

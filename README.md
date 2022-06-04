@@ -4,18 +4,20 @@ This Repository collects a lot of usefull and mostly not trivial examples that c
 ## Overview
 ![](Overview.png)
 
-## Details
+# Details
+
+## data_control
+
+Collection of classes and examples corresponding to data processing, math and corresponding stuff
+
+
+## OpenGL
+
+Collection of classes and examples that are mainly related to OpenGL implementations
+
 ### Mapviewer:
+
 Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use.
-
-### uJSON
-JSON Parser
-
-### udomxml
-XML Parser
-
-### uvectormath
-Implementation of higherlevel vector based algoritms, and other more "complex" math algorithms
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
