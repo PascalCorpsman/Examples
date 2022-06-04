@@ -8,6 +8,15 @@ This Repository collects a lot of usefull and mostly not trivial examples that c
 ### Mapviewer:
 Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use.
 
+### uJSON
+JSON Parser
+
+### udomxml
+XML Parser
+
+### uvectormath
+Implementation of higherlevel vector based algoritms, and other more "complex" math algorithms
+
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 
