@@ -15,6 +15,9 @@ Interface
  *           0.08 = Uncommenter unterstützt nun StringLiterale -> Besserer Support für JSON5 Kommentare
  *           0.09 = Array Parsing erlaubte "zu viel" ungültiges -> Parser Verschärft
  *           0.10 = Einführen des Feldes "Tag"
+ *           0.11 = TJSONComment -> nur im "erstellen" mode sinnvoll
+ *           0.12 = .Clone Function
+ *           0.13 = Erste Versuche eine Zeilennummer aus zu geben, wenn der JSON Text falsch ist..
  *
  * Known Bugs: Wenn der zu Parsende Text kein Gültiges JSON ist, entstehen Speicherlöcher !
  *)
@@ -31,6 +34,12 @@ Interface
  abstract class TJSONobj {
  {abstract} +String ToString()
  {abstract} +TJSONobj FindPath(String)
+ {abstract} +TJSONobj Clone()
+ }
+
+ class TJSONComment {
+ + String Comment
+ + String ToString()
  }
 
  class TJSONArray {
@@ -71,6 +80,7 @@ Interface
 
  '\Ableitungshierarchieen \'
 
+ TJSONComment --|> TJSONobj
  TJSONArray --|> TJSONobj
  TJSONNode --|> TJSONobj
  TJSONNodeObj--|> TJSONobj
@@ -98,8 +108,8 @@ Type
 
   TJSONObj = Class // Basisklasse für alle JSON Objekte
   private
-    fName: String;
-    fobjs: Array Of TJSONObj;
+    fName: String; // Wird in Findpath benötigt
+    fobjs: Array Of TJSONObj; // Das ist damit TJSONObj das Findpath bereitstellen kann, sonst müssten das die Kindklassen alle Redundant implementieren
   protected
     Procedure Clear; virtual;
   public
@@ -109,6 +119,24 @@ Type
 
     Function ToString(FrontSpace: String = ''): String; virtual; reintroduce; // Abstract;
     Function FindPath(APath: String): TJSONObj; virtual; // Abstract;
+
+    Function Clone: TJSONObj; virtual; // Abstract; // Das Object "Clont" sich selbst und wird als neue Instanz zurück gegeben
+  End;
+
+  { TJSONComment }
+
+  TJSONComment = Class(TJSONObj) // Will man einen JSON 5.0 Kommantar erzeugen der Parser wirft alle Kommentare weg
+  private
+
+  public
+    Property Comment: String read fName write fname;
+    Constructor Create; override;
+    Constructor Create(aComment: String); virtual;
+
+    Function ToString(FrontSpace: String = ''): String; override;
+    Function FindPath(APath: String): TJSONObj; override;
+
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONArray }
@@ -121,7 +149,7 @@ Type
   public
 
     Property ObjCount: integer read getObjCount;
-    Property Obj[Index: integer]: TJSONObj read getObj;
+    Property Obj[Index: integer]: TJSONObj read getObj; default;
 
     Constructor Create; override;
 
@@ -129,6 +157,8 @@ Type
     Procedure Clear; override;
 
     Function ToString(FrontSpace: String = ''): String; override;
+
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONNode }
@@ -147,6 +177,8 @@ Type
     Procedure Clear; override;
 
     Function ToString(FrontSpace: String = ''): String; override;
+
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONNodeObj }
@@ -154,16 +186,19 @@ Type
   TJSONNodeObj = Class(TJSONObj)
   private
     fvalue: TJSONObj;
+  protected
+    Procedure Clear; override;
   public
     Property Name: String read fName;
     Property Value: TJSONObj read fvalue;
 
     Constructor Create(aName: String; aValue: TJSONObj); reintroduce;
-    Destructor Destroy; override;
 
     Function ToString(FrontSpace: String = ''): String; override;
+
     Function FindPath(APath: String): TJSONObj; override;
 
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONValue }
@@ -174,11 +209,13 @@ Type
     fvalueIsString: Boolean;
   public
     Property Name: String read fName;
-    Property Value: String read fvalue;
+    Property Value: String read fvalue write fvalue;
 
     Constructor Create(aName, aValue: String; ValueisString: Boolean); reintroduce;
 
     Function ToString(FrontSpace: String = ''): String; override;
+
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONTerminal }
@@ -193,12 +230,15 @@ Type
     Constructor Create(aValue: String); reintroduce;
 
     Function ToString(FrontSpace: String = ''): String; override;
+
+    Function Clone: TJSONObj; override;
   End;
 
   { TJSONParser }
 
   TJSONParser = Class
   private
+    faLine: Integer; // Der Versuch die Aktuelle Zeile bei Fehlermeldungen aus zu geben. Das Problem ist, dass Kommentare vorher gelöscht werden und damit stimmt die Zeilennummer dann nicht mehr :(
     fparsedata: String;
     fparsedataptr: integer;
 
@@ -264,12 +304,43 @@ Begin
   result := '"' + Data + '"';
 End;
 
+{ TJSONComment }
+
+Constructor TJSONComment.Create;
+Begin
+  Inherited Create;
+  Comment := '';
+End;
+
+Constructor TJSONComment.Create(aComment: String);
+Begin
+  Inherited Create;
+  Comment := aComment;
+End;
+
+Function TJSONComment.ToString(FrontSpace: String): String;
+Var
+  s: String;
+Begin
+  s := StringToJsonString(Comment);
+  result := FrontSpace + '/*' + copy(s, 2, length(s) - 2) + '*/';
+End;
+
+Function TJSONComment.FindPath(APath: String): TJSONObj;
+Begin
+  Result := Nil;
+End;
+
+Function TJSONComment.Clone: TJSONObj;
+Begin
+  Result := TJSONComment.Create(Comment);
+End;
+
 { TJSONTerminal }
 
 Constructor TJSONTerminal.Create(aValue: String);
 Begin
   Inherited create;
-  fName := '';
   If length(aValue) > 1 Then Begin
     If (avalue[1] = '"') And (avalue[length(aValue)] = '"') Then Begin
       fName := copy(aValue, 2, length(aValue) - 2);
@@ -296,15 +367,23 @@ Begin
   End;
 End;
 
+Function TJSONTerminal.Clone: TJSONObj;
+Begin
+  Result := TJSONTerminal.Create(Value);
+  (result As TJSONTerminal).IsString := fIsString;
+End;
+
 { TJSONObj }
 
 Procedure TJSONObj.Clear;
 Var
   i: integer;
 Begin
-  For i := 0 To High(fobjs) Do
+  For i := 0 To high(fobjs) Do Begin
     fobjs[i].Free;
+  End;
   setlength(fobjs, 0);
+  fobjs := Nil;
 End;
 
 Constructor TJSONObj.Create;
@@ -333,7 +412,12 @@ Var
 Begin
   result := Nil;
   If apath = '' Then Begin
-    result := self;
+    If self Is TJSONComment Then Begin
+      result := Nil; // Kommentare werden nicht gefunden, normalerweise nicht mal erstellt
+    End
+    Else Begin
+      result := self;
+    End;
     exit;
   End;
   elem := APath;
@@ -372,6 +456,12 @@ Begin
   End;
 End;
 
+Function TJSONObj.Clone: TJSONObj;
+Begin
+  result := Nil;
+  Raise Exception.Create('Clone not implemented in ' + ClassName);
+End;
+
 { TJSONArray }
 
 Constructor TJSONArray.Create;
@@ -398,11 +488,27 @@ Begin
   res := LineEnding + FrontSpace + '[' + LineEnding;
   For i := 0 To High(fobjs) Do Begin
     If (i > 0) Then Begin
-      res := res + ',' + LineEnding;
+      If (fobjs[i - 1] Is TJSONComment) Then Begin
+        res := res + LineEnding;
+      End
+      Else Begin
+        res := res + ',' + LineEnding;
+      End;
     End;
     res := res + fobjs[i].ToString(FrontSpace + SpaceIdent);
   End;
   result := res + LineEnding + FrontSpace + ']';
+End;
+
+Function TJSONArray.Clone: TJSONObj;
+Var
+  i: Integer;
+Begin
+  Result := TJSONArray.Create;
+  setlength(result.fobjs, length(Self.fobjs));
+  For i := 0 To high(fobjs) Do Begin
+    result.fobjs[i] := Self.fobjs[i].Clone;
+  End;
 End;
 
 Procedure TJSONArray.AddObj(JSONObj: TJSONObj);
@@ -442,11 +548,27 @@ Begin
   res := FrontSpace + '{' + LineEnding;
   For i := 0 To High(fobjs) Do Begin
     If (i > 0) Then Begin
-      res := res + ',' + LineEnding;
+      If (fobjs[i - 1] Is TJSONComment) Then Begin
+        res := res + LineEnding;
+      End
+      Else Begin
+        res := res + ',' + LineEnding;
+      End;
     End;
     res := res + fobjs[i].ToString(FrontSpace + SpaceIdent);
   End;
   result := res + LineEnding + FrontSpace + '}';
+End;
+
+Function TJSONNode.Clone: TJSONObj;
+Var
+  i: Integer;
+Begin
+  Result := TJSONNode.Create;
+  setlength(result.fobjs, length(Self.fobjs));
+  For i := 0 To high(fobjs) Do Begin
+    result.fobjs[i] := Self.fobjs[i].Clone;
+  End;
 End;
 
 Procedure TJSONNode.AddObj(JSONObj: TJSONObj);
@@ -470,7 +592,7 @@ End;
 
 Destructor TJSONParser.Destroy;
 Begin
-
+  // Nichts
 End;
 
 Procedure TJSONParser.Eat(Token: String);
@@ -482,7 +604,7 @@ Begin
   Token := LowerCase(Token);
   If (atoken <> Token) Then Begin
     nop;
-    Raise Exception.Create('Expected token : "' + Token + '" got "' + atoken + '"');
+    Raise Exception.Create('Expected token : "' + Token + '" got "' + atoken + '" [Line: ' + inttostr(faLine) + ']');
   End;
 End;
 
@@ -505,6 +627,7 @@ Begin
     exit;
   End;
   achar := fparsedata[aindex];
+  If EatToken And (achar = #10) Then inc(faLine); // TODO: unter MAC wäre das ein Problem ..
   skipnext := false; // Das nächste Zeichen wird nicht in res aufgenommen
   ignorenext := false; // Das nächste Zeichen wird nicht für die String Auswertung berücksichtigt.
   interpretnext := false; // Das nächste zeichen muss gemäß der \ regel ausgewertet werden.
@@ -579,6 +702,7 @@ Begin
     skipnext := false;
     aindex := aindex + 1;
     achar := fparsedata[aindex];
+    If EatToken And (achar = #10) Then inc(faLine); // TODO: unter MAC wäre das ein Problem ..
   End;
   If (res = '') Then Begin // Wir haben nur Leerzeichen überlesen und eigentlich direkt wieder ein Token gelesen.
     If (EatToken) Then Begin
@@ -601,6 +725,8 @@ Var
   uc: TUnCommenter;
 Begin
   result := Nil;
+  faLine := 1;
+  // TODO: Der TUnCommenter muss wieder raus und von "Hand" in Nexttoken implementiert werden -> dann stimmen die faLines wieder !
   If SupportJSON5Comments Then Begin
     uc := TUnCommenter.Create;
     uc.AddRule('//', '', true);
@@ -629,7 +755,7 @@ Begin
       End;
     End;
     If (Not only_Space) Then Begin
-      if assigned(obj) then obj.free;
+      If assigned(obj) Then obj.free;
       Raise Exception.Create('not all data where parsed, missing "' + copy(fparsedata, fparsedataptr + 1, length(fparsedata)) + '"');
     End;
   End;
@@ -751,6 +877,11 @@ Begin
   End;
 End;
 
+Function TJSONValue.Clone: TJSONObj;
+Begin
+  Result := TJSONValue.Create(name, value, fvalueIsString);
+End;
+
 { TJSONNodeObj }
 
 Constructor TJSONNodeObj.Create(aName: String; aValue: TJSONObj);
@@ -760,15 +891,23 @@ Begin
   fvalue := aValue;
 End;
 
-Destructor TJSONNodeObj.Destroy;
-Begin
-  fvalue.Free;
-  Inherited;
-End;
-
 Function TJSONNodeObj.ToString(FrontSpace: String): String;
 Begin
-  result := FrontSpace + StringToJsonString(fName) + ':' + fvalue.ToString(FrontSpace);
+  If assigned(fvalue) Then Begin
+    result := FrontSpace + StringToJsonString(fName) + ':' + fvalue.ToString(FrontSpace);
+  End
+  Else Begin
+    result := FrontSpace + StringToJsonString(fName) + ':""';
+  End;
+End;
+
+Procedure TJSONNodeObj.Clear;
+Begin
+  If assigned(fvalue) Then Begin
+    fvalue.free;
+  End;
+  fvalue := Nil;
+  Inherited Clear;
 End;
 
 Function TJSONNodeObj.FindPath(APath: String): TJSONObj;
@@ -781,6 +920,16 @@ Begin
     If (Not assigned(result)) And assigned(fvalue) Then Begin
       result := fvalue.FindPath(APath);
     End;
+  End;
+End;
+
+Function TJSONNodeObj.Clone: TJSONObj;
+Begin
+  If assigned(fvalue) Then Begin
+    Result := TJSONNodeObj.Create(Name, fvalue.Clone);
+  End
+  Else Begin
+    Result := TJSONNodeObj.Create(Name, Nil);
   End;
 End;
 
