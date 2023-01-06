@@ -1,26 +1,52 @@
+(******************************************************************************)
+(* uJSON.pas                                                       ??.??.???? *)
+(*                                                                            *)
+(* Version     : 0.13                                                         *)
+(*                                                                            *)
+(* Author      : Uwe Schächterle (Corpsman)                                   *)
+(*                                                                            *)
+(* Support     : www.Corpsman.de                                              *)
+(*                                                                            *)
+(* Description : Own implementation of a JSON-Parser                          *)
+(*                                                                            *)
+(* License     : See the file license.md, located under:                      *)
+(*  https://github.com/PascalCorpsman/Software_Licenses/blob/main/license.md  *)
+(*  for details about the license.                                            *)
+(*                                                                            *)
+(*               It is not allowed to change or remove this text from any     *)
+(*               source file of the project.                                  *)
+(*                                                                            *)
+(* Warranty    : There is no warranty, neither in correctness of the          *)
+(*               implementation, nor anything other that could happen         *)
+(*               or go wrong, use at your own risk.                           *)
+(*                                                                            *)
+(* Known Issues: Wenn der zu Parsende Text kein Gültiges JSON ist,            *)
+(*               entstehen Speicherlöcher !                                   *)
+(*                                                                            *)
+(* History     : 0.01 - Initial version                                       *)
+(*               0.02 = In Array's erlauben, dass anstatt eines Nodes auch    *)
+(*                      einfach nur ein String steht                          *)
+(*               0.03 = TJSONArray.clear                                      *)
+(*               0.04 = Fix Parsing Error, Array of Array                     *)
+(*               0.05 = FindPath                                              *)
+(*               0.06 = Abstieg in ArrayElemente in Findpath ging nicht       *)
+(*               0.07 = Optional // und /* */ Kommentare wie in JSON5         *)
+(*               0.08 = Uncommenter unterstützt nun StringLiterale            *)
+(*                      -> Besserer Support für JSON5 Kommentare              *)
+(*               0.09 = Array Parsing erlaubte "zu viel" ungültiges           *)
+(*                      -> Parser Verschärft                                  *)
+(*               0.10 = Einführen des Feldes "Tag"                            *)
+(*               0.11 = TJSONComment -> nur im "erstellen" mode sinnvoll      *)
+(*               0.12 = .Clone Function                                       *)
+(*               0.13 = Erste Versuche eine Zeilennummer aus zu geben, wenn   *)
+(*                      der JSON Text falsch ist..                            *)
+(*                                                                            *)
+(******************************************************************************)
 Unit uJSON;
 
 {$MODE objfpc}{$H+}
 
 Interface
-
-(*
- * Historie: 0.01 = Initial version
- *           0.02 = In Array's erlauben, dass anstatt eines Nodes auch einfach nur ein String steht
- *           0.03 = TJSONArray.clear
- *           0.04 = Fix Parsing Error, Array of Array
- *           0.05 = FindPath
- *           0.06 = Abstieg in ArrayElemente in Findpath ging nicht
- *           0.07 = Optional // und /* */ Kommentare wie in JSON5
- *           0.08 = Uncommenter unterstützt nun StringLiterale -> Besserer Support für JSON5 Kommentare
- *           0.09 = Array Parsing erlaubte "zu viel" ungültiges -> Parser Verschärft
- *           0.10 = Einführen des Feldes "Tag"
- *           0.11 = TJSONComment -> nur im "erstellen" mode sinnvoll
- *           0.12 = .Clone Function
- *           0.13 = Erste Versuche eine Zeilennummer aus zu geben, wenn der JSON Text falsch ist..
- *
- * Known Bugs: Wenn der zu Parsende Text kein Gültiges JSON ist, entstehen Speicherlöcher !
- *)
 
 (*
  * Den untenstehenden Text auf
