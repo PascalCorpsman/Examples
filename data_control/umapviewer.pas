@@ -1,26 +1,50 @@
+(******************************************************************************)
+(* umapviewe.pas                                                   ??.??.???? *)
+(*                                                                            *)
+(* Version     : 0.01                                                         *)
+(*                                                                            *)
+(* Author      : Uwe Schächterle (Corpsman)                                   *)
+(*                                                                            *)
+(* Support     : www.Corpsman.de                                              *)
+(*                                                                            *)
+(* Description : make Google maps accessable for FPC / OpenGL                 *)
+(*                                                                            *)
+(* License     : See the file license.md, located under:                      *)
+(*  https://github.com/PascalCorpsman/Software_Licenses/blob/main/license.md  *)
+(*  for details about the license.                                            *)
+(*                                                                            *)
+(*               It is not allowed to change or remove this text from any     *)
+(*               source file of the project.                                  *)
+(*                                                                            *)
+(* Warranty    : There is no warranty, neither in correctness of the          *)
+(*               implementation, nor anything other that could happen         *)
+(*               or go wrong, use at your own risk.                           *)
+(*                                                                            *)
+(* Known Issues: none                                                         *)
+(*                                                                            *)
+(* Inspired by: https://github.com/maciejkaczkowski/mapviewer (GPLv2)         *)
+(*                                                                            *)
+(* Modifications against the Original one:                                    *)
+(*                            - Merge into one file                           *)
+(*                            - removed threads                               *)
+(*                            - Render in OpenGL (instead of LCL-Component)   *)
+(*                            - Only Google Maps supported                    *)
+(*                            - Added Images shown on locations               *)
+(*                            - only using synapse as downloadmanager         *)
+(*                            - enable proxy downloading                      *)
+(*                            - removed as much variables as possible         *)
+(*                                                                            *)
+(* Missing Features:                                                          *)
+(*                       - Cleanup, Doku                                      *)
+(*                       - Download via Thread for smoother rendering ?       *)
+(*                                                                            *)
+(* History     : 0.01 - Initial version                                       *)
+(*                                                                            *)
+(******************************************************************************)
+
 Unit umapviewer;
 
 {$MODE objfpc}{$H+}
-
-(*
- * Inspired by: https://github.com/maciejkaczkowski/mapviewer (GPLv2)
- *
- * Modifications against the Original one:
- *                                         - Merge into one file
- *                                         - removed threads
- *                                         - Render in OpenGL (instead of LCL-Component)
- *                                         - Only Google Maps supported
- *                                         - Added Images shown on locations
- *                                         - only using synapse as downloadmanager
- *                                         - enable proxy downloading
- *                                         - removed as much variables as possible
- *
- * History: 0.01 = initialversion
- *
- * Bugs / Missing Features:
- *                       - Cleanup, Doku
- *                       - Download via Thread for smoother rendering ?
- *)
 
 Interface
 
