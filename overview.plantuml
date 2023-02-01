@@ -22,6 +22,7 @@ object DGLOpenGL
 Synapse <|-- Mapviewer 
 DGLOpenGL <|-- Mapviewer 
 Synapse <|-- Modbus_Diagnostic
+LNet <|-- Modbus_Diagnostic
 }
 
 
