@@ -9,6 +9,9 @@ package "Examples" {
   }
   package "graphics" {
   }
+  package "TCP_IP" {
+   object Modbus_Diagnostic
+  }
 }
 
 package "External libs" {
@@ -18,6 +21,7 @@ object MP_Arith
 object DGLOpenGL
 Synapse <|-- Mapviewer 
 DGLOpenGL <|-- Mapviewer 
+Synapse <|-- Modbus_Diagnostic
 }
 
 
