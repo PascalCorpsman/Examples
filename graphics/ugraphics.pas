@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uGraphiks.pas                                                   ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.08                                                         *)
+(* Version     : 0.09                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -31,10 +31,11 @@
 (*               0.06 - added Rotate*Degrees                                  *)
 (*               0.07 - added LeftToRight                                     *)
 (*               0.08 - added MulImage                                        *)
-(*                  added aberation                                           *)
-(*                  added vignetting                                          *)
-(*                  added foldImage                                           *)
-(*                  add Wrap Modes                                            *)
+(*                      added aberation                                       *)
+(*                      added vignetting                                      *)
+(*                      added foldImage                                       *)
+(*                      add Wrap Modes                                        *)
+(*               0.09 - added floodfill                                       *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -198,6 +199,13 @@ Procedure Contrast(Const Bitmap: TBitmap; contrast: integer);
 // Tauscht die Farbe SourceColor mit der Farbe DestColor aus
 Procedure SwapColor(Const Bitmap: TBitmap; SourceColor, DestColor: TColor);
 
+(*
+ * Füllt beginnend von StartX, StartY via Floodfill alles auf,
+ *
+ * Wenn AllowDiagonalWalk = True, dann wird zusätzlich auch über die Diagonalen gelaufen
+ *)
+Procedure FloodFill(Const Bitmap: TBitmap; StartX, StartY: Integer; DestColor: TColor; AllowDiagonalWalk: Boolean = false);
+
 // Zeichnet ein Graphic im Biliniear, oder Nearest Neighbour verfahren. ( Unter Windows gibts das Bilinar nicht, unter Linux das NearesNeighbour *g* )
 Procedure Stretchdraw(Const Dest: TBitmap; Destrect: Trect; Const Source: Tbitmap; Mode: TInterpolationMode = imNearestNeighbour (* GTK Default wäre imBilinear *)); overload;
 Procedure Stretchdraw(Const Dest: TCanvas; Destrect: Trect; Const Source: Tbitmap; Mode: TInterpolationMode = imNearestNeighbour (* GTK Default wäre imBilinear *)); overload;
@@ -215,7 +223,7 @@ Function InterpolationModeToString(Value: TInterpolationMode): String;
 
 Implementation
 
-Uses sysutils; // Exception
+Uses sysutils, ufifo; // Exception
 
 Function StringToInterpolationMode(Value: String): TInterpolationMode;
 Begin
@@ -1493,6 +1501,61 @@ Begin
   Bitmap.Handle := ImgHandle;
   Bitmap.MaskHandle := ImgMaskHandle;
   TempIntfImg.free;
+End;
+
+Procedure FloodFill(Const Bitmap: TBitmap; StartX, StartY: Integer;
+  DestColor: TColor; AllowDiagonalWalk: Boolean);
+
+Type
+  TPointFifo = specialize TBufferedFifo < TPoint > ;
+
+Var
+  TempIntfImg: TLazIntfImage;
+  ImgHandle, ImgMaskHandle: HBitmap;
+  SourceCol: TFPColor;
+  DestCol: TFPColor;
+  fifo: TPointFifo;
+  p: Tpoint;
+  w, h: integer;
+Begin
+  TempIntfImg := TLazIntfImage.Create(0, 0);
+  TempIntfImg.LoadFromBitmap(Bitmap.Handle, Bitmap.MaskHandle);
+  SourceCol := TempIntfImg.Colors[StartX, StartY];
+  DestCol := ColorToFPColor(DestColor);
+  If SourceCol = DestCol Then Begin // Das würde Endlos Rekursionen geben !
+    TempIntfImg.free;
+    exit;
+  End;
+  fifo := TPointFifo.create();
+  fifo.push(point(StartX, StartY));
+  w := Bitmap.Width;
+  h := Bitmap.Height;
+  While Not fifo.isempty Do Begin
+    p := fifo.Pop;
+    // Nur So lange wir überhaupt im Bild sind
+    If (p.x >= 0) And (p.Y >= 0) And
+      (p.x < w) And (p.Y < h) Then Begin
+      // Es gibt noch was zu tun ;)
+      If (TempIntfImg.Colors[p.x, p.y] = SourceCol) Then Begin
+        TempIntfImg.Colors[p.x, p.y] := DestCol;
+        fifo.Push(point(p.x + 1, p.y));
+        fifo.Push(point(p.x - 1, p.y));
+        fifo.Push(point(p.x, p.y + 1));
+        fifo.Push(point(p.x, p.y - 1));
+        If AllowDiagonalWalk Then Begin
+          fifo.Push(point(p.x + 1, p.y + 1));
+          fifo.Push(point(p.x + 1, p.y - 1));
+          fifo.Push(point(p.x - 1, p.y + 1));
+          fifo.Push(point(p.x - 1, p.y - 1));
+        End;
+      End;
+    End;
+  End;
+  TempIntfImg.CreateBitmaps(ImgHandle, ImgMaskHandle, false);
+  Bitmap.Handle := ImgHandle;
+  Bitmap.MaskHandle := ImgMaskHandle;
+  TempIntfImg.free;
+  fifo.free;
 End;
 
 Procedure Stretchdraw(Const Dest: TBitmap; Destrect: Trect;
