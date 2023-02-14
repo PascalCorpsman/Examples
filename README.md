@@ -17,6 +17,14 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | --- | --- |
 | Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
 
+## TCP_IP
+
+Collection of classes and examples that are mainly related to Serial and Network communications
+
+| Example | Description |
+| --- | --- |
+| Modbus_Diagnostix | Shows a implementation for the MODBUS RTU, MODBUS-TCP and Modbus-TCP RTU version, use to detect address offset and encoding of the Modbus SLAVE |
+
 ## data_control
 
 Collection of classes and examples corresponding to data processing, math and corresponding stuff
