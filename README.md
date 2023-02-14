@@ -23,7 +23,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 
 | Example | Description |
 | --- | --- |
-| Modbus_Diagnostix | Shows a implementation for the MODBUS RTU, MODBUS-TCP and Modbus-TCP RTU version, use to detect address offset and encoding of the Modbus SLAVE |
+| Modbus_Diagnostic | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
 
 ## data_control
 
