@@ -73,6 +73,7 @@ Uses
 
 Const
   Epsilon = 0.00390625; // = 1 / 256, Unterscheiden sich 2 Float Werte um weniger als Epsilon, dann werden sie als Gleich angesehen
+
 Type
 
   (*

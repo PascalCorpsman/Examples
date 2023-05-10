@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uOpenGL_ASCII_Font.pas                                          ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.04                                                         *)
+(* Version     : 0.05                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -29,6 +29,7 @@
 (*               0.02 - Added Billboarded/ 3D-Mode rendering                  *)
 (*               0.03 - Disable Lighting on Textout                           *)
 (*               0.04 - Suppurt UTF8 Strings                                  *)
+(*               0.05 - CurrentColor nicht nach Außen ändern                  *)
 (*                                                                            *)
 (******************************************************************************)
 (*                                                                            *)
@@ -41,7 +42,7 @@
 (* werden :                                                                   *)
 (*                                                                            *)
 (* glPointSize(max(OpenGLControl1.Width / 640, OpenGLControl1.Height / 480)); *)
-(*  !! Gilt seit ver 0.02 nicht mehr !!                                      *)
+(*  !! Gilt seit ver 0.02 nicht mehr !!                                       *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uOpenGL_ASCII_Font;
@@ -233,12 +234,14 @@ Var
   sc: Single;
   light: Boolean;
   //  f: GLfloat;  <-- Alte Variante mittels glPoints
+  currentColor: TVector4;
 Begin
   //  glGetFloatv(GL_POINT_SIZE, @f); // Bakup der Point Size, diese wird hier Verändert !!  <-- Alte Variante mittels glPoints
   light := glIsEnabled(GL_LIGHTING);
   If light Then Begin
     glDisable(GL_LIGHTING); // Deaktivieren der Beleuchtung, die können wir hier nun wirklich nicht gebrauchen..
   End;
+  glGetFloatv(GL_CURRENT_COLOR, @currentColor);
   glPushMatrix();
   glTranslatef(x, y, 0);
   glColor3fv(@fColor);
@@ -269,6 +272,7 @@ Begin
   glPopMatrix();
   glPopMatrix();
   //  glPointSize(f);  <-- Alte Variante mittels glPoints
+  glColor4fv(@currentColor);
   If light Then Begin
     glenable(GL_LIGHTING);
   End;
