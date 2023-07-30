@@ -8,6 +8,7 @@ package "Examples" {
   package "data_control" {
   }
   package "graphics" {
+   object Sunburstchart
   }
   package "TCP_IP" {
    object Modbus_Diagnostic
