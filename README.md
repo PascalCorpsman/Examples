@@ -33,6 +33,9 @@ Collection of classes and examples corresponding to data processing, math and co
 
 Collection of classes and examples corresponding to graphic / image processing
 
+| Example | Description |
+| --- | --- |
+| Sunburstchart | Demo application for usunburstchart.pas |
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):

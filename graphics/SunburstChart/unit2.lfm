@@ -1,0 +1,206 @@
+object Form2: TForm2
+  Left = 347
+  Height = 275
+  Top = 108
+  Width = 552
+  Caption = 'Form2'
+  ClientHeight = 275
+  ClientWidth = 552
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+  object Label1: TLabel
+    Left = 8
+    Height = 16
+    Top = 16
+    Width = 47
+    Caption = 'Caption'
+  end
+  object Edit1: TEdit
+    Left = 64
+    Height = 26
+    Top = 8
+    Width = 152
+    TabOrder = 0
+    Text = 'Edit1'
+  end
+  object GroupBox1: TGroupBox
+    Left = 8
+    Height = 145
+    Top = 80
+    Width = 257
+    Caption = ' Color '
+    ClientHeight = 128
+    ClientWidth = 255
+    TabOrder = 1
+    object Label2: TLabel
+      Left = 8
+      Height = 16
+      Top = 16
+      Width = 36
+      Caption = 'Brush'
+    end
+    object Label3: TLabel
+      Left = 8
+      Height = 16
+      Top = 44
+      Width = 28
+      Caption = 'Font'
+    end
+    object Label4: TLabel
+      Left = 8
+      Height = 16
+      Top = 73
+      Width = 23
+      Caption = 'Pen'
+    end
+    object Label5: TLabel
+      Left = 8
+      Height = 16
+      Top = 106
+      Width = 60
+      Caption = 'Pen width'
+    end
+    object Shape1: TShape
+      Left = 178
+      Height = 22
+      Top = 10
+      Width = 65
+    end
+    object Shape2: TShape
+      Left = 178
+      Height = 22
+      Top = 38
+      Width = 65
+    end
+    object Shape3: TShape
+      Left = 178
+      Height = 22
+      Top = 67
+      Width = 65
+    end
+    object Edit2: TEdit
+      Left = 178
+      Height = 26
+      Top = 96
+      Width = 65
+      TabOrder = 0
+      Text = 'Edit2'
+    end
+  end
+  object GroupBox2: TGroupBox
+    Left = 280
+    Height = 145
+    Top = 80
+    Width = 257
+    Caption = ' Selected '
+    ClientHeight = 128
+    ClientWidth = 255
+    TabOrder = 2
+    object Label6: TLabel
+      Left = 8
+      Height = 16
+      Top = 16
+      Width = 36
+      Caption = 'Brush'
+    end
+    object Label7: TLabel
+      Left = 8
+      Height = 16
+      Top = 44
+      Width = 28
+      Caption = 'Font'
+    end
+    object Label8: TLabel
+      Left = 8
+      Height = 16
+      Top = 73
+      Width = 23
+      Caption = 'Pen'
+    end
+    object Label9: TLabel
+      Left = 8
+      Height = 16
+      Top = 106
+      Width = 60
+      Caption = 'Pen width'
+    end
+    object Shape4: TShape
+      Left = 178
+      Height = 22
+      Top = 10
+      Width = 65
+    end
+    object Shape5: TShape
+      Left = 178
+      Height = 22
+      Top = 38
+      Width = 65
+    end
+    object Shape6: TShape
+      Left = 178
+      Height = 22
+      Top = 67
+      Width = 65
+    end
+    object Edit3: TEdit
+      Left = 178
+      Height = 26
+      Top = 96
+      Width = 65
+      TabOrder = 0
+      Text = 'Edit3'
+    end
+  end
+  object Label10: TLabel
+    Left = 8
+    Height = 16
+    Top = 50
+    Width = 34
+    Caption = 'Value'
+  end
+  object Edit4: TEdit
+    Left = 64
+    Height = 26
+    Top = 40
+    Width = 152
+    TabOrder = 3
+    Text = 'Edit4'
+  end
+  object Button1: TButton
+    Left = 8
+    Height = 25
+    Top = 240
+    Width = 529
+    Caption = 'OK'
+    ModalResult = 1
+    TabOrder = 4
+  end
+  object ColorDialog1: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 328
+    Top = 8
+  end
+end
