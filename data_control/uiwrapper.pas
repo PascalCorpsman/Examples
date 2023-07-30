@@ -79,6 +79,9 @@ Type
     Procedure Write(Const Value: String); virtual; // Schreibt einen String
     Procedure WriteBytes(Const data: Array Of Byte); virtual; // Schreibt beliebig viele Bytes
     Procedure Flush(); virtual; // Löscht den Empfangspuffer
+
+    Function Connected(): Boolean; virtual; // Abstract
+    Procedure Disconnect(); virtual; // Abstract
   End;
 
 {$IFDEF useUUart}
@@ -102,8 +105,9 @@ Type
     Procedure Flush(); override;
 
     Function connect(Port: String; Baudrate, Bits: Integer; Parity: Char; Stop: Integer; softflow, hardflow: boolean): Boolean;
-    Function Connected(): Boolean;
-    Procedure Disconnect();
+    Function Connected(): Boolean; override;
+
+    Procedure Disconnect(); override;
   End;
 {$ENDIF}
 
@@ -125,8 +129,12 @@ Type
     Procedure Flush(); override;
 
     Function Connect(IP_Address: String; Port: Word): Boolean;
+    Function Connected(): Boolean; override;
+    Procedure Disconnect(); override;
+
   End;
 {$ENDIF}
+
 Implementation
 {$IFDEF useTCP}
 { TTCPInput }
@@ -184,6 +192,17 @@ Function TTCPInput.Connect(IP_Address: String; Port: Word): Boolean;
 Begin
   result := FTCP.Connect(IP_Address, Port);
 End;
+
+Function TTCPInput.Connected: Boolean;
+Begin
+  result := FTCP.Connected();
+End;
+
+Procedure TTCPInput.Disconnect;
+Begin
+  FTCP.Disconnect();
+End;
+
 {$ENDIF}
 
 {$IFDEF useUUart}
@@ -291,6 +310,16 @@ End;
 Procedure TInput.Flush;
 Begin
   Raise exception.create('Error virtual method "' + ClassName + '.Flush" is not declared.');
+End;
+
+Function TInput.Connected: Boolean;
+Begin
+  Raise exception.create('Error virtual method "' + ClassName + '.Connected" is not declared.');
+End;
+
+Procedure TInput.Disconnect();
+Begin
+  Raise exception.create('Error virtual method "' + ClassName + '.Disconnect" is not declared.');
 End;
 
 End.

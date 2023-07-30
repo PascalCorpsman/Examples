@@ -77,19 +77,19 @@
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\DatenSteuerung\utcp.pas"/>
+        <Filename Value="..\..\DatenSteuerung\ucrc.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\DatenSteuerung\ucrc.pas"/>
+        <Filename Value="..\..\synapse\synaser.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\..\synapse\synaser.pas"/>
+        <Filename Value="..\..\DatenSteuerung\uuart_deprecated.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\..\DatenSteuerung\uuart_deprecated.pas"/>
+        <Filename Value="..\utcp.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
     </Units>
@@ -102,7 +102,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\synapse;..\..\DatenSteuerung"/>
+      <OtherUnitFiles Value="..\..\synapse;..\..\DatenSteuerung;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

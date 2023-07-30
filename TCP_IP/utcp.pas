@@ -71,9 +71,15 @@ Type
 {$ENDIF}
   public
     OnDisConnect: TLSocketEvent;
+
     Constructor create(); virtual;
     Destructor destroy(); override;
+
     Function Connect(IP_Address: String; Port: Word): Boolean;
+    Function Connected(): Boolean;
+
+    Procedure Disconnect();
+
     Function RecvByte(Out Error: Boolean; Timeout: Integer = 10): Byte;
     Procedure Write(Const Value: String);
     Procedure WriteByteArr(Const Data: TBytes); // Sendet einen Byte Datanstrom
@@ -210,6 +216,16 @@ Begin
 {$ENDIF}
   End;
   result := Not FQuit;
+End;
+
+Function TTCP.Connected: Boolean;
+Begin
+  result := FCon.Connected;
+End;
+
+Procedure TTCP.Disconnect();
+Begin
+  FCon.Disconnect(true);
 End;
 
 Function TTCP.RecvByte(Out Error: Boolean; Timeout: Integer): Byte;

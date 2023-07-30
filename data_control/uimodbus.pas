@@ -54,6 +54,7 @@ Type
 
   tBools = Array Of Boolean;
   tWords = Array Of Word; // Der Modbus überträgt in 16-Bit Worten Pro Register
+
   TModbusMode = (mmRTU, mmTCP {, mmASCII, mmTCPASCII});
 
   { TUIModbusServer }
