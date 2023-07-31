@@ -213,13 +213,15 @@ Begin
   If form2.ShowModal = mrOK Then Begin
     Chart.AddChild(aSelected, form2.GetChildDataFromLCL());
     Chart.Deselect;
+    aSelected := Nil;
   End;
 End;
 
 Procedure TForm1.MenuItem2Click(Sender: TObject);
 Begin
   // Clear
-
+  Chart.Clear;
+  Chart.Invalidate;
 End;
 
 Procedure TForm1.MenuItem3Click(Sender: TObject);
@@ -231,6 +233,7 @@ Begin
     If form2.ShowModal = mrOK Then Begin
       aSelected^ := form2.GetChildDataFromLCL();
       Chart.Deselect;
+      aselected := Nil;
     End;
   End
   Else Begin
@@ -241,6 +244,12 @@ End;
 Procedure TForm1.MenuItem4Click(Sender: TObject);
 Begin
   // Del Element
+  If assigned(aSelected) Then Begin
+    If Chart.DelChild(aSelected) Then Begin
+      chart.Deselect;
+      aselected := Nil;
+    End;
+  End;
 End;
 
 Procedure TForm1.MenuItem5Click(Sender: TObject);
@@ -252,6 +261,7 @@ Begin
     If form2.ShowModal = mrOK Then Begin
       Chart.AddSibling(aSelected, form2.GetChildDataFromLCL());
       Chart.Deselect;
+      aselected := Nil;
     End;
   End
   Else Begin
@@ -290,7 +300,6 @@ Begin
   Else Begin
     aSelected := Nil;
   End;
-  //  Chart.Root[0].Childrens[1].Selected := true;
   Chart.Invalidate;
 End;
 

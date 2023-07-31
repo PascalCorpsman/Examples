@@ -117,6 +117,8 @@ Type
      *)
     Function AddChild(Const aElement: PChild; Child: TChild): Boolean; // if aElement = nil, child will always be added to root
     Function AddSibling(Const aElement: PChild; Sibling: TChild): Boolean;
+    Function DelChild(Const aElement: PChild): boolean;
+    Procedure Clear;
 
     Procedure Deselect; // Iterates through all Childs and "desectes" them
 
@@ -153,7 +155,7 @@ Begin
   // The values the user is allowed to access to
   result.Caption := '';
   result.Color.BrushColor := clGray;
-  result.Color.PenColor := clwhite;
+  result.Color.PenColor := clblack;
   result.Color.PenWitdh := 1;
   result.Color.FontColor := clBlack;
   result.SelectedColor.BrushColor := clNavy;
@@ -213,7 +215,6 @@ End;
 
 Function TSunburstChart.AddSibling(Const aElement: PChild; Sibling: TChild
   ): Boolean;
-
 Var
   i: Integer;
   pa: PChild;
@@ -232,6 +233,41 @@ Begin
       exit;
     End;
   End;
+End;
+
+Function TSunburstChart.DelChild(Const aElement: PChild): boolean;
+Var
+  i: Integer;
+Begin
+  result := false;
+  For i := 0 To high(Root) Do Begin
+    If @root[i] = aElement Then Begin
+Hier gehts weiter
+      result := true;
+      exit;
+    End;
+  End;
+End;
+
+Procedure TSunburstChart.Clear;
+  Procedure FreeChild(Var Child: TChild);
+  Var
+    i: Integer;
+  Begin
+    For i := 0 To high(Child.Childrens) Do Begin
+      FreeChild(Child.Childrens[i]);
+    End;
+    SetLength(Child.Childrens, 0);
+  End;
+
+Var
+  i: Integer;
+Begin
+  For i := 0 To high(Root) Do Begin
+    FreeChild(Root[i]);
+  End;
+  setlength(Root, 0);
+  root := Nil;
 End;
 
 Procedure TSunburstChart.Deselect;
@@ -257,6 +293,29 @@ End;
 Function TSunburstChart.GetSegmentAtPos(x, y: integer; Out aElement: PChild
   ): Boolean;
 
+Const
+  TwoPi = 2 * Pi;
+
+  Function AngleInRange(Const Angle: Single; StartAngle, EndAngle: Single): boolean;
+  Begin
+    // Clamp all Angles into the range of 0 .. 2 * pi
+    While StartAngle < 0 Do
+      StartAngle := StartAngle + TwoPi;
+    While StartAngle > TwoPi Do
+      StartAngle := StartAngle - TwoPi;
+    While EndAngle < 0 Do
+      EndAngle := EndAngle + TwoPi;
+    While EndAngle > TwoPi Do
+      EndAngle := EndAngle - TwoPi;
+    If EndAngle < StartAngle Then Begin
+      // If the zero crossing is within the Range
+      result := (angle >= StartAngle) Or (angle <= EndAngle);
+    End
+    Else Begin
+      result := (Angle >= StartAngle) And (angle <= EndAngle);
+    End;
+  End;
+
 Var
   Stage: Integer;
   angle: Single;
@@ -265,9 +324,7 @@ Var
   Var
     i: Integer;
   Begin
-    result := (asElement.Stage = Stage) And
-      (angle >= asElement.AbsStartAngle) And
-      (angle <= asElement.AbsEndAngle);
+    result := (asElement.Stage = Stage) And AngleInRange(angle, asElement.AbsStartAngle, asElement.AbsEndAngle);
     If result Then Begin
       aElement := @asElement;
     End
@@ -283,6 +340,7 @@ Var
   tx, ty, i: integer;
 Begin
   result := false;
+  aElement := Nil;
   If Not assigned(Root) Then exit;
   // 0. Alle Elemente initialisieren, sollten diese noch nie gerendert worden sein
   CalcAllMetaData();
