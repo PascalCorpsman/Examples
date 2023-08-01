@@ -1,37 +1,36 @@
 object Form1: TForm1
-  Left = 650
-  Height = 1001
-  Top = 222
-  Width = 1400
+  Left = 329
+  Height = 500
+  Top = 115
+  Width = 700
   Caption = 'Form1'
-  ClientHeight = 1001
-  ClientWidth = 1400
-  DesignTimePPI = 192
+  ClientHeight = 500
+  ClientWidth = 700
   OnCreate = FormCreate
   Position = poScreenCenter
   LCLVersion = '2.3.0.0'
   object Panel1: TPanel
-    Left = 1000
-    Height = 1001
+    Left = 500
+    Height = 500
     Top = 0
-    Width = 400
+    Width = 200
     Anchors = [akTop, akRight, akBottom]
     Caption = 'Panel1'
-    ClientHeight = 1001
-    ClientWidth = 400
+    ClientHeight = 500
+    ClientWidth = 200
     TabOrder = 0
     object Label1: TLabel
-      Left = 16
-      Height = 32
-      Top = 16
-      Width = 96
+      Left = 8
+      Height = 15
+      Top = 8
+      Width = 48
       Caption = 'Initial arc'
     end
     object ScrollBar1: TScrollBar
-      Left = 16
-      Height = 28
-      Top = 48
-      Width = 370
+      Left = 8
+      Height = 14
+      Top = 24
+      Width = 185
       Max = 360
       PageSize = 0
       Position = 360
@@ -39,77 +38,127 @@ object Form1: TForm1
       OnChange = ScrollBar1Change
     end
     object Label2: TLabel
-      Left = 16
-      Height = 32
-      Top = 96
-      Width = 130
+      Left = 8
+      Height = 15
+      Top = 48
+      Width = 64
       Caption = 'Angle offset'
     end
     object ScrollBar2: TScrollBar
-      Left = 16
-      Height = 28
-      Top = 128
-      Width = 370
+      Left = 8
+      Height = 14
+      Top = 64
+      Width = 185
       Max = 360
       PageSize = 0
       TabOrder = 1
       OnChange = ScrollBar2Change
     end
     object ScrollBar3: TScrollBar
-      Left = 16
-      Height = 28
-      Top = 224
-      Width = 370
+      Left = 8
+      Height = 14
+      Top = 112
+      Width = 185
       Max = 10
       PageSize = 0
       TabOrder = 2
       OnChange = ScrollBar3Change
     end
     object Label3: TLabel
-      Left = 16
-      Height = 32
-      Top = 188
-      Width = 76
+      Left = 8
+      Height = 15
+      Top = 94
+      Width = 38
       Caption = 'Margin'
     end
     object Button1: TButton
-      Left = 16
-      Height = 50
-      Top = 800
-      Width = 358
+      Left = 8
+      Height = 25
+      Top = 400
+      Width = 179
+      Anchors = [akLeft, akBottom]
       Caption = 'Load from file'
       OnClick = Button1Click
       TabOrder = 3
     end
     object Button2: TButton
-      Left = 16
-      Height = 50
-      Top = 864
-      Width = 358
+      Left = 8
+      Height = 25
+      Top = 432
+      Width = 179
+      Anchors = [akLeft, akBottom]
       Caption = 'Save to file'
       OnClick = Button2Click
       TabOrder = 4
     end
     object Button3: TButton
-      Left = 16
-      Height = 50
-      Top = 928
-      Width = 358
+      Left = 8
+      Height = 25
+      Top = 464
+      Width = 179
+      Anchors = [akLeft, akBottom]
       Caption = 'Close'
       OnClick = Button3Click
       TabOrder = 5
     end
     object Label4: TLabel
-      Left = 16
-      Height = 64
-      Top = 320
-      Width = 199
+      Left = 8
+      Height = 30
+      Top = 168
+      Width = 98
       Caption = 'use context menu '#10'to edit chart'
+    end
+    object GroupBox1: TGroupBox
+      Left = 16
+      Height = 120
+      Top = 248
+      Width = 169
+      Caption = ' For all do '
+      ClientHeight = 100
+      ClientWidth = 165
+      TabOrder = 6
+      object Label5: TLabel
+        Left = 8
+        Height = 15
+        Top = 11
+        Width = 53
+        Caption = 'Pen width'
+      end
+      object Edit1: TEdit
+        Left = 80
+        Height = 23
+        Top = 3
+        Width = 80
+        TabOrder = 0
+        Text = 'Edit1'
+      end
+      object Label6: TLabel
+        Left = 8
+        Height = 15
+        Top = 38
+        Width = 50
+        Caption = 'Pen color'
+      end
+      object Shape1: TShape
+        Left = 80
+        Height = 21
+        Top = 32
+        Width = 80
+      end
+      object Button4: TButton
+        Left = 8
+        Height = 25
+        Top = 64
+        Width = 152
+        Caption = 'Set'
+        OnClick = Button4Click
+        TabOrder = 1
+      end
     end
   end
   object PopupMenu1: TPopupMenu
-    Left = 384
-    Top = 282
+    Left = 200
+    Top = 200
     object MenuItem1: TMenuItem
       Caption = 'Add child'
       OnClick = MenuItem1Click
@@ -130,5 +179,44 @@ object Form1: TForm1
       Caption = 'Clear'
       OnClick = MenuItem2Click
     end
+  end
+  object ColorDialog1: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 400
+    Top = 240
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = '.sbc'
+    Filter = 'Sunburstchart|*.sbc|All|*.*'
+    Left = 400
+    Top = 392
+  end
+  object SaveDialog1: TSaveDialog
+    DefaultExt = '.sbc'
+    Filter = 'Sunburstchart|*.sbc|All|*.*'
+    Left = 400
+    Top = 448
   end
 end

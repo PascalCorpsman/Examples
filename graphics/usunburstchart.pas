@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uSunburstChart                                                  28.07.2023 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - rewrite with pointers -> more stable and faster.      *)
+(*                      load/save                                             *)
 (*                                                                            *)
 (******************************************************************************)
 Unit usunburstchart;
@@ -33,9 +35,15 @@ Unit usunburstchart;
 Interface
 
 Uses
-  Classes, SysUtils, Controls, Graphics;
+  Classes, SysUtils, Controls, Graphics, ufifo;
+
+Const
+  SunBurstChartFileVersion: integer = 1;
 
 Type
+
+  TOnSaveUserData = Procedure(Sender: TObject; Const Stream: TStream; aUserData: Pointer) Of Object;
+  TOnLoadUserData = Function(Sender: TObject; Const Stream: TStream): Pointer Of Object;
 
   TPointArray = Array Of TPoint;
 
@@ -46,97 +54,116 @@ Type
     FontColor: TColor;
   End;
 
-  TChild = Record
+  (*
+   * Needed to give write access to Selected elements ..
+   *)
+  PSunBurstChartElement = ^TSunBurstChartElement;
+
+  TSunBurstChartElement = Record
     // Everything that a user is allowed to access to
     Caption: String;
     Color: TColorSet;
     SelectedColor: TColorSet;
     Value: Integer;
     UserData: Pointer;
-    Childrens: Array Of TChild;
-    Selected: Boolean; // If True, then Selected Brush / Selected will be used.
+    Selected: Boolean; // If True, then Selected Brush / Selected will be used (will not be stored!)
 
     // Everything that the user is not allowed to access (can and will be overwriten by TSunburstChart)
+    Child: PSunBurstChartElement; // Pointer to first Child
+    PrevSibling: PSunBurstChartElement; // Pointer to previos Sibling (nil if first child)
+    NextSibling: PSunBurstChartElement; // Pointer to next Sibling
+    Parent: PSunBurstChartElement; // Pointer Back to Parent only needed when deleting Elements
     AbsStartAngle: Single;
     AbsEndAngle: Single;
-    Stage: Integer;
-    StageRadius: Single;
+    Level: Integer; // 0 = most inner circle
+    LevelRadius: Single; // is more or less constant, but with this and some constraints the width could be dynamic ..
   End;
 
-  (*
-   * Needed to give write access to Selected elements ..
-   *)
-  PChild = ^TChild;
+
+  TPSunBurstChartElementFifo = Specialize TBufferedFifo < PSunBurstChartElement > ;
 
   { TSunburstChart }
 
   TSunburstChart = Class(TGraphicControl)
   private
-    fSelectedStack: Array Of PChild; // unly used during Paint
-    fSelectedStackCnt: integer;
+    fRoot: PSunBurstChartElement; // Pointer to Root Element
+    fSelectedStack: Array Of PSunBurstChartElement; // only used during Paint
+    fSelectedStackCnt: integer; // only used during Paint
     FAngleOffset: Single;
     fInitialArc: Single;
     fPieCenter: Tpoint;
     fPieRadius: Single;
-    fStageMargin: integer;
+    fLevelMargin: integer;
+    fChanged: Boolean;
+
+    // Helper for iterator pattern
+    fIterator: PSunBurstChartElement;
+    fIteratorFifo: TPSunBurstChartElementFifo;
+
     Procedure setAngleOffset(AValue: Single);
     Procedure SetInitialArc(AValue: Single);
     Procedure SetPieCenter(AValue: Tpoint);
 
-    Function CalcMaxStageCount(): Integer;
+    Function CalcMaxlevelCount(): Integer;
     Procedure SetPieRadius(AValue: Integer);
 
-    Procedure RenderStageSegment(Var aElement: TChild; RenderAll: Boolean);
+    Procedure RenderElement(Const aElement: PSunBurstChartElement; RenderAll: Boolean);
     Procedure SetPieRadius(AValue: Single);
-    Procedure SetStageMargin(AValue: integer);
-    Procedure CalcAllMetaData(); // Calc Stage, Angle informations for each Element accessable by Root
+    Procedure SetLevelMargin(AValue: integer);
+    Procedure CalcAllMetaData(); // Calc Level, Angle informations for each Element accessable by Root
 
-    Function SearchParent(Const aPotentialParent, aChild: PChild): Pchild;
+    Procedure FreeChild(Var Child: PSunBurstChartElement);
   protected
     Procedure Paint; override;
   public
-    Root: Array Of TChild; // TODO: Find a better way to access to this elements !
 
-    Property StageMargin: integer read fStageMargin write SetStageMargin;
+    OnSaveUserData: TOnSaveUserData; // Only needed if UserData Pointer is <> nil
+    OnLoadUserData: TOnLoadUserData; // Only needed if UserData Pointer is <> nil
+
+    Property AngleOffset: Single read FAngleOffset write setAngleOffset; // in Radian
+    Property Changed: Boolean read fChanged;
+    Property Color;
+    Property InitialArc: Single read fInitialArc write SetInitialArc; // in Radian
+    Property PieCenter: Tpoint read fPieCenter write SetPieCenter;
+    Property PieRadius: Single read fPieRadius write SetPieRadius;
+    Property LevelMargin: integer read fLevelMargin write SetLevelMargin;
 
     Property OnMouseDown;
     Property OnResize;
-    Property Color;
-
-    Property InitialArc: Single read fInitialArc write SetInitialArc;
-    Property AngleOffset: Single read FAngleOffset write setAngleOffset;
-    Property PieCenter: Tpoint read fPieCenter write SetPieCenter;
-    Property PieRadius: Single read fPieRadius write SetPieRadius;
 
     Constructor Create(AOwner: TComponent); override;
     Destructor Destroy(); override;
 
-    (*
-     * Following some helper Routines to work with TChild / PChild
-     * true on succeed
-     *)
-    Function AddChild(Const aElement: PChild; Child: TChild): Boolean; // if aElement = nil, child will always be added to root
-    Function AddSibling(Const aElement: PChild; Sibling: TChild): Boolean;
-    Function DelChild(Const aElement: PChild): boolean;
-    Procedure Clear;
+    Function LoadFromStream(Const Stream: TStream): Boolean;
+    Function LoadFromFile(aFilename: String): Boolean;
+    Function SaveToStream(Const Stream: TStream): Boolean;
+    Function SaveToFile(aFilename: String): Boolean;
 
-    Procedure Deselect; // Iterates through all Childs and "desectes" them
+    Function AddChildElement(Const aParent: PSunBurstChartElement; Child: TSunBurstChartElement): PSunBurstChartElement; // if aParent = nil, child will always be added as sibling to root
+    Function AddSiblingElement(Const aElement: PSunBurstChartElement; Sibling: TSunBurstChartElement): PSunBurstChartElement;
+    Function DelElement(Const aElement: PSunBurstChartElement): boolean;
+
+    Procedure Clear; // Removes all elements at once
+
+    Procedure DeselectAll; // Iterates through all Childs and "desectes" them (but without changing the iterator values !
 
     // Gives the Segment which collides with x,y
     // false if none exist
-    // Only valid after the first "rendering"
     // Returns a pointer to give write access to the Element!
-    Function GetSegmentAtPos(x, y: integer; Out aElement: PChild): Boolean;
+    Function GetSegmentAtPos(x, y: integer; Out aElement: PSunBurstChartElement): Boolean;
 
     (*
-     * Iterator Pattern to walk all Segments
+     * Iterator Pattern to walk all Childs
      *)
-    Function Iterator: PChild; // TODO: implement
-    Function IterFirst: Pchild; // TODO: implement
-    Function IterNext: PChild; // TODO: implement
+    Function Iterator: PSunBurstChartElement;
+    Function IterFirst: PSunBurstChartElement;
+    Function IterNext: PSunBurstChartElement;
   End;
 
-Function DefaultChild(): TChild;
+  (*
+   * Use this function to get a proper initialized TSunBurstChartElement !
+   *)
+Function DefaultSunBurstChartElement(): TSunBurstChartElement;
 
 Implementation
 
@@ -146,11 +173,12 @@ Uses
 Const
   Epsilon = 0.0001;
 
-Procedure Nop();
+Procedure Nop(); // Debug only
 Begin
+
 End;
 
-Function DefaultChild(): TChild;
+Function DefaultSunBurstChartElement(): TSunBurstChartElement;
 Begin
   // The values the user is allowed to access to
   result.Caption := '';
@@ -162,16 +190,19 @@ Begin
   result.SelectedColor.PenColor := clred;
   result.SelectedColor.PenWitdh := 4;
   result.SelectedColor.FontColor := clWhite;
-  result.Selected := false;
   result.Value := 1;
   result.UserData := Nil;
-  result.Childrens := Nil;
+  result.Selected := false;
 
   // The values the user shall not change / or edit, will be calculated through TSunburstChart
+  result.Child := Nil;
+  result.PrevSibling := Nil;
+  result.NextSibling := Nil;
+  result.Parent := Nil;
   result.AbsStartAngle := 0;
   result.AbsEndAngle := 0;
-  result.Stage := 0;
-  result.StageRadius := 0;
+  result.Level := 0;
+  result.LevelRadius := 0;
 End;
 
 { TSunburstChart }
@@ -179,118 +210,362 @@ End;
 Constructor TSunburstChart.Create(AOwner: TComponent);
 Begin
   Inherited Create(AOwner);
+  OnSaveUserData := Nil;
+  OnLoadUserData := Nil;
+  fChanged := false;
   Width := 300;
   Height := 300;
-  PieRadius := 150;
+  fPieRadius := 140;
   Color := clwhite;
-  PieCenter := point(Width Div 2, height Div 2);
-  InitialArc := 2 * pi;
-  AngleOffset := 0;
-  StageMargin := 0;
-  Root := Nil;
+  fPieCenter := point(150, 150);
+  fInitialArc := 2 * pi;
+  fAngleOffset := 0;
+  fLevelMargin := 0;
+  fRoot := Nil;
   fSelectedStack := Nil;
   fSelectedStackCnt := 0;
+  fIterator := Nil;
+  fIteratorFifo := TPSunBurstChartElementFifo.create(16);
+End;
+
+Procedure TSunburstChart.Clear;
+Begin
+  fChanged := false;
+  FreeChild(froot);
+  fRoot := Nil;
+  InitialArc := 2 * pi;
+  AngleOffset := 0;
+  LevelMargin := 0;
+  Color := clwhite;
+  Invalidate;
 End;
 
 Destructor TSunburstChart.Destroy;
 Begin
-  Root := Nil;
+  Clear();
   setlength(fSelectedStack, 0);
+  fIteratorFifo.free;
   Inherited Destroy;
 End;
 
-Function TSunburstChart.AddChild(Const aElement: PChild; Child: TChild
-  ): Boolean;
-Begin
-  If aElement = Nil Then Begin
-    setlength(Root, high(root) + 2);
-    root[high(root)] := Child;
-  End
-  Else Begin
-    setlength(aElement^.Childrens, high(aElement^.Childrens) + 2);
-    aElement^.Childrens[high(aElement^.Childrens)] := Child;
-  End;
-  result := true;
-End;
+Function TSunburstChart.SaveToStream(Const Stream: TStream): Boolean;
 
-Function TSunburstChart.AddSibling(Const aElement: PChild; Sibling: TChild
-  ): Boolean;
-Var
-  i: Integer;
-  pa: PChild;
-Begin
-  result := false;
-  // To be Able to add a Sibling we need to find the Parent of the aElement
-  // case 1: aElement is Child of Root
-  For i := 0 To high(Root) Do Begin
-    If @root[i] = aElement Then Begin
-      result := AddChild(Nil, Sibling);
-    End;
-    // case 2: aElement is child of a roots child
-    pa := SearchParent(@root[i], aElement);
-    If assigned(pa) Then Begin
-      result := AddChild(pa, Sibling);
-      exit;
+  Function GetSiblingCount(Const aElement: PSunBurstChartElement): Integer;
+  Var
+    p: PSunBurstChartElement;
+  Begin
+    result := 0;
+    If Not assigned(aElement) Then exit;
+    p := aElement;
+    While assigned(p) Do Begin
+      inc(result);
+      p := p^.NextSibling;
     End;
   End;
-End;
 
-Function TSunburstChart.DelChild(Const aElement: PChild): boolean;
-Var
-  i: Integer;
-Begin
-  result := false;
-  For i := 0 To high(Root) Do Begin
-    If @root[i] = aElement Then Begin
-Hier gehts weiter
+  Function ElementsToStream(Const aElement: PSunBurstChartElement): Boolean;
+  Var
+    Siblings: Integer;
+    b: UInt8;
+    p: PSunBurstChartElement;
+  Begin
+    If Not Assigned(aElement) Then Begin
+      Siblings := 0;
+      stream.Write(Siblings, SizeOf(Siblings));
       result := true;
       exit;
     End;
-  End;
-End;
-
-Procedure TSunburstChart.Clear;
-  Procedure FreeChild(Var Child: TChild);
-  Var
-    i: Integer;
-  Begin
-    For i := 0 To high(Child.Childrens) Do Begin
-      FreeChild(Child.Childrens[i]);
+    result := false;
+    Siblings := GetSiblingCount(aElement);
+    stream.Write(Siblings, SizeOf(Siblings));
+    p := aElement;
+    While Assigned(p) Do Begin
+      stream.WriteAnsiString(p^.Caption);
+      stream.Write(p^.Color, SizeOf(p^.Color));
+      stream.Write(p^.SelectedColor, SizeOf(p^.SelectedColor));
+      stream.Write(p^.Value, SizeOf(p^.Value));
+      If assigned(p^.UserData) Then Begin
+        b := 1;
+        stream.Write(b, SizeOf(b));
+        If Not assigned(OnSaveUserData) Then Begin
+          Raise exception.create('Error, TChild with defined userdata, but no OnSaveUserData property set.');
+          exit;
+        End;
+        OnSaveUserData(self, Stream, p^.UserData);
+      End
+      Else Begin
+        b := 0;
+        stream.Write(b, SizeOf(b));
+      End;
+      ElementsToStream(p^.Child);
+      p := p^.NextSibling;
     End;
-    SetLength(Child.Childrens, 0);
+    result := true;
   End;
 
 Var
-  i: Integer;
+  c: TColor;
 Begin
-  For i := 0 To high(Root) Do Begin
-    FreeChild(Root[i]);
-  End;
-  setlength(Root, 0);
-  root := Nil;
+  result := false;
+  // Global Settings
+  stream.Write(SunBurstChartFileVersion, sizeof(SunBurstChartFileVersion));
+
+  stream.write(FAngleOffset, sizeof(FAngleOffset));
+  c := Color;
+  stream.write(C, sizeof(C));
+  stream.write(fInitialArc, sizeof(fInitialArc));
+  stream.write(fPieCenter, sizeof(fPieCenter));
+  stream.write(fPieRadius, sizeof(fPieRadius));
+  stream.write(fLevelMargin, sizeof(fLevelMargin));
+
+  result := ElementsToStream(fRoot);
+  If result Then fChanged := false;
 End;
 
-Procedure TSunburstChart.Deselect;
-  Procedure DeSel(Var aElement: TChild);
+Function TSunburstChart.LoadFromStream(Const Stream: TStream): Boolean;
+Var
+  LoadedFileVersion: integer;
+
+  Function ElementFromStream(): TSunBurstChartElement;
   Var
-    i: Integer;
+    b: uint8;
   Begin
-    aElement.Selected := false;
-    For i := 0 To high(aElement.Childrens) Do Begin
-      DeSel(aElement.Childrens[i]);
+    result := DefaultSunBurstChartElement();
+    result.caption := Stream.ReadAnsiString;
+    stream.Read(result.Color, SizeOf(result.Color));
+    stream.Read(result.SelectedColor, SizeOf(result.SelectedColor));
+    stream.Read(result.Value, SizeOf(result.Value));
+    b := 2;
+    stream.Read(b, SizeOf(b));
+    If b = 1 Then Begin
+      If Not assigned(OnLoadUserData) Then Begin
+        Raise exception.create('Error, stream with defined userdata, but no OnLoadUserData property set.');
+        exit;
+      End;
+      result.UserData := OnLoadUserData(self, Stream);
     End;
   End;
 
-Var
-  i: Integer;
-Begin
-  For i := 0 To high(Root) Do Begin
-    DeSel(root[i]);
+  Function ElementsFromStream(aParent: PSunBurstChartElement): boolean;
+  Var
+    Siblings, i: Integer;
+    Element: TSunBurstChartElement;
+    nParent: PSunBurstChartElement;
+  Begin
+    result := false;
+    Siblings := 0;
+    stream.Read(Siblings, SizeOf(Siblings));
+    For i := 0 To Siblings - 1 Do Begin
+      Element := ElementFromStream();
+      nParent := AddChildElement(aParent, Element);
+      result := ElementsFromStream(nParent);
+      If Not result Then exit;
+    End;
+    result := true;
   End;
+
+Var
+  c: TColor;
+Begin
+  result := false;
+  Clear;
+  LoadedFileVersion := 0;
+  stream.Read(LoadedFileVersion, sizeof(LoadedFileVersion));
+  If (LoadedFileVersion > SunBurstChartFileVersion) Or (LoadedFileVersion <= 0) Then exit; // Da ist offensichtlich was falsch ..
+
+  stream.Read(FAngleOffset, sizeof(FAngleOffset));
+  c := Color;
+  stream.Read(C, sizeof(C));
+  stream.Read(fInitialArc, sizeof(fInitialArc));
+  stream.Read(fPieCenter, sizeof(fPieCenter));
+  stream.Read(fPieRadius, sizeof(fPieRadius));
+  stream.Read(fLevelMargin, sizeof(fLevelMargin));
+
+  result := ElementsFromStream(Nil);
+  If result Then fChanged := false;
+End;
+
+Function TSunburstChart.SaveToFile(aFilename: String): Boolean;
+Var
+  fs: TFileStream;
+Begin
+  result := false;
+  Try
+    fs := TFileStream.Create(aFilename, fmCreate Or fmOpenWrite);
+    result := SaveToStream(fs);
+    fs.free;
+  Except
+    Raise;
+    // Nichts, das Result ist ja schon false..
+  End;
+End;
+
+Function TSunburstChart.LoadFromFile(aFilename: String): Boolean;
+Var
+  fs: TFileStream;
+Begin
+  result := false;
+  Try
+    fs := TFileStream.Create(aFilename, fmOpenRead);
+    result := LoadFromStream(fs);
+    fs.free;
+    Invalidate;
+  Except
+    Raise;
+    // Nichts, das Result ist ja schon false..
+  End;
+End;
+
+Function TSunburstChart.AddChildElement(Const aParent: PSunBurstChartElement; Child: TSunBurstChartElement
+  ): PSunBurstChartElement;
+Var
+  p: PSunBurstChartElement;
+Begin
+  result := Nil;
+  If aParent = Nil Then Begin
+    If assigned(fRoot) Then Begin
+      If assigned(fRoot^.NextSibling) Then Begin
+        p := fRoot^.NextSibling;
+        While assigned(p^.NextSibling) Do Begin
+          p := p^.NextSibling;
+        End;
+        new(p^.NextSibling);
+        p^.NextSibling^ := Child;
+        p^.NextSibling^.Parent := Nil;
+        p^.NextSibling^.PrevSibling := p;
+        result := p^.NextSibling;
+      End
+      Else Begin
+        new(fRoot^.NextSibling);
+        fRoot^.NextSibling^ := Child;
+        fRoot^.NextSibling^.Parent := Nil;
+        fRoot^.NextSibling^.PrevSibling := fRoot;
+        result := fRoot^.NextSibling;
+      End;
+    End
+    Else Begin
+      new(fRoot);
+      froot^ := Child;
+      froot^.Parent := Nil;
+      froot^.PrevSibling := Nil;
+      result := fRoot;
+    End;
+  End
+  Else Begin
+    If assigned(aParent^.Child) Then Begin
+      p := aParent^.Child;
+      While assigned(p^.NextSibling) Do Begin
+        p := p^.NextSibling;
+      End;
+      new(p^.NextSibling);
+      p^.NextSibling^ := Child;
+      p^.NextSibling^.Parent := p^.Parent;
+      p^.NextSibling^.PrevSibling := p;
+      result := p^.NextSibling;
+    End
+    Else Begin
+      new(aParent^.Child);
+      aParent^.Child^ := Child;
+      aParent^.Child^.Parent := aParent;
+      aParent^.Child^.PrevSibling := Nil;
+      result := aParent^.Child;
+    End;
+  End;
+  fChanged := true;
   Invalidate;
 End;
 
-Function TSunburstChart.GetSegmentAtPos(x, y: integer; Out aElement: PChild
+Function TSunburstChart.AddSiblingElement(Const aElement: PSunBurstChartElement;
+  Sibling: TSunBurstChartElement): PSunBurstChartElement;
+Var
+  p: PSunBurstChartElement;
+Begin
+  result := Nil;
+  If Not assigned(aElement) Then exit;
+  If assigned(aElement^.NextSibling) Then Begin
+    p := aElement^.NextSibling;
+    While assigned(p^.NextSibling) Do Begin
+      p := p^.NextSibling;
+    End;
+    new(p^.NextSibling);
+    p^.NextSibling^ := Sibling;
+    p^.NextSibling^.PrevSibling := p;
+    p^.NextSibling^.Parent := p^.Parent;
+    result := p^.NextSibling;
+  End
+  Else Begin
+    new(aElement^.NextSibling);
+    aElement^.NextSibling^ := Sibling;
+    aElement^.NextSibling^.PrevSibling := aElement;
+    aElement^.NextSibling^.Parent := aElement^.Parent;
+    result := aElement^.NextSibling;
+  End;
+  fChanged := true;
+  Invalidate;
+End;
+
+Function TSunburstChart.DelElement(Const aElement: PSunBurstChartElement): boolean;
+Var
+  p: PSunBurstChartElement;
+Begin
+  result := false;
+  If Not assigned(aElement) Then exit;
+  If assigned(aElement^.PrevSibling) Then Begin
+    // Das Element ist irgendwo mitten in der Siblingkette
+    p := aElement;
+    // Aushängen des Elementes aus der Siblingkette
+    p^.PrevSibling^.NextSibling := p^.NextSibling;
+    If assigned(p^.NextSibling) Then Begin
+      p^.NextSibling^.PrevSibling := p^.PrevSibling;
+    End;
+    // Alles Unterhalb fliegt sowieso raus
+    FreeChild(p^.Child);
+    // Das Eigentliche element Freigeben
+    dispose(p);
+  End
+  Else Begin
+    // Das Element ist das Erste in der Kette
+    If aElement^.Parent = Nil Then Begin
+      p := aElement;
+      //p^.Parent^.Child := p^.NextSibling; -- Gibt es in der 1. Ebene ja nicht.
+      If assigned(p^.NextSibling) Then Begin
+        p^.NextSibling^.PrevSibling := Nil;
+      End;
+      If aElement = fRoot Then froot := froot^.NextSibling;
+      FreeChild(p^.Child);
+      dispose(p);
+      Invalidate;
+    End
+    Else Begin
+      p := aElement;
+      p^.Parent^.Child := p^.NextSibling;
+      If assigned(p^.NextSibling) Then Begin
+        p^.NextSibling^.PrevSibling := Nil;
+      End;
+      FreeChild(p^.Child);
+      dispose(p);
+    End;
+  End;
+  fChanged := true;
+  Invalidate;
+End;
+
+Procedure TSunburstChart.DeselectAll;
+  Procedure DeSel(Const aElement: PSunBurstChartElement);
+  Begin
+    If Not assigned(aElement) Then exit;
+    aElement^.Selected := false;
+    DeSel(aElement^.Child);
+    DeSel(aElement^.NextSibling);
+  End;
+
+Begin
+  Desel(fRoot);
+  //fChanged := true; -- Selected flag is not stored so no change !
+  Invalidate;
+End;
+
+Function TSunburstChart.GetSegmentAtPos(x, y: integer; Out aElement: PSunBurstChartElement
   ): Boolean;
 
 Const
@@ -305,7 +580,7 @@ Const
       StartAngle := StartAngle - TwoPi;
     While EndAngle < 0 Do
       EndAngle := EndAngle + TwoPi;
-    While EndAngle > TwoPi Do
+    While EndAngle > TwoPi + Epsilon Do
       EndAngle := EndAngle - TwoPi;
     If EndAngle < StartAngle Then Begin
       // If the zero crossing is within the Range
@@ -317,60 +592,85 @@ Const
   End;
 
 Var
-  Stage: Integer;
+  Level: Integer;
   angle: Single;
 
-  Function Search(Const asElement: TChild): Boolean;
-  Var
-    i: Integer;
+  Function Search(Const asElement: PSunBurstChartElement): Boolean;
   Begin
-    result := (asElement.Stage = Stage) And AngleInRange(angle, asElement.AbsStartAngle, asElement.AbsEndAngle);
+    result := false;
+    If Not assigned(asElement) Then exit;
+
+    result := (asElement^.Level = Level) And AngleInRange(angle, asElement^.AbsStartAngle, asElement^.AbsEndAngle);
     If result Then Begin
-      aElement := @asElement;
+      aElement := asElement;
     End
     Else Begin
-      For i := 0 To high(asElement.Childrens) Do Begin
-        result := Search(asElement.Childrens[i]);
+      If asElement^.Level < Level Then Begin
+        result := search(asElement^.Child);
+        If result Then exit;
+      End;
+      If asElement^.Level <= Level Then Begin
+        result := search(asElement^.NextSibling);
         If result Then exit;
       End;
     End;
   End;
 
 Var
-  tx, ty, i: integer;
+  tx, ty: integer;
 Begin
   result := false;
   aElement := Nil;
-  If Not assigned(Root) Then exit;
+  If Not assigned(fRoot) Then exit;
   // 0. Alle Elemente initialisieren, sollten diese noch nie gerendert worden sein
   CalcAllMetaData();
   // 1. Bestimmen der Polarkoordinaten von X,Y
   tx := x - PieCenter.x;
   ty := PieCenter.y - y; // Man Bedenke die Y-Achse ist invertiert damit der Mathematische Drehsinn stimmt ;)
-  // TODO: Abfangen Div by 0, wenn Root[0].StageRadius + StageMargin = 0 !
-  Stage := trunc(sqrt(sqr(tx) + sqr(ty)) / (Root[0].StageRadius + StageMargin)); // Berechnen des Aktuellen Ringes
+  // TODO: Abfangen Div by 0, wenn fRoot[0].LevelRadius + LevelMargin = 0 !
+  Level := trunc(sqrt(sqr(tx) + sqr(ty)) / (fRoot[0].LevelRadius + fLevelMargin)); // Berechnen des Aktuellen Ringes
   angle := ArcTan2(ty, tx); // -pi .. pi
   If angle < 0 Then angle := angle + 2 * pi; // 0 .. 2 * pi (so wie alle internen Koordiaten abgespeichert sind !
   // 2. Suchen ob es ein Segment gibt, welches in diesen Koordinaten liegt !
-  For i := 0 To high(root) Do Begin
-    result := Search(root[i]);
-    If result Then exit;
+  result := Search(fRoot);
+End;
+
+Function TSunburstChart.Iterator: PSunBurstChartElement;
+Begin
+  result := fIterator;
+End;
+
+Function TSunburstChart.IterFirst: PSunBurstChartElement;
+  Procedure Push(Const aElement: PSunBurstChartElement);
+  Begin
+    If Not Assigned(aElement) Then exit;
+    fIteratorFifo.Push(aElement);
+    push(aElement^.NextSibling);
+    push(aElement^.Child);
   End;
+
+Begin
+  // TODO: Not shure if this is the best way of implementing a iteration pattern
+  //       as long as nobody deletes a element everything should be fine otherwise
+  //       you will get lots of dangling references ..
+  fIterator := Nil;
+  fIteratorFifo.clear;
+  Push(fRoot);
+  If fIteratorFifo.Count <> 0 Then Begin
+    fIterator := fIteratorFifo.Pop;
+  End;
+  result := fIterator;
 End;
 
-Function TSunburstChart.Iterator: PChild;
+Function TSunburstChart.IterNext: PSunBurstChartElement;
 Begin
-  result := Nil;
-End;
-
-Function TSunburstChart.IterFirst: Pchild;
-Begin
-  result := Nil;
-End;
-
-Function TSunburstChart.IterNext: PChild;
-Begin
-  result := Nil;
+  If fIteratorFifo.Count <> 0 Then Begin
+    fIterator := fIteratorFifo.Pop;
+  End
+  Else Begin
+    fIterator := Nil;
+  End;
+  result := fIterator;
 End;
 
 Procedure TSunburstChart.Paint;
@@ -384,30 +684,27 @@ Begin
   Canvas.Pen.Width := 1;
   Canvas.Rectangle(-1, -1, Width + 1, Height + 1);
 
-  If Not assigned(root) Then exit;
+  If Not assigned(froot) Then exit;
   CalcAllMetaData;
 
   fSelectedStackCnt := 0;
-  // Umstellen auf Iterator pattern , aber nur Testweise !
-  For i := 0 To high(Root) Do Begin
-    RenderStageSegment(root[i], True);
-  End;
+  RenderElement(froot, True);
 
   // Re Render all Selected Parts so that their border can overpaint the non selected areas
   For i := 0 To fSelectedStackCnt - 1 Do Begin
-    RenderStageSegment(fSelectedStack[i]^, false);
+    RenderElement(fSelectedStack[i], false);
   End;
 End;
 
-Procedure TSunburstChart.RenderStageSegment(Var aElement: TChild;
+Procedure TSunburstChart.RenderElement(Const aElement: PSunBurstChartElement;
   RenderAll: Boolean);
 
   Procedure PlotTextAtPos(p: Tpoint);
   Begin
     canvas.TextOut(
-      p.x - Canvas.TextWidth(aElement.Caption) Div 2,
-      p.Y - Canvas.TextHeight(aElement.Caption) Div 2,
-      aElement.Caption
+      p.x - Canvas.TextWidth(aElement^.Caption) Div 2,
+      p.Y - Canvas.TextHeight(aElement^.Caption) Div 2,
+      aElement^.Caption
       );
   End;
 
@@ -417,13 +714,14 @@ Var
   PolyPoints: Array Of TPoint;
   InnerRadius, OuterRadius: Single;
 Begin
+  If Not assigned(aElement) Then exit;
   PolyPoints := Nil;
   // 1. Rendern des Segmentes
-  If aElement.Selected Then Begin
-    Canvas.Brush.Color := aElement.SelectedColor.BrushColor;
-    canvas.Pen.Color := aElement.SelectedColor.PenColor;
-    canvas.Pen.Width := aElement.SelectedColor.PenWitdh;
-    canvas.Font.Color := aElement.SelectedColor.FontColor;
+  If aElement^.Selected Then Begin
+    Canvas.Brush.Color := aElement^.SelectedColor.BrushColor;
+    canvas.Pen.Color := aElement^.SelectedColor.PenColor;
+    canvas.Pen.Width := aElement^.SelectedColor.PenWitdh;
+    canvas.Font.Color := aElement^.SelectedColor.FontColor;
     If RenderAll Then Begin
       inc(fSelectedStackCnt);
       If fSelectedStackCnt > high(fSelectedStack) Then Begin
@@ -431,21 +729,21 @@ Begin
         // This is totally fine. In case with lots and lots selected
         // elements, this is really high cost at the very first rendering ..
         setlength(fSelectedStack, fSelectedStackCnt);
-        fSelectedStack[fSelectedStackCnt - 1] := @aElement;
+        fSelectedStack[fSelectedStackCnt - 1] := aElement;
       End;
     End;
   End
   Else Begin
-    Canvas.Brush.Color := aElement.Color.BrushColor;
-    canvas.Pen.Color := aElement.Color.PenColor;
-    canvas.Pen.Width := aElement.Color.PenWitdh;
-    canvas.Font.Color := aElement.Color.FontColor;
+    Canvas.Brush.Color := aElement^.Color.BrushColor;
+    canvas.Pen.Color := aElement^.Color.PenColor;
+    canvas.Pen.Width := aElement^.Color.PenWitdh;
+    canvas.Font.Color := aElement^.Color.FontColor;
   End;
 
-  InnerRadius := aElement.Stage * (aElement.StageRadius + StageMargin);
-  OuterRadius := (aElement.Stage + 1) * (aElement.StageRadius);
+  InnerRadius := aElement^.Level * (aElement^.LevelRadius + fLevelMargin);
+  OuterRadius := (aElement^.Level + 1) * (aElement^.LevelRadius);
   If InnerRadius = 0 Then Begin
-    If abs(aElement.AbsEndAngle - aElement.AbsStartAngle - 2 * pi) <= Epsilon Then Begin
+    If abs(aElement^.AbsEndAngle - aElement^.AbsStartAngle - 2 * pi) <= Epsilon Then Begin
       // Ein Vollkreis
       Canvas.Ellipse(
         round(PieCenter.x - OuterRadius),
@@ -457,40 +755,39 @@ Begin
     End
     Else Begin
       // Ein "Torten" Element
-      cnt := max(3, round(((aElement.AbsEndAngle - aElement.AbsStartAngle) * OuterRadius) / 10));
+      cnt := max(3, round(((aElement^.AbsEndAngle - aElement^.AbsStartAngle) * OuterRadius) / 10));
       setlength(PolyPoints, cnt + 2);
       PolyPoints[0] := PieCenter;
       For i := 0 To cnt Do Begin
-        a := (aElement.AbsEndAngle - aElement.AbsStartAngle) * i / cnt + aElement.AbsStartAngle;
+        a := (aElement^.AbsEndAngle - aElement^.AbsStartAngle) * i / cnt + aElement^.AbsStartAngle;
         SinCos(a, s, c);
         PolyPoints[i + 1] := point(round(PieCenter.x + OuterRadius * c), round(PieCenter.Y - OuterRadius * s));
       End;
       Canvas.Polygon(PolyPoints);
-      a := (aElement.AbsEndAngle + aElement.AbsStartAngle) / 2;
+      a := (aElement^.AbsEndAngle + aElement^.AbsStartAngle) / 2;
       SinCos(a, s, c);
       PlotTextAtPos(point(round(PieCenter.x + OuterRadius * c / 2), round(PieCenter.Y - OuterRadius * s / 2)));
     End;
   End
   Else Begin
     // Ein Segment "außen" also als Ring
-    cnt := max(3, round(((aElement.AbsEndAngle - aElement.AbsStartAngle) * OuterRadius) / 10));
+    cnt := max(3, round(((aElement^.AbsEndAngle - aElement^.AbsStartAngle) * OuterRadius) / 10));
     setlength(PolyPoints, 2 * (cnt + 1));
     For i := 0 To cnt Do Begin
-      a := (aElement.AbsEndAngle - aElement.AbsStartAngle) * i / cnt + aElement.AbsStartAngle;
+      a := (aElement^.AbsEndAngle - aElement^.AbsStartAngle) * i / cnt + aElement^.AbsStartAngle;
       SinCos(a, s, c);
       PolyPoints[i] := point(round(PieCenter.x + InnerRadius * c), round(PieCenter.Y - InnerRadius * s));
       PolyPoints[2 * (cnt + 1) - 1 - i] := point(round(PieCenter.x + OuterRadius * c), round(PieCenter.Y - OuterRadius * s));
     End;
     Canvas.Polygon(PolyPoints);
-    a := (aElement.AbsEndAngle + aElement.AbsStartAngle) / 2;
+    a := (aElement^.AbsEndAngle + aElement^.AbsStartAngle) / 2;
     SinCos(a, s, c);
     PlotTextAtPos(point(round(PieCenter.x + (InnerRadius + OuterRadius) * c / 2), round(PieCenter.Y - (InnerRadius + OuterRadius) * s / 2)));
   End;
   // 2. Rekursiver Abstieg
   If RenderAll Then Begin
-    For i := 0 To high(aElement.Childrens) Do Begin
-      RenderStageSegment(aElement.Childrens[i], true);
-    End;
+    RenderElement(aElement^.Child, true);
+    RenderElement(aElement^.NextSibling, true);
   End;
 End;
 
@@ -498,38 +795,37 @@ Procedure TSunburstChart.SetPieCenter(AValue: Tpoint);
 Begin
   If fPieCenter = AValue Then Exit;
   fPieCenter := AValue;
+  fChanged := true;
   Invalidate;
 End;
 
-Function TSunburstChart.CalcMaxStageCount: Integer;
-  Function GetDepthOf(aElement: TChild): integer;
+Function TSunburstChart.CalcMaxLevelCount: Integer;
+  Function GetDepthOf(aElement: PSunBurstChartElement): integer;
   Var
-    i: Integer;
+    p: PSunBurstChartElement;
   Begin
-    result := 1;
-    For i := 0 To high(aElement.Childrens) Do Begin
-      result := max(result, 1 + GetDepthOf(aElement.Childrens[i]));
+    If assigned(aElement) Then Begin
+      result := 1 + GetDepthOf(aElement^.Child);
+      p := aElement^.NextSibling;
+      While assigned(p) Do Begin
+        result := max(result, 1 + GetDepthOf(p^.Child));
+        p := p^.NextSibling;
+      End;
+    End
+    Else Begin
+      result := 0;
     End;
   End;
 
-Var
-  i: Integer;
 Begin
-  If assigned(Root) Then Begin
-    result := 1;
-    For i := 0 To high(Root) Do Begin
-      result := max(result, GetDepthOf(Root[i]));
-    End;
-  End
-  Else Begin
-    Result := 0;
-  End;
+  result := GetDepthOf(fRoot);
 End;
 
 Procedure TSunburstChart.SetPieRadius(AValue: Integer);
 Begin
   If fPieRadius = AValue Then Exit;
   fPieRadius := AValue;
+  fChanged := true;
   Invalidate;
 End;
 
@@ -537,92 +833,84 @@ Procedure TSunburstChart.SetPieRadius(AValue: Single);
 Begin
   If fPieRadius = AValue Then Exit;
   fPieRadius := AValue;
+  fChanged := true;
   Invalidate;
 End;
 
-Procedure TSunburstChart.SetStageMargin(AValue: integer);
+Procedure TSunburstChart.SetLevelMargin(AValue: integer);
 Begin
-  If fStageMargin = AValue Then Exit;
-  fStageMargin := AValue;
+  If fLevelMargin = AValue Then Exit;
+  fLevelMargin := AValue;
+  fChanged := true;
   Invalidate;
 End;
 
 Procedure TSunburstChart.CalcAllMetaData;
 Var
-  StageRadius: Single;
-  Procedure CalcAllMetaDataSub(Var aElement: TChild);
-  Var
-    ElementSum, i: integer;
-    AngleDist, ChildStartAngle, ChildAngleDist: Single;
-  Begin
-    ElementSum := 0;
-    For i := 0 To high(aElement.Childrens) Do Begin
-      ElementSum := ElementSum + aElement.Childrens[i].Value;
-    End;
-    If ElementSum = 0 Then ElementSum := 1;
-    AngleDist := aElement.AbsEndAngle - aElement.AbsStartAngle;
-    ChildStartAngle := aElement.AbsStartAngle;
+  LevelRadius: Single;
 
-    For i := 0 To high(aElement.Childrens) Do Begin
-      ChildAngleDist := AngleDist * aElement.Childrens[i].Value / ElementSum;
-      aElement.Childrens[i].StageRadius := aElement.StageRadius;
-      aElement.Childrens[i].Stage := aElement.Stage + 1;
-      aElement.Childrens[i].AbsStartAngle := ChildStartAngle;
-      aElement.Childrens[i].AbsEndAngle := ChildStartAngle + ChildAngleDist;
-      CalcAllMetaDataSub(aElement.Childrens[i]);
-      ChildStartAngle := ChildStartAngle + ChildAngleDist;
+  Function GetSiblingValueSum(Const aElement: PSunBurstChartElement): integer;
+  Var
+    p: PSunBurstChartElement;
+  Begin
+    result := 0;
+    p := aElement;
+    While Assigned(p) Do Begin
+      result := result + p^.Value;
+      p := p^.NextSibling;
+    End;
+  End;
+
+  Procedure CalcAllMetaDataSub(Const aElement: PSunBurstChartElement; Level: integer; absStartAngle, absEndAngle: Single);
+  Var
+    ElementSum: integer;
+    p: PSunBurstChartElement;
+    ChildAngleDist, ChildStartAngle, AngleDist: Single;
+  Begin
+    If Not assigned(aElement) Then exit;
+
+    ElementSum := GetSiblingValueSum(aElement);
+    p := aElement;
+    AngleDist := absEndAngle - absStartAngle;
+    ChildStartAngle := absStartAngle;
+    While assigned(p) Do Begin
+      ChildAngleDist := AngleDist * p^.Value / ElementSum;
+      p^.AbsStartAngle := ChildStartAngle;
+      p^.AbsEndAngle := ChildStartAngle + ChildAngleDist;
+      p^.Level := Level;
+      p^.LevelRadius := LevelRadius;
+      CalcAllMetaDataSub(p^.Child, Level + 1, p^.AbsStartAngle, p^.AbsEndAngle);
+      ChildStartAngle := p^.AbsEndAngle;
+      p := p^.NextSibling;
     End;
   End;
 
 Var
-  StageCount, i, ElementSum: integer;
-  AngleDist, ChildStartAngle, ChildAngleDist: Single;
+  LevelCount: integer;
 Begin
-  StageCount := CalcMaxStageCount();
-  If StageCount = 0 Then exit;
+  LevelCount := CalcMaxlevelCount();
+  If LevelCount = 0 Then exit; // Das ist quasi die Prüfung auf fRoot <> Nil
 
-  StageRadius := (PieRadius - StageMargin * (StageCount - 1)) / StageCount;
+  LevelRadius := (PieRadius - fLevelMargin * (LevelCount - 1)) / LevelCount;
 
-  ElementSum := 0;
-  For i := 0 To high(Root) Do Begin
-    ElementSum := ElementSum + Root[i].Value;
-  End;
-  If ElementSum = 0 Then ElementSum := 1;
-
-  AngleDist := InitialArc;
-  ChildStartAngle := AngleOffset;
-
-  For i := 0 To high(Root) Do Begin
-    ChildAngleDist := AngleDist * Root[i].Value / ElementSum;
-    root[i].StageRadius := StageRadius;
-    root[i].Stage := 0;
-    root[i].AbsStartAngle := ChildStartAngle;
-    root[i].AbsEndAngle := ChildStartAngle + ChildAngleDist;
-    CalcAllMetaDataSub(root[i]);
-    ChildStartAngle := ChildStartAngle + ChildAngleDist;
-  End;
+  CalcAllMetaDataSub(fRoot, 0, AngleOffset, InitialArc + AngleOffset);
 End;
 
-Function TSunburstChart.SearchParent(Const aPotentialParent, aChild: PChild
-  ): Pchild;
-Var
-  i: Integer;
+Procedure TSunburstChart.FreeChild(Var Child: PSunBurstChartElement);
 Begin
-  result := Nil;
-  For i := 0 To high(aPotentialParent^.Childrens) Do Begin
-    If @aPotentialParent^.Childrens[i] = aChild Then Begin
-      result := aPotentialParent;
-      exit;
-    End;
-    result := SearchParent(@aPotentialParent^.Childrens[i], aChild);
-    If assigned(result) Then exit;
-  End;
+  If Not assigned(Child) Then exit;
+  FreeChild(child^.Child);
+  FreeChild(child^.NextSibling);
+  Dispose(Child);
+  fChanged := true;
+  Invalidate;
 End;
 
 Procedure TSunburstChart.SetInitialArc(AValue: Single);
 Begin
   If fInitialArc = AValue Then Exit;
   fInitialArc := AValue;
+  fChanged := true;
   Invalidate;
 End;
 
@@ -630,6 +918,7 @@ Procedure TSunburstChart.setAngleOffset(AValue: Single);
 Begin
   If FAngleOffset = AValue Then Exit;
   FAngleOffset := AValue;
+  fChanged := true;
   Invalidate;
 End;
 

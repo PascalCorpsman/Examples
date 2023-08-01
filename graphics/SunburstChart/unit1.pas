@@ -44,23 +44,33 @@ Type
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
+    Button4: TButton;
+    ColorDialog1: TColorDialog;
+    Edit1: TEdit;
+    GroupBox1: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
     MenuItem5: TMenuItem;
+    OpenDialog1: TOpenDialog;
     Panel1: TPanel;
     PopupMenu1: TPopupMenu;
+    SaveDialog1: TSaveDialog;
     ScrollBar1: TScrollBar;
     ScrollBar2: TScrollBar;
     ScrollBar3: TScrollBar;
+    Shape1: TShape;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
     Procedure Button3Click(Sender: TObject);
+    Procedure Button4Click(Sender: TObject);
     Procedure FormCreate(Sender: TObject);
     Procedure MenuItem1Click(Sender: TObject);
     Procedure MenuItem2Click(Sender: TObject);
@@ -72,10 +82,11 @@ Type
     Procedure ScrollBar3Change(Sender: TObject);
   private
     Chart: TSunburstChart;
-    aSelected: PChild;
+    aSelected: PSunBurstChartElement;
 
     Procedure OnChartMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     Procedure OnChartResize(Sender: Tobject);
+    Procedure OnShapeClick(Sender: TObject);
   public
 
   End;
@@ -92,9 +103,21 @@ Uses math, unit2;
 { TForm1 }
 
 Procedure TForm1.FormCreate(Sender: TObject);
+  Function Child(bc: TColor; c: String; v: integer): TSunBurstChartElement;
+  Begin
+    result := DefaultSunBurstChartElement();
+    result.Color.BrushColor := bc;
+    result.Caption := c;
+    result.Value := v;
+  End;
+
+Var
+  n, r, b, f: PSunBurstChartElement;
 Begin
   caption := 'sunburst demo ver 0.01';
   panel1.caption := '';
+  Shape1.OnClick := @OnShapeClick;
+  edit1.text := '4';
   (*
    * Create TSunburstChart by hand, this prevents us from the need to install the component into the IDE ;)
    *)
@@ -116,78 +139,19 @@ Begin
   aSelected := Nil;
 
   // Initial "Fillings" ;)
+  // Ring 1
+  r := Chart.AddChildElement(Nil, Child(clred, 'Red', 3));
+  Chart.AddChildElement(Nil, Child(clGreen, 'Green', 1));
+  b := Chart.AddChildElement(Nil, Child(clBlue, 'Blue', 1));
 
- //{
-(* Vollkreis
-setlength(Chart.Root, 1);
-Chart.Root[0] := DefaultChild;
-Chart.Root[0].Color.BrushColor := clRed;
-Chart.Root[0].Caption := 'Level1';
-// *)
+  // Ring 2
+  chart.AddChildElement(r, child(clLime, 'Lime', 2));
+  f := chart.AddChildElement(r, child(clfuchsia, 'Fuchsia', 1));
+  chart.AddChildElement(b, child(clSilver, 'Silver', 1));
 
-// (* Gefüllt mit innen ausgefüllt
-  setlength(Chart.Root, 3);
-  Chart.Root[0] := DefaultChild;
-  Chart.Root[0].Color.BrushColor := clRed;
-  Chart.Root[0].Caption := 'Red';
-  Chart.Root[0].value := 3;
-
-  Chart.Root[1] := DefaultChild;
-  Chart.Root[1].Color.BrushColor := clGreen;
-  Chart.Root[1].Caption := 'Green';
-
-  Chart.Root[2] := DefaultChild;
-  Chart.Root[2].Color.BrushColor := clBlue;
-  Chart.Root[2].Caption := 'Blue';
-
-  setlength(Chart.Root[0].Childrens, 2);
-
-  Chart.Root[0].Childrens[0] := DefaultChild();
-  Chart.Root[0].Childrens[0].Color.BrushColor := clLime;
-  Chart.Root[0].Childrens[0].Value := 2;
-  Chart.Root[0].Childrens[0].Caption := 'Lime';
-
-  Chart.Root[0].Childrens[1] := DefaultChild();
-  Chart.Root[0].Childrens[1].Color.BrushColor := clFuchsia;
-  Chart.Root[0].Childrens[1].Caption := 'Fuchsia';
-
-
-  setlength(Chart.Root[2].Childrens, 1);
-  Chart.Root[2].Childrens[0] := DefaultChild();
-  Chart.Root[2].Childrens[0].Color.BrushColor := clSilver;
-  Chart.Root[2].Childrens[0].Caption := 'Silver';
-
-  setlength(Chart.Root[0].Childrens[1].Childrens, 1);
-  Chart.Root[0].Childrens[1].Childrens[0] := DefaultChild();
-  Chart.Root[0].Childrens[1].Childrens[0].Color.BrushColor := clNavy;
-  Chart.Root[0].Childrens[1].Childrens[0].Caption := 'Navy';
-  Chart.Root[0].Childrens[1].Childrens[0].Color.FontColor := clWhite;
-  // *)
-
-  (*// Ein "Ring" -> Das Innerste Element Leer
-  SetLength(chart.Root, 1);
-  chart.Root[0] := DefaultChild();
-  chart.Root[0].Color.BrushColor := clWhite;
-  chart.Root[0].Color.PenColor := clWhite;
-
-  setlength(chart.Root[0].Childrens, 3);
-
-  chart.Root[0].Childrens[0] := DefaultChild();
-  chart.Root[0].Childrens[0].Color.BrushColor := clRed;
-
-  chart.Root[0].Childrens[1] := DefaultChild();
-  chart.Root[0].Childrens[1].Color.BrushColor := clGreen;
-
-  chart.Root[0].Childrens[2] := DefaultChild();
-  chart.Root[0].Childrens[2].Color.BrushColor := clBlue;
-
-  setlength(chart.Root[0].Childrens[1].Childrens, 2);
-  chart.Root[0].Childrens[1].Childrens[0] := DefaultChild();
-  chart.Root[0].Childrens[1].Childrens[0].Color.BrushColor := clNavy;
-  chart.Root[0].Childrens[1].Childrens[1] := DefaultChild();
-  chart.Root[0].Childrens[1].Childrens[1].Color.BrushColor := clLime;
-  // *)
-  //}
+  // Ring 3
+  n := Chart.AddChildElement(f, child(clNavy, 'Navy', 1));
+  n^.Color.FontColor := clWhite;
 End;
 
 Procedure TForm1.Button3Click(Sender: TObject);
@@ -195,24 +159,59 @@ Begin
   close;
 End;
 
+Procedure TForm1.Button4Click(Sender: TObject);
+Var
+  w: integer;
+  c: TColor;
+  //p: PSunBurstChartElement; // Debug Only
+Begin
+  // Demo of iterater pattern set something for all Elements.
+  w := max(1, strtointdef(edit1.text, 1));
+  c := Shape1.Brush.Color;
+  Chart.IterFirst;
+  While assigned(Chart.Iterator) Do Begin
+    //p := Chart.Iterator;
+    Chart.Iterator^.Color.PenWitdh := w;
+    Chart.Iterator^.Color.PenColor := c;
+    chart.IterNext;
+  End;
+  chart.Invalidate;
+End;
+
 Procedure TForm1.Button1Click(Sender: TObject);
 Begin
   // Load from file
+  If OpenDialog1.Execute Then Begin
+    If Chart.LoadFromFile(OpenDialog1.FileName) Then Begin
+      OnChartResize(Nil);
+      ScrollBar1.Position := round(radtodeg(Chart.InitialArc));
+      ScrollBar2.Position := round(radtodeg(Chart.AngleOffset));
+      ScrollBar3.Position := Chart.LevelMargin;
+    End
+    Else Begin
+      showmessage('Error, during load.');
+    End;
+  End;
 End;
 
 Procedure TForm1.Button2Click(Sender: TObject);
 Begin
   // Save to file
+  If SaveDialog1.Execute Then Begin
+    If Not Chart.SaveToFile(SaveDialog1.FileName) Then Begin
+      showmessage('Error, during save.');
+    End;
+  End;
 End;
 
 Procedure TForm1.MenuItem1Click(Sender: TObject);
 Begin
   // Add Element
-  form2.LoadChildDataToLCL(DefaultChild());
+  form2.LoadChildDataToLCL(DefaultSunBurstChartElement());
   form2.caption := 'Add element';
   If form2.ShowModal = mrOK Then Begin
-    Chart.AddChild(aSelected, form2.GetChildDataFromLCL());
-    Chart.Deselect;
+    Chart.AddChildElement(aSelected, form2.GetChildDataFromLCL());
+    Chart.DeselectAll;
     aSelected := Nil;
   End;
 End;
@@ -232,7 +231,7 @@ Begin
     form2.caption := 'Edit element';
     If form2.ShowModal = mrOK Then Begin
       aSelected^ := form2.GetChildDataFromLCL();
-      Chart.Deselect;
+      Chart.DeselectAll;
       aselected := Nil;
     End;
   End
@@ -245,9 +244,10 @@ Procedure TForm1.MenuItem4Click(Sender: TObject);
 Begin
   // Del Element
   If assigned(aSelected) Then Begin
-    If Chart.DelChild(aSelected) Then Begin
-      chart.Deselect;
+    If Chart.DelElement(aSelected) Then Begin
+      chart.DeselectAll;
       aselected := Nil;
+      Chart.Invalidate;
     End;
   End;
 End;
@@ -256,11 +256,11 @@ Procedure TForm1.MenuItem5Click(Sender: TObject);
 Begin
   // Add Sibling
   If assigned(aSelected) Then Begin
-    form2.LoadChildDataToLCL(DefaultChild());
+    form2.LoadChildDataToLCL(DefaultSunBurstChartElement());
     form2.caption := 'Add sibling';
     If form2.ShowModal = mrOK Then Begin
-      Chart.AddSibling(aSelected, form2.GetChildDataFromLCL());
-      Chart.Deselect;
+      Chart.AddSiblingElement(aSelected, form2.GetChildDataFromLCL());
+      Chart.DeselectAll;
       aselected := Nil;
     End;
   End
@@ -283,16 +283,16 @@ End;
 
 Procedure TForm1.ScrollBar3Change(Sender: TObject);
 Begin
-  Chart.StageMargin := ScrollBar3.Position;
+  Chart.LevelMargin := ScrollBar3.Position;
   chart.Invalidate;
 End;
 
 Procedure TForm1.OnChartMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 Var
-  segment: PChild;
+  segment: PSunBurstChartElement;
 Begin
-  Chart.Deselect;
+  Chart.DeselectAll;
   If Chart.GetSegmentAtPos(x, y, segment) Then Begin
     segment^.Selected := true;
     aSelected := segment;
@@ -308,6 +308,14 @@ Begin
   Chart.PieCenter := point(Chart.Width Div 2, Chart.Height Div 2);
   chart.PieRadius := min(Chart.Width / 2, Chart.Height / 2) - 10;
   chart.Invalidate;
+End;
+
+Procedure TForm1.OnShapeClick(Sender: TObject);
+Begin
+  ColorDialog1.Color := TShape(Sender).brush.Color;
+  If ColorDialog1.Execute Then Begin
+    TShape(Sender).brush.Color := ColorDialog1.Color;
+  End;
 End;
 
 End.

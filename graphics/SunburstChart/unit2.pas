@@ -53,11 +53,11 @@ Type
     Shape6: TShape;
     Procedure FormCreate(Sender: TObject);
   private
-    fPrivateChild: TChild;
+    fPrivateChild: TSunBurstChartElement;
     Procedure OnShapeClick(Sender: TObject);
   public
-    Function GetChildDataFromLCL(): TChild;
-    Procedure LoadChildDataToLCL(Const aElement: TChild);
+    Function GetChildDataFromLCL(): TSunBurstChartElement;
+    Procedure LoadChildDataToLCL(Const aElement: TSunBurstChartElement);
   End;
 
 Var
@@ -82,7 +82,7 @@ Begin
   End;
 End;
 
-Function TForm2.GetChildDataFromLCL: TChild;
+Function TForm2.GetChildDataFromLCL: TSunBurstChartElement;
 Begin
   result := fPrivateChild;
   result.caption := edit1.text;
@@ -99,7 +99,7 @@ Begin
   result.SelectedColor.PenWitdh := strtoint(edit3.text);
 End;
 
-Procedure TForm2.LoadChildDataToLCL(Const aElement: TChild);
+Procedure TForm2.LoadChildDataToLCL(Const aElement: TSunBurstChartElement);
 Begin
   fPrivateChild := aElement;
   edit1.text := aElement.Caption;
