@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uSunburstChart                                                  28.07.2023 *)
 (*                                                                            *)
-(* Version     : 0.02                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -26,6 +26,8 @@
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - rewrite with pointers -> more stable and faster.      *)
 (*                      load/save                                             *)
+(*               0.03 - support multi line captions                           *)
+(*                      OnDeleteElementsUserData                              *)
 (*                                                                            *)
 (******************************************************************************)
 Unit usunburstchart;
@@ -41,9 +43,6 @@ Const
   SunBurstChartFileVersion: integer = 1;
 
 Type
-
-  TOnSaveUserData = Procedure(Sender: TObject; Const Stream: TStream; aUserData: Pointer) Of Object;
-  TOnLoadUserData = Function(Sender: TObject; Const Stream: TStream): Pointer Of Object;
 
   TPointArray = Array Of TPoint;
 
@@ -79,6 +78,10 @@ Type
     LevelRadius: Single; // is more or less constant, but with this and some constraints the width could be dynamic ..
   End;
 
+  TOnSaveUserData = Procedure(Sender: TObject; Const Stream: TStream; aUserData: Pointer) Of Object;
+  TOnLoadUserData = Function(Sender: TObject; Const Stream: TStream): Pointer Of Object;
+  TOnDeleteElementsUserData = Procedure(Sender: TObject; aUserData: Pointer) Of Object;
+  TOnBeforeSegmentPaint = Procedure(Sender: TObject; Const aElement: PSunBurstChartElement) Of Object;
 
   TPSunBurstChartElementFifo = Specialize TBufferedFifo < PSunBurstChartElement > ;
 
@@ -100,12 +103,19 @@ Type
     fIterator: PSunBurstChartElement;
     fIteratorFifo: TPSunBurstChartElementFifo;
 
+    (*
+     * Variables for callback handlings
+     *)
+    fOnBeforeSegmentPaint: TOnBeforeSegmentPaint;
+    fOnDeleteElementsUserData: TOnDeleteElementsUserData;
+    fOnSaveUserData: TOnSaveUserData; // Only needed if UserData Pointer is <> nil
+    fOnLoadUserData: TOnLoadUserData; // Only needed if UserData Pointer is <> nil
+
     Procedure setAngleOffset(AValue: Single);
     Procedure SetInitialArc(AValue: Single);
     Procedure SetPieCenter(AValue: Tpoint);
 
     Function CalcMaxlevelCount(): Integer;
-    Procedure SetPieRadius(AValue: Integer);
 
     Procedure RenderElement(Const aElement: PSunBurstChartElement; RenderAll: Boolean);
     Procedure SetPieRadius(AValue: Single);
@@ -113,23 +123,13 @@ Type
     Procedure CalcAllMetaData(); // Calc Level, Angle informations for each Element accessable by Root
 
     Procedure FreeChild(Var Child: PSunBurstChartElement);
+
   protected
     Procedure Paint; override;
+
   public
-
-    OnSaveUserData: TOnSaveUserData; // Only needed if UserData Pointer is <> nil
-    OnLoadUserData: TOnLoadUserData; // Only needed if UserData Pointer is <> nil
-
-    Property AngleOffset: Single read FAngleOffset write setAngleOffset; // in Radian
     Property Changed: Boolean read fChanged;
-    Property Color;
-    Property InitialArc: Single read fInitialArc write SetInitialArc; // in Radian
-    Property PieCenter: Tpoint read fPieCenter write SetPieCenter;
-    Property PieRadius: Single read fPieRadius write SetPieRadius;
-    Property LevelMargin: integer read fLevelMargin write SetLevelMargin;
-
-    Property OnMouseDown;
-    Property OnResize;
+    Property PieCenter: Tpoint read fPieCenter write SetPieCenter; // According to the compiler this can not be published :-(
 
     Constructor Create(AOwner: TComponent); override;
     Destructor Destroy(); override;
@@ -158,6 +158,24 @@ Type
     Function Iterator: PSunBurstChartElement;
     Function IterFirst: PSunBurstChartElement;
     Function IterNext: PSunBurstChartElement;
+
+  published
+    Property AngleOffset: Single read FAngleOffset write setAngleOffset; // in Radian
+    Property Color;
+    Property InitialArc: Single read fInitialArc write SetInitialArc; // in Radian
+    Property LevelMargin: integer read fLevelMargin write SetLevelMargin;
+    Property PieRadius: Single read fPieRadius write SetPieRadius;
+    Property ShowHint;
+
+    Property OnBeforeSegmentPaint: TOnBeforeSegmentPaint read fOnBeforeSegmentPaint write fOnBeforeSegmentPaint;
+    Property OnDeleteElementsUserData: TOnDeleteElementsUserData read fOnDeleteElementsUserData write fOnDeleteElementsUserData;
+    Property OnLoadUserData: TOnLoadUserData read fOnLoadUserData write fOnLoadUserData;
+    Property OnMouseUp;
+    Property OnMouseMove;
+    Property OnMouseDown;
+    Property OnSaveUserData: TOnSaveUserData read fOnSaveUserData write fOnSaveUserData;
+    Property OnShowHint;
+    Property OnResize;
   End;
 
   (*
@@ -210,8 +228,10 @@ End;
 Constructor TSunburstChart.Create(AOwner: TComponent);
 Begin
   Inherited Create(AOwner);
-  OnSaveUserData := Nil;
-  OnLoadUserData := Nil;
+  fOnSaveUserData := Nil;
+  fOnLoadUserData := Nil;
+  fOnDeleteElementsUserData := Nil;
+  fOnBeforeSegmentPaint := Nil;
   fChanged := false;
   Width := 300;
   Height := 300;
@@ -521,6 +541,14 @@ Begin
     // Alles Unterhalb fliegt sowieso raus
     FreeChild(p^.Child);
     // Das Eigentliche element Freigeben
+    If assigned(p^.UserData) Then Begin
+      If assigned(OnDeleteElementsUserData) Then Begin
+        OnDeleteElementsUserData(self, p^.UserData);
+      End
+      Else Begin
+        Raise exception.create('Error, freeing PSunBurstChartElement with userdata, but no OnDeleteElementsUserData set.');
+      End;
+    End;
     dispose(p);
   End
   Else Begin
@@ -533,6 +561,14 @@ Begin
       End;
       If aElement = fRoot Then froot := froot^.NextSibling;
       FreeChild(p^.Child);
+      If assigned(p^.UserData) Then Begin
+        If assigned(OnDeleteElementsUserData) Then Begin
+          OnDeleteElementsUserData(self, p^.UserData);
+        End
+        Else Begin
+          Raise exception.create('Error, freeing PSunBurstChartElement with userdata, but no OnDeleteElementsUserData set.');
+        End;
+      End;
       dispose(p);
       Invalidate;
     End
@@ -543,6 +579,14 @@ Begin
         p^.NextSibling^.PrevSibling := Nil;
       End;
       FreeChild(p^.Child);
+      If assigned(p^.UserData) Then Begin
+        If assigned(OnDeleteElementsUserData) Then Begin
+          OnDeleteElementsUserData(self, p^.UserData);
+        End
+        Else Begin
+          Raise exception.create('Error, freeing PSunBurstChartElement with userdata, but no OnDeleteElementsUserData set.');
+        End;
+      End;
       dispose(p);
     End;
   End;
@@ -677,8 +721,6 @@ Procedure TSunburstChart.Paint;
 Var
   i: integer;
 Begin
-  Inherited Paint; // Call the fOnPaint, ifneeded
-
   // Erase Background
   Canvas.Brush.Color := Color;
   Canvas.Pen.Width := 1;
@@ -694,18 +736,45 @@ Begin
   For i := 0 To fSelectedStackCnt - 1 Do Begin
     RenderElement(fSelectedStack[i], false);
   End;
+  Inherited Paint; // Call the fOnPaint, ifneeded
 End;
 
 Procedure TSunburstChart.RenderElement(Const aElement: PSunBurstChartElement;
   RenderAll: Boolean);
 
   Procedure PlotTextAtPos(p: Tpoint);
+  Var
+    Lines: TStringArray;
+    t, i: Integer;
+  {$IFDEF Windows}
+    s: String;
+  {$ENDIF}
   Begin
-    canvas.TextOut(
-      p.x - Canvas.TextWidth(aElement^.Caption) Div 2,
-      p.Y - Canvas.TextHeight(aElement^.Caption) Div 2,
-      aElement^.Caption
-      );
+    If pos(LineEnding, aElement^.Caption) <> 0 Then Begin
+{$IFDEF Windows}
+      s := aElement^.Caption;
+      s := StringReplace(s, #10, '', [rfReplaceAll]);
+      lines := s.Split([#13]);
+{$ELSE}
+      lines := aElement^.Caption.Split([LineEnding]);
+{$ENDIF}
+      t := p.y - (canvas.TextHeight('8') * length(Lines)) Div 2;
+      // TODO: This implements a "center" layout, in theory you could provide left and right as well..
+      For i := 0 To high(lines) Do Begin
+        canvas.TextOut(
+          p.x - (Canvas.TextWidth(lines[i]) Div 2),
+          t + i * Canvas.TextHeight('8'),
+          lines[i]
+          );
+      End;
+    End
+    Else Begin
+      canvas.TextOut(
+        p.x - Canvas.TextWidth(aElement^.Caption) Div 2,
+        p.Y - Canvas.TextHeight(aElement^.Caption) Div 2,
+        aElement^.Caption
+        );
+    End;
   End;
 
 Var
@@ -715,6 +784,9 @@ Var
   InnerRadius, OuterRadius: Single;
 Begin
   If Not assigned(aElement) Then exit;
+  If assigned(fOnBeforeSegmentPaint) Then Begin
+    fOnBeforeSegmentPaint(self, aElement);
+  End;
   PolyPoints := Nil;
   // 1. Rendern des Segmentes
   If aElement^.Selected Then Begin
@@ -739,7 +811,6 @@ Begin
     canvas.Pen.Width := aElement^.Color.PenWitdh;
     canvas.Font.Color := aElement^.Color.FontColor;
   End;
-
   InnerRadius := aElement^.Level * (aElement^.LevelRadius + fLevelMargin);
   OuterRadius := (aElement^.Level + 1) * (aElement^.LevelRadius);
   If InnerRadius = 0 Then Begin
@@ -770,6 +841,8 @@ Begin
     End;
   End
   Else Begin
+    // TODO: Wenn das Segment ein Vollkreis ist solte es als Ring und nicht als Ring mit 0-Linie gemalt werden.
+    //       \-> Dieser "Bug" / "glitch" tritt nur auf, wenn BrushColor <> PenColor, sonst stimmt es *g*
     // Ein Segment "außen" also als Ring
     cnt := max(3, round(((aElement^.AbsEndAngle - aElement^.AbsStartAngle) * OuterRadius) / 10));
     setlength(PolyPoints, 2 * (cnt + 1));
@@ -819,14 +892,6 @@ Function TSunburstChart.CalcMaxLevelCount: Integer;
 
 Begin
   result := GetDepthOf(fRoot);
-End;
-
-Procedure TSunburstChart.SetPieRadius(AValue: Integer);
-Begin
-  If fPieRadius = AValue Then Exit;
-  fPieRadius := AValue;
-  fChanged := true;
-  Invalidate;
 End;
 
 Procedure TSunburstChart.SetPieRadius(AValue: Single);
@@ -901,6 +966,14 @@ Begin
   If Not assigned(Child) Then exit;
   FreeChild(child^.Child);
   FreeChild(child^.NextSibling);
+  If assigned(Child^.UserData) Then Begin
+    If assigned(OnDeleteElementsUserData) Then Begin
+      OnDeleteElementsUserData(self, Child^.UserData);
+    End
+    Else Begin
+      Raise exception.create('Error, freeing PSunBurstChartElement with userdata, but no OnDeleteElementsUserData set.');
+    End;
+  End;
   Dispose(Child);
   fChanged := true;
   Invalidate;

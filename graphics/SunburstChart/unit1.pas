@@ -71,6 +71,7 @@ Type
     Procedure Button2Click(Sender: TObject);
     Procedure Button3Click(Sender: TObject);
     Procedure Button4Click(Sender: TObject);
+    Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
     Procedure FormCreate(Sender: TObject);
     Procedure MenuItem1Click(Sender: TObject);
     Procedure MenuItem2Click(Sender: TObject);
@@ -98,7 +99,7 @@ Implementation
 
 {$R *.lfm}
 
-Uses math, unit2;
+Uses math, unit2,LCLType;
 
 { TForm1 }
 
@@ -176,6 +177,13 @@ Begin
     chart.IterNext;
   End;
   chart.Invalidate;
+End;
+
+Procedure TForm1.FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
+Begin
+  If Chart.Changed Then Begin
+    If id_no = application.MessageBox('Close without save ?', 'Question', mb_yesno Or mb_iconquestion) Then canclose := false;
+  End;
 End;
 
 Procedure TForm1.Button1Click(Sender: TObject);

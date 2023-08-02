@@ -72,6 +72,11 @@ Implementation
 Procedure TForm2.FormCreate(Sender: TObject);
 Begin
   Shape1.OnClick := @OnShapeClick;
+  Shape2.OnClick := @OnShapeClick;
+  Shape3.OnClick := @OnShapeClick;
+  Shape4.OnClick := @OnShapeClick;
+  Shape5.OnClick := @OnShapeClick;
+  Shape6.OnClick := @OnShapeClick;
 End;
 
 Procedure TForm2.OnShapeClick(Sender: TObject);
