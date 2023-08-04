@@ -28,6 +28,8 @@
 (*                      load/save                                             *)
 (*               0.03 - support multi line captions                           *)
 (*                      OnDeleteElementsUserData                              *)
+(*               0.04 - OnAfterSegmentPaint                                   *)
+(*                      Fix Crash when selecting multiple elements            *)
 (*                                                                            *)
 (******************************************************************************)
 Unit usunburstchart;
@@ -81,7 +83,7 @@ Type
   TOnSaveUserData = Procedure(Sender: TObject; Const Stream: TStream; aUserData: Pointer) Of Object;
   TOnLoadUserData = Function(Sender: TObject; Const Stream: TStream): Pointer Of Object;
   TOnDeleteElementsUserData = Procedure(Sender: TObject; aUserData: Pointer) Of Object;
-  TOnBeforeSegmentPaint = Procedure(Sender: TObject; Const aElement: PSunBurstChartElement) Of Object;
+  TOnSegmentPaint = Procedure(Sender: TObject; Const aElement: PSunBurstChartElement) Of Object;
 
   TPSunBurstChartElementFifo = Specialize TBufferedFifo < PSunBurstChartElement > ;
 
@@ -106,10 +108,12 @@ Type
     (*
      * Variables for callback handlings
      *)
-    fOnBeforeSegmentPaint: TOnBeforeSegmentPaint;
-    fOnDeleteElementsUserData: TOnDeleteElementsUserData;
-    fOnSaveUserData: TOnSaveUserData; // Only needed if UserData Pointer is <> nil
+    fOnAfterSegmentPaint: TOnSegmentPaint;
+    fOnAfterPaint: TNotifyEvent;
+    fOnBeforeSegmentPaint: TOnSegmentPaint;
+    fOnDeleteElementsUserData: TOnDeleteElementsUserData; // Only needed if UserData Pointer is <> nil
     fOnLoadUserData: TOnLoadUserData; // Only needed if UserData Pointer is <> nil
+    fOnSaveUserData: TOnSaveUserData; // Only needed if UserData Pointer is <> nil
 
     Procedure setAngleOffset(AValue: Single);
     Procedure SetInitialArc(AValue: Single);
@@ -167,8 +171,12 @@ Type
     Property PieRadius: Single read fPieRadius write SetPieRadius;
     Property ShowHint;
 
-    Property OnBeforeSegmentPaint: TOnBeforeSegmentPaint read fOnBeforeSegmentPaint write fOnBeforeSegmentPaint;
+    Property OnAfterSegmentPaint: TOnSegmentPaint read fOnAfterSegmentPaint write fOnAfterSegmentPaint;
+    Property OnAfterPaint: TNotifyEvent read fOnAfterPaint write fOnAfterPaint;
+    Property OnBeforeSegmentPaint: TOnSegmentPaint read fOnBeforeSegmentPaint write fOnBeforeSegmentPaint;
+    Property OnClick;
     Property OnDeleteElementsUserData: TOnDeleteElementsUserData read fOnDeleteElementsUserData write fOnDeleteElementsUserData;
+    Property OnDblClick;
     Property OnLoadUserData: TOnLoadUserData read fOnLoadUserData write fOnLoadUserData;
     Property OnMouseUp;
     Property OnMouseMove;
@@ -228,10 +236,12 @@ End;
 Constructor TSunburstChart.Create(AOwner: TComponent);
 Begin
   Inherited Create(AOwner);
-  fOnSaveUserData := Nil;
-  fOnLoadUserData := Nil;
-  fOnDeleteElementsUserData := Nil;
+  fOnAfterSegmentPaint := Nil;
+  fOnAfterPaint := Nil;
   fOnBeforeSegmentPaint := Nil;
+  fOnDeleteElementsUserData := Nil;
+  fOnLoadUserData := Nil;
+  fOnSaveUserData := Nil;
   fChanged := false;
   Width := 300;
   Height := 300;
@@ -721,6 +731,7 @@ Procedure TSunburstChart.Paint;
 Var
   i: integer;
 Begin
+  Inherited Paint; // Call the fOnPaint, ifneeded
   // Erase Background
   Canvas.Brush.Color := Color;
   Canvas.Pen.Width := 1;
@@ -736,7 +747,9 @@ Begin
   For i := 0 To fSelectedStackCnt - 1 Do Begin
     RenderElement(fSelectedStack[i], false);
   End;
-  Inherited Paint; // Call the fOnPaint, ifneeded
+  If assigned(fOnAfterPaint) Then Begin
+    FonAfterPaint(Self);
+  End;
 End;
 
 Procedure TSunburstChart.RenderElement(Const aElement: PSunBurstChartElement;
@@ -801,8 +814,8 @@ Begin
         // This is totally fine. In case with lots and lots selected
         // elements, this is really high cost at the very first rendering ..
         setlength(fSelectedStack, fSelectedStackCnt);
-        fSelectedStack[fSelectedStackCnt - 1] := aElement;
       End;
+      fSelectedStack[fSelectedStackCnt - 1] := aElement;
     End;
   End
   Else Begin
@@ -856,6 +869,9 @@ Begin
     a := (aElement^.AbsEndAngle + aElement^.AbsStartAngle) / 2;
     SinCos(a, s, c);
     PlotTextAtPos(point(round(PieCenter.x + (InnerRadius + OuterRadius) * c / 2), round(PieCenter.Y - (InnerRadius + OuterRadius) * s / 2)));
+  End;
+  If assigned(fOnAfterSegmentPaint) Then Begin
+    fOnAfterSegmentPaint(self, aElement);
   End;
   // 2. Rekursiver Abstieg
   If RenderAll Then Begin
