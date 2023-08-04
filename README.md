@@ -16,6 +16,8 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | Example | Description |
 | --- | --- |
 | Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
+| uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
+| uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
 
 ## TCP_IP
 
@@ -24,11 +26,24 @@ Collection of classes and examples that are mainly related to Serial and Network
 | Example | Description |
 | --- | --- |
 | Modbus_Diagnostic | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
+| utcp.pas | abstract wrapper for TLTcp (from L-net) |
 
 ## data_control
 
 Collection of classes and examples corresponding to data processing, math and corresponding stuff
 
+| Example | Description |
+| --- | --- |
+| uJSON.pas | JSON-Loader / writer class |
+| ucrc.pas | Generic crc calculation class |
+| udomxml.pas | generic xml parser |
+| ufifo.pas | generic first in first out class |
+| uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
+| uiwrapper.pas | data source wrapper for uimodbus.pas (L-Net or Synapse) | 
+| umapviewer.pas | see OpenGL "Mapviewer" |
+| uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
+| uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
+| uvectormath.pas | Math library for multidimensional things (e.g. OpenGL, Matrix ..) |
 ## graphics
 
 Collection of classes and examples corresponding to graphic / image processing
@@ -36,6 +51,8 @@ Collection of classes and examples corresponding to graphic / image processing
 | Example | Description |
 | --- | --- |
 | Sunburstchart | Demo application for usunburstchart.pas |
+| ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
+| usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
