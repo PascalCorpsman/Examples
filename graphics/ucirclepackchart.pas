@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uCirclePackChart                                                08.08.2023 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -25,6 +25,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Add: NeedReEvaluation                                 *)
+(*                      FIX: OnAfterPaint missing, Memleak                    *)
 (*                                                                            *)
 (******************************************************************************)
 Unit ucirclepackchart;
@@ -139,6 +141,8 @@ Type
     Function Iterator: PCircle;
     Function IterFirst: PCircle;
     Function IterNext: PCircle;
+
+    Procedure NeedReEvaluation; // Call this routine if you manually changed the value of a already included cirlce
   published
     Property Color;
     Property ShowHint;
@@ -251,6 +255,7 @@ Begin
   While assigned(i) Do Begin
     j := i;
     i := i^.Next;
+    FreeUserData(j);
     Dispose(j);
   End;
   FCircleCount := 0;
@@ -748,6 +753,9 @@ Begin
     PlotTextAtPos(point(round(i^.ScaledCenter.X), round(i^.ScaledCenter.y)), i^.Caption);
     i := i^.Next;
   End;
+  If assigned(OnAfterPaint) Then Begin
+    OnAfterPaint(Self);
+  End;
 End;
 
 Procedure TPackedCircleChart.DoOnResize;
@@ -815,6 +823,12 @@ Begin
   Else Begin
     result := Nil;
   End;
+End;
+
+Procedure TPackedCircleChart.NeedReEvaluation;
+Begin
+  fNeedRecalculation := true;
+  Invalidate;
 End;
 
 End.
