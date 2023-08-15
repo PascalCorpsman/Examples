@@ -50,8 +50,10 @@ Collection of classes and examples corresponding to graphic / image processing
 
 | Example | Description |
 | --- | --- |
-| Sunburstchart | Demo application for usunburstchart.pas |
+| CirclePackChart | Demo application for ucirclepackchart.pas |
+| SunburstChart | Demo application for usunburstchart.pas |
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
+| ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 
 ## Dependencies
