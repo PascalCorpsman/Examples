@@ -2,7 +2,7 @@
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
-(* This file is part of Sunburst_demo                                         *)
+(* This file is part of Circlepack_demo                                       *)
 (*                                                                            *)
 (*  See the file license.md, located under:                                   *)
 (*  https://github.com/PascalCorpsman/Software_Licenses/blob/main/license.md  *)
@@ -20,7 +20,7 @@ Interface
 
 Uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  usunburstchart;
+  ucirclepackchart;
 
 Type
 
@@ -52,12 +52,12 @@ Type
     Shape5: TShape;
     Shape6: TShape;
     Procedure FormCreate(Sender: TObject);
-  private
-    fPrivateChild: TSunBurstChartElement;
     Procedure OnShapeClick(Sender: TObject);
+  private
+    fPrivateCircle: TCircle;
   public
-    Function GetChildDataFromLCL(): TSunBurstChartElement;
-    Procedure LoadChildDataToLCL(Const aElement: TSunBurstChartElement);
+    Function GetCircleDataFromLCL(): TCircle;
+    Procedure LoadCircleDataToLCL(Const aElement: TCircle);
   End;
 
 Var
@@ -81,15 +81,15 @@ End;
 
 Procedure TForm2.OnShapeClick(Sender: TObject);
 Begin
-  ColorDialog1.Color := TShape(sender).Brush.Color;
+  ColorDialog1.Color := TShape(Sender).Brush.Color;
   If ColorDialog1.Execute Then Begin
-    TShape(sender).Brush.Color := ColorDialog1.Color;
+    TShape(Sender).Brush.Color := ColorDialog1.Color;
   End;
 End;
 
-Function TForm2.GetChildDataFromLCL: TSunBurstChartElement;
+Function TForm2.GetCircleDataFromLCL(): TCircle;
 Begin
-  result := fPrivateChild;
+  result := fPrivateCircle;
   result.caption := edit1.text;
   result.Value := strtoint(edit4.text);
   // Color
@@ -104,12 +104,11 @@ Begin
   result.SelectedColor.PenWitdh := strtoint(edit3.text);
 End;
 
-Procedure TForm2.LoadChildDataToLCL(Const aElement: TSunBurstChartElement);
+Procedure TForm2.LoadCircleDataToLCL(Const aElement: TCircle);
 Begin
-  fPrivateChild := aElement;
+  fPrivateCircle := aElement;
   edit1.text := aElement.Caption;
   edit4.text := inttostr(aElement.Value);
-
   // Color
   Shape1.Brush.Color := aElement.Color.BrushColor;
   Shape2.Brush.Color := aElement.Color.FontColor;

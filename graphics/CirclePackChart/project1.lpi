@@ -12,6 +12,7 @@
       <XPManifest>
         <DpiAware Value="True"/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <BuildModes>
       <Item Name="Default" Default="True"/>
@@ -42,7 +43,7 @@
         <UnitName Value="Unit1"/>
       </Unit>
       <Unit>
-        <Filename Value="..\usunburstchart.pas"/>
+        <Filename Value="..\ucirclepackchart.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -52,10 +53,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit2"/>
-      </Unit>
-      <Unit>
-        <Filename Value="..\..\DatenSteuerung\ufifo.pas"/>
-        <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
   </ProjectOptions>
@@ -67,7 +64,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+      <OtherUnitFiles Value=".."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

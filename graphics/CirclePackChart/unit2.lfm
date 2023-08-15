@@ -1,13 +1,12 @@
 object Form2: TForm2
-  Left = 347
-  Height = 275
-  Top = 108
-  Width = 552
+  Left = 353
+  Height = 277
+  Top = 124
+  Width = 550
   Caption = 'Form2'
-  ClientHeight = 275
-  ClientWidth = 552
+  ClientHeight = 277
+  ClientWidth = 550
   OnCreate = FormCreate
-  Position = poScreenCenter
   LCLVersion = '2.3.0.0'
   object Label1: TLabel
     Left = 8
@@ -200,7 +199,7 @@ object Form2: TForm2
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    Left = 328
-    Top = 8
+    Left = 356
+    Top = 36
   end
 end
