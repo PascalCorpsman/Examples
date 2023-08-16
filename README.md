@@ -43,7 +43,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | uiwrapper.pas | data source wrapper for uimodbus.pas (L-Net or Synapse) | 
 | umapviewer.pas | see OpenGL "Mapviewer" |
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
-| usqlite_helper.pas | helper routines to access to SQL-Lite3 databases (needs SQLDBLaz package)|
+| usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
 | uvectormath.pas | Math library for multidimensional things (e.g. OpenGL, Matrix ..) |
 ## graphics
