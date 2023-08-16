@@ -108,7 +108,7 @@ Procedure TForm2.LoadCircleDataToLCL(Const aElement: TCircle);
 Begin
   fPrivateCircle := aElement;
   edit1.text := aElement.Caption;
-  edit4.text := inttostr(aElement.Value);
+  edit4.text := inttostr(round(aElement.Value));
   // Color
   Shape1.Brush.Color := aElement.Color.BrushColor;
   Shape2.Brush.Color := aElement.Color.FontColor;

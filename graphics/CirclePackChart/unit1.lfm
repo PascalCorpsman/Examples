@@ -41,9 +41,9 @@ object Form1: TForm1
   end
   object Label1: TLabel
     Left = 616
-    Height = 30
+    Height = 32
     Top = 270
-    Width = 95
+    Width = 107
     Caption = 'use context menu'#13#10'to edit chart'
   end
   object GroupBox1: TGroupBox
@@ -53,8 +53,8 @@ object Form1: TForm1
     Width = 185
     Anchors = [akRight, akBottom]
     Caption = ' for all do '
-    ClientHeight = 109
-    ClientWidth = 181
+    ClientHeight = 112
+    ClientWidth = 183
     TabOrder = 3
     object Button4: TButton
       Left = 8
@@ -67,21 +67,21 @@ object Form1: TForm1
     end
     object Label2: TLabel
       Left = 8
-      Height = 15
+      Height = 16
       Top = 8
-      Width = 53
+      Width = 60
       Caption = 'Pen width'
     end
     object Label3: TLabel
       Left = 8
-      Height = 15
+      Height = 16
       Top = 42
-      Width = 50
+      Width = 57
       Caption = 'Pen color'
     end
     object Edit1: TEdit
       Left = 96
-      Height = 23
+      Height = 26
       Top = 0
       Width = 80
       TabOrder = 1
@@ -106,14 +106,14 @@ object Form1: TForm1
   end
   object Label4: TLabel
     Left = 611
-    Height = 15
+    Height = 16
     Top = 17
-    Width = 33
+    Width = 37
     Caption = 'Count'
   end
   object Edit2: TEdit
     Left = 713
-    Height = 23
+    Height = 26
     Top = 8
     Width = 80
     Anchors = [akTop, akRight]

@@ -146,7 +146,7 @@ End;
 
 Procedure TForm1.MenuItem2Click(Sender: TObject);
 Var
-  oldValue: Integer;
+  oldValue: Single;
 Begin
   // Edit Circle
   If assigned(aSelected) Then Begin
