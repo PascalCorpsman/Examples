@@ -14,18 +14,21 @@ package "Examples" {
   package "TCP_IP" {
    object Modbus_Diagnostic
   }
+  package "Sound" {
+   
+  }
 }
 
 package "External libs" {
-object Synapse
+object Bass
+object DGLOpenGL
 object LNet 
 object MP_Arith
-object DGLOpenGL
+object Synapse
 Synapse <|-- Mapviewer 
 DGLOpenGL <|-- Mapviewer 
 Synapse <|-- Modbus_Diagnostic
 LNet <|-- Modbus_Diagnostic
 }
-
 
 @enduml
