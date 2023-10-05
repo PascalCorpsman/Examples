@@ -58,6 +58,11 @@ Collection of classes and examples corresponding to graphic / image processing
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
+## sound
+
+Collection of classes and examples corresponding to sound / music processing
+| Example | Description |
+| --- | --- |
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
