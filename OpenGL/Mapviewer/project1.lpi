@@ -68,7 +68,7 @@
         <IsPartOfProject Value="True"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\..\DatenSteuerung\umapviewer.pas"/>
+        <Filename Value="..\umapviewer.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
