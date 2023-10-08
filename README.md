@@ -18,6 +18,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
+| umapviewer.pas | LCL-Component to make google mapviewer in Opengl possible |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
 
 ## TCP_IP
@@ -42,7 +43,6 @@ Collection of classes and examples corresponding to data processing, math and co
 | ufifo.pas | generic first in first out class |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
 | uiwrapper.pas | data source wrapper for uimodbus.pas (L-Net or Synapse) | 
-| umapviewer.pas | see OpenGL "Mapviewer" |
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
