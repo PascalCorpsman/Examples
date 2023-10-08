@@ -70,7 +70,7 @@ Some examples may have dependencies to external libraries here is the collection
 
 | libname | Description | Link |
 |---|---|---|
-| Bass | Sound library | https://www.un4seen.com/ |
+| Bass | Audio library | https://www.un4seen.com/ |
 | DGLOpenGL | OpenGL header translation | https://github.com/saschawillems/dglopengl |
 | Lnet | Lightweight Networking library | https://github.com/almindor/lnet |
 | MP-Arith | Math library for big numbers | https://web.archive.org/web/20190628091417/http://www.wolfgang-ehrhardt.de/index.html |
