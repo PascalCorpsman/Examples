@@ -63,14 +63,15 @@ Collection of classes and examples corresponding to graphic / image processing
 Collection of classes and examples corresponding to sound / music processing
 | Example | Description |
 | --- | --- |
+| uwave.pas | class to access .wav files |
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 
 | libname | Description | Link |
 |---|---|---|
+| Bass | Sound library | https://www.un4seen.com/ |
+| DGLOpenGL | OpenGL header translation | https://github.com/saschawillems/dglopengl |
+| Lnet | Lightweight Networking library | https://github.com/almindor/lnet |
+| MP-Arith | Math library for big numbers | https://web.archive.org/web/20190628091417/http://www.wolfgang-ehrhardt.de/index.html |
 | Synapse | Synapse TCP/IP and serial library | http://www.ararat.cz/synapse/doku.php/download |
-| DGLOpenGL | OpenGL Header translation | https://github.com/saschawillems/dglopengl |
-| MP-Arith | Mathlibrary for big numbers | https://web.archive.org/web/20190628091417/http://www.wolfgang-ehrhardt.de/index.html |
-| Lnet | Lightweight Networking Library | https://github.com/almindor/lnet |
-
