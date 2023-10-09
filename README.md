@@ -18,7 +18,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
-| umapviewer.pas | LCL-Component to make google mapviewer in Opengl possible |
+| umapviewer.pas | LCL-Component to make google mapviewer in OpenGL possible |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
 
 ## TCP_IP
