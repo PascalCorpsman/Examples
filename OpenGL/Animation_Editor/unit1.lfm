@@ -1,0 +1,531 @@
+object Form1: TForm1
+  Left = 347
+  Height = 635
+  Top = 111
+  Width = 981
+  ActiveControl = OpenGLControl1
+  Caption = 'Form1'
+  ClientHeight = 613
+  ClientWidth = 981
+  Menu = MainMenu1
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+  object OpenGLControl1: TOpenGLControl
+    Left = 24
+    Height = 246
+    Top = 352
+    Width = 314
+    OnMakeCurrent = OpenGLControl1MakeCurrent
+    OnPaint = OpenGLControl1Paint
+    OnResize = OpenGLControl1Resize
+  end
+  object GroupBox1: TGroupBox
+    Left = 208
+    Height = 336
+    Top = 8
+    Width = 760
+    Caption = ' Sprite settings '
+    ClientHeight = 319
+    ClientWidth = 758
+    TabOrder = 3
+    object Label4: TLabel
+      Left = 8
+      Height = 16
+      Top = 8
+      Width = 35
+      Caption = 'Name'
+    end
+    object Edit1: TEdit
+      Left = 48
+      Height = 26
+      Top = 0
+      Width = 80
+      OnChange = Edit1Change
+      TabOrder = 0
+      Text = 'Edit1'
+    end
+    object Label5: TLabel
+      Left = 144
+      Height = 16
+      Top = 8
+      Width = 77
+      Caption = 'Angle range:'
+    end
+    object Label6: TLabel
+      Left = 232
+      Height = 16
+      Top = 8
+      Width = 41
+      Caption = 'Label6'
+    end
+    object Label8: TLabel
+      Left = 8
+      Height = 16
+      Top = 40
+      Width = 37
+      Caption = 'Image'
+    end
+    object Button3: TButton
+      Left = 143
+      Height = 25
+      Top = 34
+      Width = 75
+      Caption = 'Load'
+      OnClick = Button3Click
+      TabOrder = 2
+    end
+    object Image1: TImage
+      Left = 416
+      Height = 232
+      Hint = 'If "Frames per row" and "Frames per col" are defined correct. '#10'You can automatically calculate "Frameoffset" and "Framecount" by '#10'clicking on a "subimage" via left and right mouse button.'
+      Top = 0
+      Width = 332
+      Center = True
+      OnMouseDown = Image1MouseDown
+      ParentShowHint = False
+      Proportional = True
+      ShowHint = True
+      Stretch = True
+    end
+    object GroupBox2: TGroupBox
+      Left = 232
+      Height = 113
+      Top = 34
+      Width = 176
+      Caption = ' Subimage rect '
+      ClientHeight = 96
+      ClientWidth = 174
+      TabOrder = 4
+      object Edit3: TEdit
+        Left = 40
+        Height = 26
+        Hint = 'Top edge in pixel'
+        Top = 2
+        Width = 50
+        OnKeyPress = Edit5KeyPress
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 0
+        Text = 'Edit3'
+      end
+      object Edit4: TEdit
+        Left = 112
+        Height = 26
+        Hint = 'Right edge in pixel'
+        Top = 31
+        Width = 50
+        OnKeyPress = Edit5KeyPress
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        Text = 'Edit4'
+      end
+      object Edit5: TEdit
+        Left = 88
+        Height = 26
+        Hint = 'Bottom edge in pixel'
+        Top = 56
+        Width = 50
+        OnKeyPress = Edit5KeyPress
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        Text = 'Edit5'
+      end
+      object Edit6: TEdit
+        Left = 8
+        Height = 26
+        Hint = 'Left edge in pixel'
+        Top = 31
+        Width = 50
+        OnKeyPress = Edit5KeyPress
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        Text = 'Edit6'
+      end
+      object Button4: TButton
+        Left = 64
+        Height = 25
+        Top = 29
+        Width = 40
+        Caption = 'set'
+        OnClick = Button4Click
+        TabOrder = 2
+      end
+    end
+    object CheckBox1: TCheckBox
+      Left = 64
+      Height = 22
+      Top = 40
+      Width = 71
+      Caption = 'Derived'
+      OnClick = CheckBox1Click
+      TabOrder = 1
+    end
+    object Button5: TButton
+      Left = 8
+      Height = 25
+      Top = 280
+      Width = 400
+      Caption = 'Create OpenGL preview'
+      OnClick = Button5Click
+      TabOrder = 13
+    end
+    object CheckBox2: TCheckBox
+      Left = 8
+      Height = 22
+      Top = 128
+      Width = 196
+      Caption = 'animation uses transparency'
+      OnClick = CheckBox2Click
+      TabOrder = 5
+    end
+    object Label10: TLabel
+      Left = 32
+      Height = 16
+      Top = 256
+      Width = 77
+      Caption = 'Renderwidth'
+    end
+    object Label11: TLabel
+      Left = 248
+      Height = 16
+      Top = 256
+      Width = 82
+      Caption = 'Renderheight'
+    end
+    object Edit7: TEdit
+      Left = 111
+      Height = 26
+      Top = 248
+      Width = 80
+      OnChange = Edit7Change
+      TabOrder = 11
+      Text = 'Edit7'
+    end
+    object Edit8: TEdit
+      Left = 327
+      Height = 26
+      Top = 248
+      Width = 80
+      OnChange = Edit8Change
+      TabOrder = 12
+      Text = 'Edit8'
+    end
+    object Label12: TLabel
+      Left = 232
+      Height = 16
+      Top = 192
+      Width = 72
+      Caption = 'Framecount'
+    end
+    object Edit9: TEdit
+      Left = 328
+      Height = 26
+      Top = 184
+      Width = 80
+      OnChange = Edit9Change
+      TabOrder = 9
+      Text = 'Edit9'
+    end
+    object Label13: TLabel
+      Left = 231
+      Height = 16
+      Top = 160
+      Width = 87
+      Caption = 'Frames per col'
+    end
+    object Label14: TLabel
+      Left = 16
+      Height = 16
+      Top = 160
+      Width = 92
+      Caption = 'Frames per row'
+    end
+    object Edit10: TEdit
+      Left = 327
+      Height = 26
+      Top = 152
+      Width = 80
+      OnChange = Edit10Change
+      TabOrder = 7
+      Text = 'Edit10'
+    end
+    object Edit11: TEdit
+      Left = 112
+      Height = 26
+      Top = 152
+      Width = 80
+      OnChange = Edit11Change
+      TabOrder = 6
+      Text = 'Edit11'
+    end
+    object Label15: TLabel
+      Left = 95
+      Height = 16
+      Top = 224
+      Width = 118
+      Caption = 'Time per frame [ms]'
+    end
+    object Edit12: TEdit
+      Left = 216
+      Height = 26
+      Top = 216
+      Width = 80
+      OnChange = Edit12Change
+      TabOrder = 10
+      Text = 'Edit12'
+    end
+    object Button7: TButton
+      Left = 160
+      Height = 25
+      Top = 64
+      Width = 59
+      Caption = 'export'
+      OnClick = Button7Click
+      TabOrder = 3
+    end
+    object Edit13: TEdit
+      Left = 112
+      Height = 26
+      Top = 184
+      Width = 80
+      OnChange = Edit13Change
+      TabOrder = 8
+      Text = 'Edit13'
+    end
+    object Label17: TLabel
+      Left = 16
+      Height = 16
+      Top = 192
+      Width = 73
+      Caption = 'Frameoffset'
+    end
+  end
+  object ListBox1: TListBox
+    Left = 56
+    Height = 336
+    Top = 8
+    Width = 144
+    ItemHeight = 0
+    OnClick = ListBox1Click
+    TabOrder = 2
+    TopIndex = -1
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 16
+    Top = 8
+    Width = 41
+    Caption = 'Sprites'
+  end
+  object ScrollBar1: TScrollBar
+    Left = 456
+    Height = 14
+    Top = 473
+    Width = 320
+    Max = 360
+    PageSize = 0
+    TabOrder = 6
+    OnChange = ScrollBar1Change
+  end
+  object Label2: TLabel
+    Left = 368
+    Height = 16
+    Top = 472
+    Width = 87
+    Caption = 'Prieview angle'
+  end
+  object Label3: TLabel
+    Left = 784
+    Height = 16
+    Top = 472
+    Width = 41
+    Caption = 'Label3'
+  end
+  object Button1: TButton
+    Left = 24
+    Height = 26
+    Top = 280
+    Width = 26
+    Caption = '+'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 24
+    Height = 26
+    Top = 318
+    Width = 26
+    Caption = '-'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object Label7: TLabel
+    Left = 368
+    Height = 16
+    Top = 442
+    Width = 77
+    Caption = 'Angle Offset'
+  end
+  object Edit2: TEdit
+    Left = 448
+    Height = 26
+    Top = 440
+    Width = 80
+    OnChange = ScrollBar1Change
+    TabOrder = 5
+    Text = 'Edit2'
+  end
+  object ScrollBar2: TScrollBar
+    Left = 456
+    Height = 14
+    Top = 529
+    Width = 316
+    Min = 1
+    PageSize = 0
+    Position = 10
+    TabOrder = 7
+    OnChange = ScrollBar2Change
+  end
+  object Label9: TLabel
+    Left = 368
+    Height = 16
+    Top = 528
+    Width = 34
+    Caption = 'Zoom'
+  end
+  object Label16: TLabel
+    Left = 784
+    Height = 16
+    Top = 528
+    Width = 49
+    Caption = 'Label16'
+  end
+  object Button6: TButton
+    Left = 832
+    Height = 25
+    Top = 520
+    Width = 25
+    Caption = 'R'
+    OnClick = Button6Click
+    TabOrder = 8
+  end
+  object Label18: TLabel
+    Left = 352
+    Height = 16
+    Top = 368
+    Width = 108
+    Caption = 'Background color'
+  end
+  object Shape1: TShape
+    Left = 456
+    Height = 25
+    Top = 358
+    Width = 65
+    Brush.Color = clBlack
+    OnMouseUp = Shape1MouseUp
+  end
+  object PaintBox1: TPaintBox
+    Left = 888
+    Height = 32
+    Top = 455
+    Width = 32
+    OnPaint = PaintBox1Paint
+  end
+  object Button8: TButton
+    Left = 352
+    Height = 25
+    Top = 568
+    Width = 320
+    Caption = 'Show preview image'
+    OnClick = Button8Click
+    TabOrder = 9
+  end
+  object Timer1: TTimer
+    OnTimer = Timer1Timer
+    Left = 144
+    Top = 392
+  end
+  object MainMenu1: TMainMenu
+    Left = 104
+    Top = 24
+    object MenuItem1: TMenuItem
+      Caption = 'File'
+      object MenuItem2: TMenuItem
+        Caption = 'New'
+        OnClick = MenuItem2Click
+      end
+      object MenuItem5: TMenuItem
+        Caption = 'Load'
+        OnClick = MenuItem5Click
+      end
+      object MenuItem3: TMenuItem
+        Caption = 'Save'
+        ShortCut = 16467
+        OnClick = MenuItem3Click
+      end
+      object MenuItem4: TMenuItem
+        Caption = 'Save as'
+        OnClick = MenuItem4Click
+      end
+      object MenuItem6: TMenuItem
+        Caption = 'Quit'
+        OnClick = MenuItem6Click
+      end
+    end
+  end
+  object OpenPictureDialog1: TOpenPictureDialog
+    Filter = 'Grafik (*.png;*.xpm;*.bmp;*.cur;*.ico;*.icns;*.jpeg;*.jpg;*.jpe;*.jfif;*.tif;*.tiff;*.gif;*.pbm;*.pgm;*.ppm;*.tga)|*.png;*.xpm;*.bmp;*.cur;*.ico;*.icns;*.jpeg;*.jpg;*.jpe;*.jfif;*.tif;*.tiff;*.gif;*.pbm;*.pgm;*.ppm;*.tga|Portable Network Graphic (*.png)|*.png'
+    Left = 104
+    Top = 80
+  end
+  object SaveDialog1: TSaveDialog
+    DefaultExt = '.ani'
+    Filter = 'Animation file|*.ani|All files|*.*'
+    Left = 106
+    Top = 140
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = '.ani'
+    Filter = 'Animation file|*.ani|All files|*.*'
+    Left = 104
+    Top = 201
+  end
+  object ColorDialog1: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 579
+    Top = 353
+  end
+  object SaveDialog2: TSaveDialog
+    DefaultExt = '.png'
+    Filter = 'Portable Network File|*.png|All Files|*.*'
+    Left = 320
+    Top = 96
+  end
+end

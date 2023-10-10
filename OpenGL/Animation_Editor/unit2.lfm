@@ -1,0 +1,29 @@
+object Form2: TForm2
+  Left = 279
+  Height = 149
+  Top = 124
+  Width = 107
+  BorderStyle = bsDialog
+  Caption = 'Form2'
+  ClientHeight = 149
+  ClientWidth = 107
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+  object Image1: TImage
+    Left = 8
+    Height = 90
+    Top = 8
+    Width = 90
+    AutoSize = True
+  end
+  object Button1: TButton
+    Left = 16
+    Height = 25
+    Top = 112
+    Width = 75
+    Caption = 'OK'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+end
