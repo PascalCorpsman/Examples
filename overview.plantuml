@@ -4,6 +4,7 @@
 package "Examples" {
   package "OpenGL" {
    object Mapviewer
+   object Animation_Editor
   }
   package "data_control" {
   }
@@ -27,6 +28,7 @@ object MP_Arith
 object Synapse
 Synapse <|-- Mapviewer 
 DGLOpenGL <|-- Mapviewer 
+DGLOpenGL <|-- Animation_Editor 
 Synapse <|-- Modbus_Diagnostic
 LNet <|-- Modbus_Diagnostic
 }
