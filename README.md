@@ -30,6 +30,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 | Example | Description |
 | --- | --- |
 | Modbus_Diagnostic | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
+| uchunkmanager.pas | Server / Client component to send packages of data through a TCP-IP connection (need L-Net) |
 | uip.pas | Some helper routines to work and get IP's |
 | utcp.pas | abstract wrapper for TLTcp (from L-net) |
 
@@ -44,7 +45,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | udomxml.pas | generic xml parser |
 | ufifo.pas | generic first in first out class |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
-| uiwrapper.pas | data source wrapper for uimodbus.pas (L-Net or Synapse) | 
+| uiwrapper.pas | data source wrapper for uimodbus.pas (Lnet or Synapse) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
