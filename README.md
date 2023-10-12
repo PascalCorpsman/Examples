@@ -46,6 +46,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | ufifo.pas | generic first in first out class |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
 | uiwrapper.pas | data source wrapper for uimodbus.pas (Lnet or Synapse) | 
+| uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
