@@ -49,6 +49,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
+| utokenizer.pas | generic lexer class to lex strings into tokens |
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
 | uvectormath.pas | Math library for multidimensional things (e.g. OpenGL, Matrix ..) |
 ## graphics
