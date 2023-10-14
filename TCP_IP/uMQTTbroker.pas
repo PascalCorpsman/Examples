@@ -330,8 +330,8 @@ Var
 Begin
   result := false;
   If Clientindex > high(fClients) Then exit; // Der Client wurde mittlerweile frei gegeben ..
-  // Der Fixed Header hat auf jeden Fall 2 Byte + 1 Byte Payload Länge
-  If length(fClients[Clientindex].RecvBytes) < 3 Then exit;
+  // Der Fixed Header hat auf jeden Fall 2 Byte
+  If length(fClients[Clientindex].RecvBytes) < 2 Then exit;
   // Decoding the Remaining Length
   aPayloadStartIndex := 1;
   Multiplier := 1;
