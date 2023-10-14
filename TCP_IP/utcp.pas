@@ -158,8 +158,16 @@ End;
 
 Procedure TTCP.OnIdle(Sender: TObject; Var Done: Boolean);
 Begin
-  FCon.CallAction;
-  Done := false; // Evtl. muss hier auch immer False stehen ??
+  If assigned(FCon.Eventer) Then Begin
+    FCon.CallAction;
+    Done := false; // TODO: Muss das nun auf true, oder nicht ?
+  End
+  Else Begin
+    // Wenn kein Eventer definiert ist = die Komponente ist nicht verbunden
+    // Dann ist Done auf jeden Fall true, denn dann wollen wir nicht mehr weiter
+    // Aufgerufen werden, sonst erzeugen wir hier nur unnütz CPU-Load !
+    done := true;
+  End;
 End;
 {$ENDIF}
 

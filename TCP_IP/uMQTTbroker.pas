@@ -114,6 +114,7 @@ Type
     fconnection: TLTcp;
     fClients: Array Of TClients;
 
+    Function GetListening: Boolean;
     Procedure OnAccept(aSocket: TLSocket);
     Procedure OnDisconnect(aSocket: TLSocket);
     Procedure OnReceive(aSocket: TLSocket);
@@ -150,7 +151,9 @@ Type
     OnPublishRequest: TOnPublishRequest;
     OnPingEvent: TOnClientEvent;
 
-    Constructor Create(Const aConnection: TLTcp);
+    Property Listening: Boolean read GetListening;
+
+    Constructor Create(Const aConnection: TLTcp); virtual;
     Destructor Destroy(); override;
 
     Function Listen: Boolean;
@@ -192,6 +195,7 @@ End;
 Destructor TMQTTBroker.Destroy;
 Begin
   If fconnection.Connected Then fconnection.Disconnect(true);
+  // Connection is not owned -> so no fconnection.free; !
 End;
 
 Function TMQTTBroker.Listen: Boolean;
@@ -227,6 +231,11 @@ Begin
   fClients[high(fClients)].RecvBytes := Nil;
   fClients[high(fClients)].MQTTConnected := false;
   log(fClientIDs, 'Accepted connection');
+End;
+
+Function TMQTTBroker.GetListening: Boolean;
+Begin
+  result := fconnection.Connected;
 End;
 
 Procedure TMQTTBroker.OnDisconnect(aSocket: TLSocket);
@@ -297,7 +306,7 @@ Begin
   Else Begin
     Log(0, 'Error: ' + msg);
   End;
-  OnDisconnect(aSocket);
+  // OnDisconnect(aSocket); -- This causes a endlessloop we have to trust L-net to call the "Disconnect" event !
 End;
 
 Function TMQTTBroker.SocketToindex(Const aSocket: TLSocket): integer;
