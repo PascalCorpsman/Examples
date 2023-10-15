@@ -13,6 +13,7 @@ package "Examples" {
    object CirclePackChart
   }
   package "TCP_IP" {
+   object MQTT_Broker
    object Modbus_Diagnostic
   }
   package "Sound" {
@@ -31,6 +32,7 @@ DGLOpenGL <|-- Mapviewer
 DGLOpenGL <|-- Animation_Editor 
 Synapse <|-- Modbus_Diagnostic
 LNet <|-- Modbus_Diagnostic
+LNet <|-- MQTT_Broker
 }
 
 @enduml
