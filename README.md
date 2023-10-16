@@ -82,3 +82,6 @@ Some examples may have dependencies to external libraries here is the collection
 | Lnet | Lightweight Networking library | https://github.com/almindor/lnet |
 | MP-Arith | Math library for big numbers | https://web.archive.org/web/20190628091417/http://www.wolfgang-ehrhardt.de/index.html |
 | Synapse | Synapse TCP/IP and serial library | http://www.ararat.cz/synapse/doku.php/download |
+
+## License
+All sourcecode files do have their own license header included at the top, for all other files in this repository see license.md for further informations.
