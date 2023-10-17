@@ -61,10 +61,10 @@ Type
 
   TUIModbusServer = Class
   private
-    fSendingDevice: TInput;
     fcrc: TCRC_Calculator;
     ftcptn: Word; // die TCP-Transaktionsnummer
   protected
+    fSendingDevice: TInput; // Only for debugging in Modbus Diagnostic application
     Function HandleRegisterEvent(FC: integer; SlaveID: Byte; Address: Word; Quantity: Byte; TimeOut: integer = 10): tWords;
     (*
      * !! ACHTUNG !!

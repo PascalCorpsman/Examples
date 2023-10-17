@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Modbus_diagnostic                                               ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.07                                                         *)
+(* Version     : 0.08                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -33,6 +33,8 @@
 (*               0.06 - Verhindern von Senden, wenn nicht verbunden.          *)
 (*               0.07 - Kleinere Bugfixes im RTU-Protokoll                    *)
 (*                      Support Broadcast Schreiben                           *)
+(*               0.08 - Anzeigen aller Empfangenen Bytes auch wenn diese      *)
+(*                       "Falsch" waren                                       *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -186,35 +188,60 @@ Begin
   For i := 0 To high(data) Do Begin
     s := s + format('%0.2X ', [data[i]]);
   End;
-  form1.memo1.lines.add(s);
   Inherited WriteRawBytes(data);
+  form1.memo1.lines.add(s);
+  Application.ProcessMessages;
 End;
 
 Function TMyModbus.ReceiveRawBytes(TimeOut: integer): TBytes;
 Var
   s: String;
-  i: Integer;
+  err: Boolean;
+  value: Byte;
+  l: integer;
 Begin
-  Result := Inherited ReceiveRawBytes(TimeOut);
   s := 'In : ';
-  For i := 0 To high(result) Do Begin
-    s := s + format('%0.2X ', [result[i]]);
+  result := Nil;
+  setlength(result, 1024);
+  l := 0;
+  err := false;
+  While Not err Do Begin
+    value := fSendingDevice.RecvByte(err, TimeOut);
+    If Not err Then Begin
+      s := s + format('%0.2X ', [value]);
+      result[l] := value;
+      inc(l);
+      If l > high(result) Then setlength(result, high(result) + 1025);
+    End;
   End;
-  form1.memo1.lines.add(s);
+  setlength(result, l);
+  form1.memo1.Append(trim(s));
 End;
 
 Function TMyModbus.ReceiveRawBytesCnt(ByteCount: integer; TimeOut: integer
   ): TBytes;
 Var
   s: String;
-  i: Integer;
+  i: integer;
+  value: Byte;
+  err: Boolean;
 Begin
-  Result := Inherited ReceiveRawBytesCnt(ByteCount, TimeOut);
+  result := Nil;
   s := 'In : ';
-  For i := 0 To high(result) Do Begin
-    s := s + format('%0.2X ', [result[i]]);
+  setlength(result, ByteCount);
+  err := false;
+  For i := 0 To ByteCount - 1 Do Begin
+    value := fSendingDevice.RecvByte(err, TimeOut);
+    If err Then Begin
+      setlength(result, 0);
+      break;
+    End
+    Else Begin
+      s := s + format('%0.2X ', [value]);
+      result[i] := value;
+    End;
   End;
-  form1.memo1.lines.add(s);
+  form1.memo1.Append(trim(s));
 End;
 
 { TForm1 }

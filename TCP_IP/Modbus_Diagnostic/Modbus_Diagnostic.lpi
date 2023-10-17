@@ -102,7 +102,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\synapse;..\..\DatenSteuerung;.."/>
+      <OtherUnitFiles Value="..\..\synapse;..\..\DatenSteuerung;..\..\data_control;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
