@@ -157,6 +157,7 @@ Type
   private
     { private declarations }
     Procedure OnTCPDisconnect(aSocket: TLSocket);
+    Procedure OnDroppedFrame(Sender: TObject);
   public
     { public declarations }
     Procedure ReLoadModbusDevice();
@@ -218,8 +219,7 @@ Begin
   form1.memo1.Append(trim(s));
 End;
 
-Function TMyModbus.ReceiveRawBytesCnt(ByteCount: integer; TimeOut: integer
-  ): TBytes;
+Function TMyModbus.ReceiveRawBytesCnt(ByteCount: integer; TimeOut: integer): TBytes;
 Var
   s: String;
   i: integer;
@@ -251,7 +251,7 @@ Var
   s: String;
 Begin
   FormatSettings.DecimalSeparator := '.';
-  Caption := 'Modbus Diagnostic ver. 0.07, by Corpsman, www.Corpsman.de';
+  Caption := 'Modbus Diagnostic ver. 0.08, by Corpsman, www.Corpsman.de';
   Tform(self).Constraints.MaxHeight := Tform(self).Height;
   Tform(self).Constraints.MinHeight := Tform(self).Height;
   Tform(self).Constraints.Maxwidth := Tform(self).width;
@@ -283,6 +283,11 @@ Begin
   //    Connection.free;
   //  Connection := Nil;
   edit3.text := 'not connected.';
+End;
+
+Procedure TForm1.OnDroppedFrame(Sender: TObject);
+Begin
+  Memo1.Append('Error, invalid responce.');
 End;
 
 Procedure TForm1.ReLoadModbusDevice;
@@ -356,6 +361,9 @@ Begin
           info := 'not connected.';
         End;
       End;
+  End;
+  If assigned(Modbus) Then Begin
+    Modbus.OnDroppedFrame := @OnDroppedFrame;
   End;
   edit3.text := info;
 End;

@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uimodbus                                                        27.11.2014 *)
 (*                                                                            *)
-(* Version     : 0.08                                                         *)
+(* Version     : 0.09                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -32,6 +32,7 @@
 (*               0.06 Anpassen Sichtbarkeiten der Debugg Routinen             *)
 (*               0.07 Support für Modbus BroadCast                            *)
 (*               0.08 Read Input Registers                                    *)
+(*               0.09 Callback when dropping a frame                          *)
 (*                                                                            *)
 (* Echt gute Doku: https://www.simplymodbus.ca/FC04.htm                       *)
 (*                                                                            *)
@@ -81,6 +82,9 @@ Type
     Function ReceiveRawBytesCnt(ByteCount: integer; TimeOut: integer = 10): TBytes; virtual; // ACHTUNG : das hier hat nichts mit Modbus zu tun !!
   public
     Mode: TModbusMode;
+
+    OnDroppedFrame: TNotifyEvent; // If Set, will be called if a responce is invalid
+
     Constructor Create(Const SendingDevice: TInput);
     Destructor destroy; override;
     (*
@@ -99,6 +103,8 @@ Implementation
 
 Constructor TUIModbusServer.Create(Const SendingDevice: TInput);
 Begin
+  Inherited Create();
+  OnDroppedFrame := Nil;
   fSendingDevice := SendingDevice;
   fcrc := TCRC_Calculator.create();
   Mode := mmRTU;
@@ -440,6 +446,9 @@ Begin
             For i := 0 To Quantity - 1 Do Begin
               result[i] := (b[9 + 2 * i] Shl 8) Or (b[10 + 2 * i] Shl 0);
             End;
+          End
+          Else Begin
+            If assigned(OnDroppedFrame) Then OnDroppedFrame(self);
           End;
           ftcptn := ftcptn + 1;
         End;
@@ -452,9 +461,16 @@ Begin
             For i := 0 To Quantity - 1 Do Begin
               result[i] := (b[3 + 2 * i] Shl 8) Or (b[4 + 2 * i] Shl 0);
             End;
+          End
+          Else Begin
+            If assigned(OnDroppedFrame) Then OnDroppedFrame(self);
           End;
         End;
     End;
+  End
+  Else Begin
+    // Wenn wir gar nichts bekommen haben wo wir was erwarten, ist das auch ein Fehler
+    If assigned(OnDroppedFrame) Then OnDroppedFrame(self);
   End;
 End;
 
