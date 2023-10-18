@@ -29,7 +29,8 @@ Type
   private
     fServer: TMQTTBroker;
     Procedure OnLog(Sender: TObject; ClientID: integer; aValue: String);
-    Function OnSubscribeRequest(Sender: TObject; ClientID: integer; Subscription: String): Treturn;
+    Function OnSubscribeRequest(Sender: TObject; ClientID: integer; PackageIdentifier: uint16; Subscription: String): Treturn;
+    Procedure OnUnSubscribeRequest(Sender: TObject; ClientID: integer; PackageIdentifier: uint16; Subscription: String);
     Procedure OnPublishRequest(Sender: TObject; ClientID: integer; aName, aPayload: String; DUP, Retain: Boolean);
     Procedure OnPing(Sender: TObject; ClientID: integer);
     Procedure OnAcceptMQTTClient(Sender: TObject; ClientID: integer);
@@ -81,6 +82,7 @@ Begin
   fServer := TMQTTBroker.Create(LTCPComponent1);
   fserver.OnLog := @OnLog;
   fserver.OnSubscribeRequest := @OnSubscribeRequest;
+  fserver.OnUnSubscribeRequest := @OnUnSubscribeRequest;
   fserver.OnPublishRequest := @OnPublishRequest;
   fserver.OnPingEvent := @OnPing;
   fserver.OnAcceptMQTTClient := @OnAcceptMQTTClient;
@@ -104,10 +106,16 @@ Begin
 End;
 
 Function TForm1.OnSubscribeRequest(Sender: TObject; ClientID: integer;
-  Subscription: String): Treturn;
+  PackageIdentifier: uint16; Subscription: String): Treturn;
 Begin
   Onlog(self, ClientID, 'Request subscription for: ' + Subscription);
   result := rQoS0;
+End;
+
+Procedure TForm1.OnUnSubscribeRequest(Sender: TObject; ClientID: integer;
+  PackageIdentifier: uint16; Subscription: String);
+Begin
+  Onlog(self, ClientID, 'Request unsubscription for: ' + Subscription);
 End;
 
 Procedure TForm1.OnPublishRequest(Sender: TObject; ClientID: integer; aName,

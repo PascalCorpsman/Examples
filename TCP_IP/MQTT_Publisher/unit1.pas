@@ -6,7 +6,7 @@ Interface
 
 Uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  lNetComponents, lNet, umqttbroker;
+  lNetComponents, lNet, uMQTTbroker;
 
 Type
 

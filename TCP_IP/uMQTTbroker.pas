@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uMQTTbroker.pas                                                 13.10.2023 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -42,6 +42,7 @@
 (* Known Issues: it seems that the socket is not freeed correctly             *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Support for Unsubsciption                             *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -102,7 +103,8 @@ Type
   TReturn = (rQoS0, rQoS1, rQoS2, rFailure);
 
   TOnLog = Procedure(Sender: TObject; ClientID: integer; LogText: String) Of Object; // 0 = from Broker
-  TOnSubscribeRequest = Function(Sender: TObject; ClientID: integer; Subscription: String): TReturn Of Object;
+  TOnSubscribeRequest = Function(Sender: TObject; ClientID: integer; PackageIdentifier: uint16; Subscription: String): TReturn Of Object;
+  TOnUnSubscribeRequest = Procedure(Sender: TObject; ClientID: integer; PackageIdentifier: uint16; Subscription: String) Of Object;
   TOnPublishRequest = Procedure(Sender: TObject; ClientID: integer; aName, aPayload: String; DUP, Retain: Boolean) Of Object;
   TOnClientEvent = Procedure(Sender: TObject; ClientID: integer) Of Object;
 
@@ -137,6 +139,7 @@ Type
      *)
     Procedure HandleConnectPacket(Clientindex: Integer; Const aPacket: TMQTTPacket);
     Procedure HandleSubscribePacket(Clientindex: Integer; Const aPacket: TMQTTPacket);
+    Procedure HandleUnSubscribePacket(Clientindex: Integer; Const aPacket: TMQTTPacket);
     Procedure HandlePublishPacket(Clientindex: Integer; Const aPacket: TMQTTPacket);
     Procedure HandlePingPacket(Clientindex: Integer; Const aPacket: TMQTTPacket);
 
@@ -148,6 +151,7 @@ Type
 
     OnAcceptMQTTClient: TOnClientEvent;
     OnSubscribeRequest: TOnSubscribeRequest;
+    OnUnSubscribeRequest: TOnUnSubscribeRequest;
     OnPublishRequest: TOnPublishRequest;
     OnPingEvent: TOnClientEvent;
 
@@ -186,6 +190,7 @@ Begin
 
   OnAcceptMQTTClient := Nil;
   OnSubscribeRequest := Nil;
+  OnUnSubscribeRequest := Nil;
   OnPublishRequest := Nil;
   OnPingEvent := Nil;
 
@@ -446,23 +451,23 @@ End;
 Procedure TMQTTBroker.HandleSubscribePacket(Clientindex: Integer;
   Const aPacket: TMQTTPacket);
 Var
-  IdentifierLen, PackageIdentifier: uint16;
+  SubscriptionLen, PackageIdentifier: uint16;
 
-  Identifier: String;
+  Subscribtion: String;
   i: Integer;
   a: Array Of Byte;
   q: TReturn;
 Begin
-  //                            +++++= Package Identifier
+  //                            +++++= Package Subscribtion
   // Unknown package: 8 2 [31]: 00 0A 00 1A 77 61 74 65 72 6D 65 74 65 72 2F 63 74 72 6C 2F 66 6C 6F 77 5F 73 74 61 72 74 00
   // Unknown package: 8 2 [33]: 00 0B 00 1C 77 61 74 65 72 6D 65 74 65 72 2F 63 74 72 6C 2F 73 65 74 5F 70 72 65 76 61 6C 75 65 00
   PackageIdentifier := aPacket.Payload[0] Shl 8 Or aPacket.Payload[1];
-  IdentifierLen := aPacket.Payload[2] Shl 8 Or aPacket.Payload[3];
-  Identifier := '';
-  For i := 0 To IdentifierLen - 1 Do Begin
-    Identifier := Identifier + chr(aPacket.Payload[4 + i]);
+  SubscriptionLen := aPacket.Payload[2] Shl 8 Or aPacket.Payload[3];
+  Subscribtion := '';
+  For i := 0 To SubscriptionLen - 1 Do Begin
+    Subscribtion := Subscribtion + chr(aPacket.Payload[4 + i]);
   End;
-  //  log(format('Subsribe: %0.4X : %s', [PackageIdentifier, Identifier]));
+  //  log(format('Subsribe: %0.4X : %s', [PackageIdentifier, Subscribtion]));
   // Subsribe: 0011 : watermeter/ctrl/flow_start
   // Subsribe: 0012 : watermeter/ctrl/set_prevalue
 
@@ -475,15 +480,15 @@ Begin
   If Not assigned(OnSubscribeRequest) Then Begin
     Raise exception.create('Error, a client want to subsribe, but no callback is defined.');
   End;
-  q := OnSubscribeRequest(self, fClients[Clientindex].ID, Identifier);
+  q := OnSubscribeRequest(self, fClients[Clientindex].ID, PackageIdentifier, Subscribtion);
 
   // --> Verlangte Antwort SUBACK
   a := Nil;
   setlength(a, 5);
   a[0] := CPT_SUBACK Shl 4;
   a[1] := 3; // Länge der Payload
-  a[2] := (PackageIdentifier Shr 8) And $FF; // Repeat Package identifier
-  a[3] := PackageIdentifier And $FF; // Repeat Package identifier
+  a[2] := (PackageIdentifier Shr 8) And $FF; // Repeat Package Subscribtion
+  a[3] := PackageIdentifier And $FF; // Repeat Package Subscribtion
   // Add Result from Application
   Case q Of
     rQoS0: a[4] := 0;
@@ -491,6 +496,36 @@ Begin
     rQoS2: a[4] := 2;
     rFailure: a[4] := $80;
   End;
+  fClients[Clientindex].Socket.Send(a[0], length(a));
+End;
+
+Procedure TMQTTBroker.HandleUnSubscribePacket(Clientindex: Integer;
+  Const aPacket: TMQTTPacket);
+Var
+  SubscriptionLen, PacketIdentifier: uint16;
+  Subscribtion: String;
+  a: Array Of Byte;
+  i: Integer;
+Begin
+  // TODO: This is untested Code !
+  PacketIdentifier := aPacket.Payload[0] Shl 8 Or aPacket.Payload[1];
+  SubscriptionLen := aPacket.Payload[2] Shl 8 Or aPacket.Payload[3];
+  Subscribtion := '';
+  For i := 0 To SubscriptionLen - 1 Do Begin
+    Subscribtion := Subscribtion + chr(aPacket.Payload[4 + i]);
+  End;
+  // TODO: The Filter is missing here, that follows the subscrition
+
+  If Not assigned(OnUnSubscribeRequest) Then Begin
+    Raise exception.create('Error, a client want to unsubsribe, but no callback is defined.');
+  End;
+  OnUnSubscribeRequest(self, fClients[Clientindex].ID, PacketIdentifier, Subscribtion);
+  a := Nil;
+  setlength(a, 4);
+  a[0] := CPT_UNSUBACK Shl 4;
+  a[1] := 2;
+  a[2] := (PacketIdentifier Shr 8) And $FF; //Packet Identifier MSB
+  a[3] := (PacketIdentifier) And $FF; //Packet Identifier LSB
   fClients[Clientindex].Socket.Send(a[0], length(a));
 End;
 
@@ -589,7 +624,7 @@ Begin
     //    CPT_PUBCOMP:
     CPT_SUBSCRIBE: HandleSubscribePacket(Clientindex, aPacket);
     //    CPT_SUBACK: -- Das Gibts auf dem Server gar nicht ist ja eine Antwort
-    //    CPT_UNSUBSCRIBE:
+    CPT_UNSUBSCRIBE: HandleUnSubscribePacket(Clientindex, aPacket);
     //    CPT_UNSUBACK: -- Das Gibts auf dem Server gar nicht ist ja eine Antwort
     CPT_PINGREQ: HandlePingPacket(Clientindex, aPacket);
     //    CPT_PINGRESP: -- Das Gibts auf dem Server gar nicht ist ja eine Antwort
