@@ -14,6 +14,7 @@ package "Examples" {
   }
   package "TCP_IP" {
    object MQTT_Broker
+   object MQTT_Publisher
    object Modbus_Diagnostic
   }
   package "Sound" {
@@ -32,6 +33,7 @@ DGLOpenGL <|-- Mapviewer
 DGLOpenGL <|-- Animation_Editor 
 Synapse <|-- Modbus_Diagnostic
 LNet <|-- Modbus_Diagnostic
+LNet <|-- MQTT_Publisher
 LNet <|-- MQTT_Broker
 }
 
