@@ -10,7 +10,6 @@ If you get a "could not find" error when compiling the examples, this could be c
 # Details
 
 ## OpenGL
-
 Collection of classes and examples that are mainly related to OpenGL implementations
 
 | Example | Description |
@@ -22,9 +21,9 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
+| uopengl_truetype_font.pas | Class to render truetype fonts to OpenGL windows |
 
 ## TCP_IP
-
 Collection of classes and examples that are mainly related to Serial and Network communications
 
 | Example | Description |
@@ -38,7 +37,6 @@ Collection of classes and examples that are mainly related to Serial and Network
 | utcp.pas | abstract wrapper for TLTcp (need L-net) |
 
 ## data_control
-
 Collection of classes and examples corresponding to data processing, math and corresponding stuff
 
 | Example | Description |
@@ -56,8 +54,8 @@ Collection of classes and examples corresponding to data processing, math and co
 | utokenizer.pas | generic lexer class to lex strings into tokens |
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
 | uvectormath.pas | Math library for multidimensional things (e.g. OpenGL, Matrix ..) |
-## graphics
 
+## graphics
 Collection of classes and examples corresponding to graphic / image processing
 
 | Example | Description |
@@ -67,8 +65,8 @@ Collection of classes and examples corresponding to graphic / image processing
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
-## sound
 
+## sound
 Collection of classes and examples corresponding to sound / music processing
 | Example | Description |
 | --- | --- |
