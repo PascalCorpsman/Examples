@@ -22,6 +22,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
 | uopengl_truetype_font.pas | Class to render truetype fonts to OpenGL windows |
+| uopengl_widgetset.pas | TButton, TScrollbar, TListbox.. for a OpenGL Renderingcontext |
 
 ## TCP_IP
 Collection of classes and examples that are mainly related to Serial and Network communications
