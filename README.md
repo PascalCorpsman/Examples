@@ -50,6 +50,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | ugenmathcalc.pas | generic parser / solver for binary and unary operands (typically used to parse mathematical formulas) |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
 | uiwrapper.pas | data source wrapper for uimodbus.pas (Lnet or Synapse) | 
+| umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
