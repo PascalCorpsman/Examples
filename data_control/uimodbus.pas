@@ -490,6 +490,7 @@ Var
   value: Byte;
   l: integer;
 Begin
+  // This routine is normally not called as it is extremly time consuming !
   result := Nil;
   setlength(result, 1024);
   l := 0;

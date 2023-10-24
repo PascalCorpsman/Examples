@@ -1,10 +1,10 @@
 object Form1: TForm1
   Left = 334
-  Height = 775
+  Height = 709
   Top = 125
   Width = 671
   Caption = 'Form1'
-  ClientHeight = 775
+  ClientHeight = 709
   ClientWidth = 671
   Menu = MainMenu1
   OnActivate = FormActivate
@@ -14,28 +14,28 @@ object Form1: TForm1
   LCLVersion = '2.3.0.0'
   object Label1: TLabel
     Left = 8
-    Height = 16
+    Height = 15
     Top = 16
-    Width = 85
+    Width = 75
     Caption = 'Client Adress :'
   end
   object Label2: TLabel
     Left = 8
-    Height = 16
+    Height = 15
     Top = 49
-    Width = 99
+    Width = 86
     Caption = 'Register Adress :'
   end
   object Label3: TLabel
     Left = 8
-    Height = 16
+    Height = 15
     Top = 80
-    Width = 86
+    Width = 74
     Caption = 'Bytes to read :'
   end
   object Edit1: TEdit
     Left = 120
-    Height = 26
+    Height = 23
     Top = 7
     Width = 80
     TabOrder = 0
@@ -43,7 +43,7 @@ object Form1: TForm1
   end
   object Edit2: TEdit
     Left = 120
-    Height = 26
+    Height = 23
     Top = 40
     Width = 80
     TabOrder = 1
@@ -51,10 +51,10 @@ object Form1: TForm1
   end
   object ComboBox1: TComboBox
     Left = 120
-    Height = 26
+    Height = 23
     Top = 70
     Width = 128
-    ItemHeight = 0
+    ItemHeight = 15
     ItemIndex = 0
     Items.Strings = (
       '2 = 1 Register'
@@ -82,12 +82,12 @@ object Form1: TForm1
     Top = 104
     Width = 656
     Caption = ' Connection settings '
-    ClientHeight = 40
-    ClientWidth = 654
+    ClientHeight = 37
+    ClientWidth = 652
     TabOrder = 4
     object Edit3: TEdit
       Left = 6
-      Height = 26
+      Height = 23
       Top = 8
       Width = 514
       ReadOnly = True
@@ -110,40 +110,40 @@ object Form1: TForm1
     Top = 168
     Width = 656
     Caption = ' Received Data '
-    ClientHeight = 327
-    ClientWidth = 654
+    ClientHeight = 324
+    ClientWidth = 652
     TabOrder = 5
     object Label4: TLabel
       Left = 136
-      Height = 48
+      Height = 45
       Top = -5
-      Width = 92
+      Width = 81
       Caption = 'Big Endian'#13#10'First Byte high'#13#10'First Word high'
     end
     object Label5: TLabel
       Left = 272
-      Height = 48
+      Height = 45
       Top = -5
-      Width = 87
+      Width = 76
       Caption = 'Mixed Endian'#13#10'First Byte high'#13#10'First Word low'
     end
     object Label6: TLabel
       Left = 408
-      Height = 48
+      Height = 45
       Top = -5
-      Width = 92
+      Width = 81
       Caption = 'Middle Endian'#13#10'First Byte low'#13#10'First Word high'
     end
     object Label7: TLabel
       Left = 544
-      Height = 48
+      Height = 45
       Top = -5
-      Width = 87
+      Width = 76
       Caption = 'Little Endian'#13#10'First Byte low'#13#10'First Word low'
     end
     object Edit4: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 46
       Width = 120
       ReadOnly = True
@@ -152,63 +152,63 @@ object Form1: TForm1
     end
     object Label8: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 55
-      Width = 79
+      Width = 71
       Caption = 'Hexadezimal:'
     end
     object Label9: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 83
-      Width = 72
+      Width = 60
       Caption = 's16 (2Byte):'
     end
     object Label10: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 139
-      Width = 72
+      Width = 60
       Caption = 's32 (4Byte):'
     end
     object Label11: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 251
-      Width = 81
+      Width = 69
       Caption = 'Float (4Byte):'
     end
     object Label12: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 167
-      Width = 74
+      Width = 62
       Caption = 'u32 (4Byte):'
     end
     object Label13: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 195
-      Width = 72
+      Width = 60
       Caption = 's64 (8Byte):'
     end
     object Label14: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 279
-      Width = 95
+      Width = 81
       Caption = 'Double (8Byte):'
     end
     object Label15: TLabel
       Left = 8
-      Height = 16
+      Height = 15
       Top = 307
-      Width = 39
+      Width = 34
       Caption = 'String:'
     end
     object Edit5: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 74
       Width = 120
       ReadOnly = True
@@ -217,7 +217,7 @@ object Form1: TForm1
     end
     object Edit6: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 102
       Width = 120
       ReadOnly = True
@@ -226,7 +226,7 @@ object Form1: TForm1
     end
     object Edit7: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 130
       Width = 120
       ReadOnly = True
@@ -235,7 +235,7 @@ object Form1: TForm1
     end
     object Edit8: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 158
       Width = 120
       ReadOnly = True
@@ -244,7 +244,7 @@ object Form1: TForm1
     end
     object Edit9: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 186
       Width = 120
       ReadOnly = True
@@ -253,7 +253,7 @@ object Form1: TForm1
     end
     object Edit10: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 214
       Width = 120
       ReadOnly = True
@@ -262,7 +262,7 @@ object Form1: TForm1
     end
     object Edit11: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 242
       Width = 120
       ReadOnly = True
@@ -271,7 +271,7 @@ object Form1: TForm1
     end
     object Edit12: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 270
       Width = 120
       ReadOnly = True
@@ -280,7 +280,7 @@ object Form1: TForm1
     end
     object Edit13: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 298
       Width = 120
       ReadOnly = True
@@ -289,7 +289,7 @@ object Form1: TForm1
     end
     object Edit14: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 46
       Width = 120
       ReadOnly = True
@@ -298,7 +298,7 @@ object Form1: TForm1
     end
     object Edit15: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 74
       Width = 120
       ReadOnly = True
@@ -307,7 +307,7 @@ object Form1: TForm1
     end
     object Edit16: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 102
       Width = 120
       ReadOnly = True
@@ -316,7 +316,7 @@ object Form1: TForm1
     end
     object Edit17: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 130
       Width = 120
       ReadOnly = True
@@ -325,7 +325,7 @@ object Form1: TForm1
     end
     object Edit18: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 158
       Width = 120
       ReadOnly = True
@@ -334,7 +334,7 @@ object Form1: TForm1
     end
     object Edit19: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 186
       Width = 120
       ReadOnly = True
@@ -343,7 +343,7 @@ object Form1: TForm1
     end
     object Edit20: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 214
       Width = 120
       ReadOnly = True
@@ -352,7 +352,7 @@ object Form1: TForm1
     end
     object Edit21: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 242
       Width = 120
       ReadOnly = True
@@ -361,7 +361,7 @@ object Form1: TForm1
     end
     object Edit22: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 270
       Width = 120
       ReadOnly = True
@@ -370,7 +370,7 @@ object Form1: TForm1
     end
     object Edit23: TEdit
       Left = 248
-      Height = 26
+      Height = 23
       Top = 298
       Width = 120
       ReadOnly = True
@@ -379,7 +379,7 @@ object Form1: TForm1
     end
     object Edit24: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 46
       Width = 120
       ReadOnly = True
@@ -388,7 +388,7 @@ object Form1: TForm1
     end
     object Edit25: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 74
       Width = 120
       ReadOnly = True
@@ -397,7 +397,7 @@ object Form1: TForm1
     end
     object Edit26: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 102
       Width = 120
       ReadOnly = True
@@ -406,7 +406,7 @@ object Form1: TForm1
     end
     object Edit27: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 130
       Width = 120
       ReadOnly = True
@@ -415,7 +415,7 @@ object Form1: TForm1
     end
     object Edit28: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 158
       Width = 120
       ReadOnly = True
@@ -424,7 +424,7 @@ object Form1: TForm1
     end
     object Edit29: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 186
       Width = 120
       ReadOnly = True
@@ -433,7 +433,7 @@ object Form1: TForm1
     end
     object Edit30: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 214
       Width = 120
       ReadOnly = True
@@ -442,7 +442,7 @@ object Form1: TForm1
     end
     object Edit31: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 242
       Width = 120
       ReadOnly = True
@@ -451,7 +451,7 @@ object Form1: TForm1
     end
     object Edit32: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 270
       Width = 120
       ReadOnly = True
@@ -460,7 +460,7 @@ object Form1: TForm1
     end
     object Edit33: TEdit
       Left = 384
-      Height = 26
+      Height = 23
       Top = 298
       Width = 120
       ReadOnly = True
@@ -469,7 +469,7 @@ object Form1: TForm1
     end
     object Edit34: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 46
       Width = 120
       ReadOnly = True
@@ -478,7 +478,7 @@ object Form1: TForm1
     end
     object Edit35: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 74
       Width = 120
       ReadOnly = True
@@ -487,14 +487,14 @@ object Form1: TForm1
     end
     object Label17: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 111
-      Width = 74
+      Width = 62
       Caption = 'u16 (2Byte):'
     end
     object Edit37: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 130
       Width = 120
       ReadOnly = True
@@ -503,7 +503,7 @@ object Form1: TForm1
     end
     object Edit36: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 102
       Width = 120
       ReadOnly = True
@@ -512,7 +512,7 @@ object Form1: TForm1
     end
     object Edit38: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 158
       Width = 120
       ReadOnly = True
@@ -521,7 +521,7 @@ object Form1: TForm1
     end
     object Edit39: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 186
       Width = 120
       ReadOnly = True
@@ -530,14 +530,14 @@ object Form1: TForm1
     end
     object Label18: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 223
-      Width = 74
+      Width = 62
       Caption = 'u64 (8Byte):'
     end
     object Edit40: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 214
       Width = 120
       ReadOnly = True
@@ -546,7 +546,7 @@ object Form1: TForm1
     end
     object Edit41: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 242
       Width = 120
       ReadOnly = True
@@ -555,7 +555,7 @@ object Form1: TForm1
     end
     object Edit42: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 270
       Width = 120
       ReadOnly = True
@@ -564,7 +564,7 @@ object Form1: TForm1
     end
     object Edit43: TEdit
       Left = 520
-      Height = 26
+      Height = 23
       Top = 298
       Width = 120
       ReadOnly = True
@@ -578,8 +578,8 @@ object Form1: TForm1
     Top = 592
     Width = 656
     Caption = ' Communication '
-    ClientHeight = 88
-    ClientWidth = 654
+    ClientHeight = 85
+    ClientWidth = 652
     TabOrder = 6
     object Memo1: TMemo
       Left = 6
@@ -603,14 +603,14 @@ object Form1: TForm1
     Top = 520
     Width = 656
     Caption = ' Send value as Big Endian '
-    ClientHeight = 40
-    ClientWidth = 654
+    ClientHeight = 37
+    ClientWidth = 652
     TabOrder = 7
     object Label16: TLabel
       Left = 6
-      Height = 16
+      Height = 15
       Top = 16
-      Width = 94
+      Width = 84
       Caption = 'Value (decimal):'
     end
     object Button3: TButton
@@ -660,7 +660,7 @@ object Form1: TForm1
     end
     object Edit44: TEdit
       Left = 112
-      Height = 26
+      Height = 23
       Top = 8
       Width = 96
       OnKeyPress = Edit44KeyPress
@@ -679,9 +679,9 @@ object Form1: TForm1
   end
   object Label19: TLabel
     Left = 256
-    Height = 16
+    Height = 15
     Top = 16
-    Width = 242
+    Width = 211
     Caption = '(0 = Broadcast, only allowed for writing)'
   end
   object MainMenu1: TMainMenu
@@ -691,5 +691,12 @@ object Form1: TForm1
       Caption = 'Info'
       OnClick = MenuItem1Click
     end
+  end
+  object LTCPComponent1: TLTCPComponent
+    Port = 0
+    Timeout = 0
+    ReuseAddress = True
+    Left = 552
+    Top = 32
   end
 end

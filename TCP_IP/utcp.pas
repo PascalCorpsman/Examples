@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* UTCP                                                            23.04.2014 *)
 (*                                                                            *)
-(* Version     : 0.06                                                         *)
+(* Version     : 0.07                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -29,6 +29,8 @@
 (*               0.03 - Added utcp.inc                                        *)
 (*               0.05 - Bugfix WriteByteArr                                   *)
 (*               0.06 - added Flush                                           *)
+(*               0.07 - change UseLCL version to use TLTCPComponent           *)
+(*                      \-> Using LCLEventer and not callaction !             *)
 (*                                                                            *)
 (******************************************************************************)
 Unit utcp;
@@ -48,7 +50,8 @@ Interface
 Uses
   Classes, SysUtils, lnet
 {$IFDEF UseLCL}
-  , forms, lclintf
+  , lNetComponents
+  , forms
 {$ENDIF}
   ;
 
@@ -62,28 +65,32 @@ Type
   TTCP = Class
   private
     receivebuffer: Array Of Byte; // Die Empfangenen Daten
-    FCon: TLTcp; // the connection
-    Procedure OnDs(aSocket: TLSocket);
-    Procedure OnRe(aSocket: TLSocket);
-    Procedure OnEr(Const msg: String; aSocket: TLSocket);
 {$IFDEF UseLCL}
-    Procedure OnIdle(Sender: TObject; Var Done: Boolean);
+    FCon: TLTCPComponent; // the connection
+    fOnOnErrorCapture: lnet.TLSocketErrorEvent;
+    fOnOnDisconnectCapture: TLSocketEvent;
+{$ELSE}
+    FCon: TLTcp; // the connection
 {$ENDIF}
+    Procedure OnDisconnectEvent(aSocket: TLSocket);
+    Procedure OnReceiveEvent(aSocket: TLSocket);
+    Procedure OnErrorEvent(Const msg: String; aSocket: TLSocket);
   public
     OnDisConnect: TLSocketEvent;
 
-    Constructor create(); virtual;
-    Destructor destroy(); override;
+    Constructor Create({$IFDEF UseLCL}aConnection: TLTCPComponent{$ENDIF}); virtual;
+    Destructor Destroy(); override;
 
     Function Connect(IP_Address: String; Port: Word): Boolean;
     Function Connected(): Boolean;
 
-    Procedure Disconnect();
+    Procedure Disconnect(); // TODO: in UseLCL version this is redundant
 
     Function RecvByte(Out Error: Boolean; Timeout: Integer = 10): Byte;
     Procedure Write(Const Value: String);
     Procedure WriteByteArr(Const Data: TBytes); // Sendet einen Byte Datanstrom
-    Procedure Flush();
+
+    Procedure Flush(); // Clears the Receive buffer
   End;
 
 Implementation
@@ -109,10 +116,42 @@ End;
 
 { TTCP }
 
-Procedure TTCP.OnDs(aSocket: TLSocket);
+Constructor TTCP.Create({$IFDEF UseLCL}aConnection: TLTCPComponent{$ENDIF});
+Begin
+  Inherited create;
+  OnDisConnect := Nil;
+{$IFDEF UseLCL}
+  FCon := aConnection;
+  fOnOnErrorCapture := FCon.OnError;
+  fOnOnDisconnectCapture := FCon.OnDisconnect;
+{$ELSE}
+  FCon := TLTCP.Create(Nil); // create new TCP connection with no parent component ->  needs to handle the .callaction's by the caller
+{$ENDIF}
+  FCon.OnError := @OnErrorEvent;
+  FCon.OnReceive := @OnReceiveEvent;
+  FCOn.OnDisconnect := @OnDisconnectEvent;
+  FCon.Timeout := 1;
+  setlength(receivebuffer, 0);
+End;
+
+Destructor TTCP.Destroy;
 Begin
 {$IFDEF UseLCL}
-  // Todo : Ausgabe einer Fehlermeldung
+  FCon.OnError := fOnOnErrorCapture;
+  FCon.OnDisconnect := fOnOnDisconnectCapture;
+  FCon.OnReceive := Nil; // Better "nil" than a dangling reference
+{$ELSE}
+  FCon.Free; // free the connection
+{$ENDIF}
+  setlength(receivebuffer, 0);
+End;
+
+Procedure TTCP.OnDisconnectEvent(aSocket: TLSocket);
+Begin
+{$IFDEF UseLCL}
+  If assigned(fOnOnDisconnectCapture) Then Begin
+    fOnOnDisconnectCapture(aSocket);
+  End;
 {$ENDIF}
 {$IFDEF UseConsole}
   Writeln('Lost connection');
@@ -122,7 +161,7 @@ Begin
   End;
 End;
 
-Procedure TTCP.OnRe(aSocket: TLSocket);
+Procedure TTCP.OnReceiveEvent(aSocket: TLSocket);
 Var
   i, asize: integer;
   buf: Array[0..2047] Of Byte;
@@ -144,55 +183,16 @@ Begin
   End;
 End;
 
-Procedure TTCP.OnEr(Const msg: String; aSocket: TLSocket);
+Procedure TTCP.OnErrorEvent(Const msg: String; aSocket: TLSocket);
 Begin
 {$IFDEF UseLCL}
-  // Todo : Ausgabe einer Fehlermeldung
+  If assigned(fOnOnErrorCapture) Then Begin
+    fOnOnErrorCapture(msg, aSocket);
+  End;
 {$ENDIF}
 {$IFDEF UseConsole}
   Writeln('Error : ' + msg); // if error occured, write it
 {$ENDIF}
-End;
-
-{$IFDEF UseLCL}
-
-Procedure TTCP.OnIdle(Sender: TObject; Var Done: Boolean);
-Begin
-  If assigned(FCon.Eventer) Then Begin
-    FCon.CallAction;
-    Done := false; // TODO: Muss das nun auf true, oder nicht ?
-  End
-  Else Begin
-    // Wenn kein Eventer definiert ist = die Komponente ist nicht verbunden
-    // Dann ist Done auf jeden Fall true, denn dann wollen wir nicht mehr weiter
-    // Aufgerufen werden, sonst erzeugen wir hier nur unnütz CPU-Load !
-    done := true;
-  End;
-End;
-{$ENDIF}
-
-Constructor TTCP.create;
-Begin
-  Inherited create;
-  OnDisConnect := Nil;
-  FCon := TLTCP.Create(Nil); // create new TCP connection with no parent component
-  FCon.OnError := @OnEr; // assign callbacks
-  FCon.OnReceive := @OnRe;
-  FCOn.OnDisconnect := @OnDs;
-  FCon.Timeout := 1;
-  setlength(receivebuffer, 0);
-{$IFDEF UseLCL}
-  Application.AddOnIdleHandler(@OnIdle, true);
-{$ENDIF}
-End;
-
-Destructor TTCP.destroy;
-Begin
-{$IFDEF UseLCL}
-  Application.RemoveOnIdleHandler(@OnIdle);
-{$ENDIF}
-  FCon.Free; // free the connection
-  setlength(receivebuffer, 0);
 End;
 
 Function TTCP.Connect(IP_Address: String; Port: Word): Boolean;
@@ -204,10 +204,14 @@ Begin
   writeln('Connecting to : ' + IP_Address + ' : ' + inttostr(port));
 {$ENDIF}
   FQuit := False;
-  t := GetTickCount64;
   If FCon.Connect(IP_Address, Port) Then Begin // if connect went ok
+    t := GetTickCount64;
     Repeat
+{$IFDEF UseLCL}
+      Application.ProcessMessages;
+{$ELSE}
       FCon.CallAction; // wait for "OnConnect"
+{$ENDIF}
       If GetTickCount64 > t + 2000 Then
         FQuit := true;
     Until FCon.Connected Or FQuit;
@@ -261,23 +265,35 @@ Begin
       error := true;
       exit;
     End;
+{$IFDEF UseLCL}
+    Application.ProcessMessages;
+{$ELSE}
     FCon.CallAction;
+{$ENDIF}
   End;
 End;
 
 Procedure TTCP.Write(Const Value: String);
 Begin
-  fcon.SendMessage(value);
+  If fcon.SendMessage(value) <> length(Value) Then Begin
+    If Not FCon.Connected Then Begin
+      Raise Exception.Create('Error, not connected.');
+    End
+    Else Begin
+      Raise Exception.Create('Error, write buffer full, use cansend implementations!');
+    End;
+  End;
+{$IFNDEF UseLCL}
   FCon.CallAction;
+{$ENDIF}
 End;
 
 Procedure TTCP.WriteByteArr(Const Data: TBytes);
-Var
 {$IFDEF DEBUG_CONSOLE}
+Var
   s: String;
+  i: integer;
 {$ENDIF}
-  c, i, j: integer;
-  buf_: Array[0..4095] Of byte;
 Begin
 {$IFDEF DEBUG_CONSOLE}
   s := 'Send:';
@@ -286,17 +302,17 @@ Begin
   End;
   writeln(s);
 {$ENDIF}
-  // Es gehen nur Statische Arrays, also müssen wir als 4kb-Blöcke senden
-  For i := 0 To length(data) Div (4096) Do Begin
-    c := 0;
-    For j := 0 To 4095 Do Begin
-      If i * 4096 + j > high(data) Then break;
-      buf_[j] := data[i * 4096 + j];
-      inc(c);
+  If FCon.send(data[0], length(data)) <> length(data) Then Begin
+    If Not FCon.Connected Then Begin
+      Raise Exception.Create('Error, not connected.');
+    End
+    Else Begin
+      Raise Exception.Create('Error, write buffer full, use cansend implementations!');
     End;
-    FCon.send(buf_, c);
-    FCon.CallAction;
   End;
+{$IFNDEF UseLCL}
+  FCon.CallAction;
+{$ENDIF}
 End;
 
 Procedure TTCP.Flush;

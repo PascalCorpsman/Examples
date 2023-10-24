@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Modbus_diagnostic                                               ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.08                                                         *)
+(* Version     : 0.09                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -35,6 +35,7 @@
 (*                      Support Broadcast Schreiben                           *)
 (*               0.08 - Anzeigen aller Empfangenen Bytes auch wenn diese      *)
 (*                       "Falsch" waren                                       *)
+(*               0.09 - Umstellen auf TLTCPComponent                          *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -45,7 +46,7 @@ Interface
 
 Uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  Menus, IniFiles, uimodbus, uiwrapper, lNet;
+  Menus, IniFiles, uimodbus, uiwrapper, lNet, lNetComponents;
 
 Type
 
@@ -138,6 +139,7 @@ Type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
+    LTCPComponent1: TLTCPComponent;
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
@@ -251,7 +253,7 @@ Var
   s: String;
 Begin
   FormatSettings.DecimalSeparator := '.';
-  Caption := 'Modbus Diagnostic ver. 0.08, by Corpsman, www.Corpsman.de';
+  Caption := 'Modbus Diagnostic ver. 0.09, by Corpsman, www.Corpsman.de';
   Tform(self).Constraints.MaxHeight := Tform(self).Height;
   Tform(self).Constraints.MinHeight := Tform(self).Height;
   Tform(self).Constraints.Maxwidth := Tform(self).width;
@@ -311,12 +313,12 @@ Begin
   info := form2.RadioGroup1.Items[ini.ReadInteger('General', 'Protocol', 2)] + ' ';
   Case ini.ReadInteger('General', 'Protocol', 2) Of
     0: Begin // TCP
-        Connection := TTCPInput.create();
+        Connection := TTCPInput.create(LTCPComponent1);
         TTCPInput(Connection).OnDisconnect := @OnTCPDisconnect;
-        If TTCPInput(connection).Connect(Ini.ReadString('ModbusTCP', 'Host', '192.168.168.1'), Ini.ReadInteger('ModbusTCP', 'Port', 502)) Then Begin
+        If TTCPInput(connection).Connect(Ini.ReadString('ModbusTCP', 'Host', '127.0.0.1'), Ini.ReadInteger('ModbusTCP', 'Port', 502)) Then Begin
           Modbus := TMyModbus.Create(Connection);
           Modbus.Mode := mmTCP;
-          info := info + format('(%s %d)', [Ini.ReadString('ModbusTCP', 'Host', '192.168.168.1'), Ini.ReadInteger('ModbusTCP', 'Port', 502)]);
+          info := info + format('(%s %d)', [Ini.ReadString('ModbusTCP', 'Host', '127.0.0.1'), Ini.ReadInteger('ModbusTCP', 'Port', 502)]);
         End
         Else Begin
           Connection.free;
@@ -325,12 +327,12 @@ Begin
         End;
       End;
     1: Begin // RTU over TCP
-        Connection := TTCPInput.create();
+        Connection := TTCPInput.create(LTCPComponent1);
         TTCPInput(Connection).OnDisconnect := @OnTCPDisconnect;
-        If TTCPInput(connection).Connect(Ini.ReadString('ModbusTCPRTU', 'Host', '192.168.168.1'), Ini.ReadInteger('ModbusTCPRTU', 'Port', 8000)) Then Begin
+        If TTCPInput(connection).Connect(Ini.ReadString('ModbusTCPRTU', 'Host', '127.0.0.1'), Ini.ReadInteger('ModbusTCPRTU', 'Port', 8000)) Then Begin
           Modbus := TMyModbus.Create(Connection);
           Modbus.Mode := mmRTU;
-          info := info + format('(%s %d)', [Ini.ReadString('ModbusTCPRTU', 'Host', '192.168.168.1'), Ini.ReadInteger('ModbusTCPRTU', 'Port', 8000)]);
+          info := info + format('(%s %d)', [Ini.ReadString('ModbusTCPRTU', 'Host', '127.0.0.1'), Ini.ReadInteger('ModbusTCPRTU', 'Port', 8000)]);
         End
         Else Begin
           Connection.free;

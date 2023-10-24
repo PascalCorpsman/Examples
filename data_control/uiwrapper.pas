@@ -51,6 +51,9 @@ Uses
 {$ENDIF}
 {$IFDEF useTCP}
   , utcp
+{$IFDEF UseLCL}
+  , lNetComponents
+{$ENDIF}
 {$ENDIF}
   ;
 {$IFDEF useUUart}
@@ -85,6 +88,7 @@ Type
   End;
 
 {$IFDEF useUUart}
+
   { TUartInput }
 
   TUartInput = Class(TInput) // Zugriff auf die Serielle Schnittstelle
@@ -96,8 +100,8 @@ Type
   public
     Property SizeRecvBuffer: integer read fGetReceivebuffer write setReceifebuffer;
 
-    Constructor create(); override;
-    Destructor destroy(); override;
+    Constructor Create(); override;
+    Destructor Destroy(); override;
 
     Function RecvByte(Out Error: Boolean; Timeout: Integer = 10): Byte; override;
     Procedure Write(Const Value: String); override; // Schreibt einen String
@@ -112,6 +116,7 @@ Type
 {$ENDIF}
 
 {$IFDEF useTCP}
+
   { TTCPInput }
 
   TTCPInput = Class(TInput) // Zugriff auf die TCP-IP Schnittstelle, fia LNet
@@ -120,8 +125,13 @@ Type
     Procedure OnDisconnectEvent(aSocket: TLSocket);
   public
     OnDisconnect: TLSocketEvent;
-    Constructor create(); override;
-    Destructor destroy(); override;
+
+{$IFDEF UseLCL}
+    Constructor Create(aConnection: TLTCPComponent); reintroduce;
+{$ELSE}
+    Constructor Create(); override;
+{$ENDIF}
+    Destructor Destroy(); override;
 
     Function RecvByte(Out Error: Boolean; Timeout: Integer = 10): Byte; override;
     Procedure Write(Const Value: String); override; // Schreibt einen String
@@ -136,7 +146,9 @@ Type
 {$ENDIF}
 
 Implementation
+
 {$IFDEF useTCP}
+
 { TTCPInput }
 
 Procedure TTCPInput.OnDisconnectEvent(aSocket: TLSocket);
@@ -146,18 +158,18 @@ Begin
   End;
 End;
 
-Constructor TTCPInput.create;
+Constructor TTCPInput.Create({$IFDEF UseLCL}aConnection: TLTCPComponent{$ENDIF});
 Begin
   Inherited create;
   OnDisconnect := Nil;
-  FTCP := TTCP.Create;
+  FTCP := TTCP.Create({$IFDEF UseLCL}aConnection{$ENDIF});
   ftcp.OnDisConnect := @OnDisconnectEvent;
 End;
 
-Destructor TTCPInput.destroy;
+Destructor TTCPInput.Destroy;
 Begin
   FTCP.free;
-  Inherited destroy;
+  Inherited Destroy;
 End;
 
 Function TTCPInput.RecvByte(Out Error: Boolean; Timeout: Integer): Byte;
@@ -171,16 +183,8 @@ Begin
 End;
 
 Procedure TTCPInput.WriteBytes(Const data: Array Of Byte);
-Var
-  i: integer;
-  dat: TBytes;
 Begin
-  dat := Nil;
-  setlength(dat, length(data));
-  For i := 0 To high(data) Do
-    dat[i] := data[i];
-  FTCP.WriteByteArr(dat);
-  //FTCP.WriteByteArr(TBytes(@data)); -- Das geht wohl nicht immer
+  FTCP.WriteByteArr(TBytes(@data[0]));
 End;
 
 Procedure TTCPInput.Flush;
@@ -237,17 +241,17 @@ Begin
   FUart.disconnect();
 End;
 
-Constructor TUartInput.create;
+Constructor TUartInput.Create;
 Begin
   Inherited create;
   FUart := TUart.create;
   fSizeRecvBuffer := FUart.SizeRecvBuffer;
 End;
 
-Destructor TUartInput.destroy;
+Destructor TUartInput.Destroy;
 Begin
   FUart.Free;
-  Inherited destroy;
+  Inherited Destroy;
 End;
 
 Function TUartInput.RecvByte(Out Error: Boolean; Timeout: Integer): Byte;

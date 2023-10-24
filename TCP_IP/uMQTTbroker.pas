@@ -180,7 +180,7 @@ Begin
   Inherited create();
   fconnection := aConnection;
   Port := 1883;
-
+  // TODO: ggf. die Orig Events als Callback puffern und diese auch aufrufen
   fconnection.OnAccept := @OnAccept;
   fconnection.OnDisconnect := @OnDisconnect;
   fconnection.OnReceive := @OnReceive;

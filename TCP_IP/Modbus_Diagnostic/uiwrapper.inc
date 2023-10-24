@@ -16,8 +16,15 @@
  * Set to enable Modbus RTU
  *)
 {$DEFINE useUUart}
+
 (*
  * Set to enable Modbus TCP
  *)
 {$DEFINE useTCP}
+
+(*
+ * Set to the same value as in utcp.inc !
+ *)
+{$define UseLCL}
+
 
