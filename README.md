@@ -44,6 +44,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | Example | Description |
 | --- | --- |
 | uJSON.pas | JSON-Loader / writer class |
+| ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
 | ucrc.pas | Generic crc calculation class |
 | udomxml.pas | generic xml parser |
 | ueventer.pas| class toc reate events for components that are not derived from LCL-Components |
