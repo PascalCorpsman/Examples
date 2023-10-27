@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* ubitstream.pas                                                 27.03.2009  *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -29,6 +29,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - rework the whole interface to be more encapsulated    *)
 (*                                                                            *)
 (******************************************************************************)
 Unit ubitstream;
@@ -43,34 +44,64 @@ Type
 
   TMode = (mRead, mWrite);
 
+  { TBitStream }
+
   TBitStream = Class
   private
+    fStream: TStream;
     Fmode: TMode;
     FBuffer: byte;
     FIndex: Integer;
-    Procedure Check(Mode: TMode);
+    Procedure Check(Mode: TMode); Inline;
     Procedure FWriteBool(Value: Boolean);
     Function FReadBool: Boolean;
-  public
-    Name: String;
-    // TODO: Make Stream Private -> Needs modification in uLZW.pas !
-    Stream: TStream; // Do not access this stream directly, if you do not know exactly what you are doing
-    Constructor Create(Mode: TMode);
-    Destructor destroy; override;
+
     (*
-    Write Operations
-    *)
+     * Finish writes the "last" byte that is actually not written to the
+     * stream (will be filled up with "0")
+     *)
+    Procedure Finish;
+  public
+    (*
+     * By Default the Stream is in Write Mode
+     *)
+    Constructor Create(); virtual;
+    Destructor Destroy; override;
+
+    (*
+     * Resets all Internal datastructure as if the Stream was created
+     * -> Switch Back to Write mode and start with a empty stream
+     *)
+    Procedure Clear;
+
+    (*
+     * This is how you "Load" the Bitstream from a other Stream
+     *
+     * After that you can "Read" the bits with all Read* funktions
+     *
+     * Usage: Create, CopyFrom, Read*, Free
+     *)
+    Procedure CopyFrom(Source: TStream; Count: int64);
+
+    (*
+     * This is how you "store" the Bitstream to a oder Stream
+     * Result is the number of bytes that where written
+     *
+     * Usage: Create, Write*, SaveTo, Free
+     *)
+    Function SaveTo(Dest: TStream): int64;
+
+    (*
+     * Write Operations
+     *)
     Procedure WriteBool(Value: Boolean);
     Procedure WriteByte(Value: Byte);
     Procedure WriteWord(Value: Word);
     Procedure WriteInteger(Value: Integer);
+
     (*
-    Close stellt sicher das der Schreibvorgang noch offen stehende Bits einfügt (der Rest wird mit 0 aufgefüllt)
-    *)
-    Procedure Close;
-    (*
-    Read Operations
-    *)
+     * Read Operations
+     *)
     Function ReadBool: Boolean;
     Function ReadByte: Byte;
     Function ReadWord: Word;
@@ -81,30 +112,34 @@ Implementation
 
 { TBitStream }
 
-Constructor TBitStream.Create(Mode: TMode);
+Constructor TBitStream.Create;
 Begin
   Inherited Create;
-  name := 'TBitStream';
-  fmode := Mode;
+  fmode := mWrite; // By Default the Stream is Empty and wants to be filled through "write" commands
   FIndex := 0;
   FBuffer := 0;
-  Stream := Nil;
+  fStream := TMemoryStream.Create;
 End;
 
-Destructor TBitStream.destroy;
+Destructor TBitStream.Destroy;
 Begin
-  Close;
+  fStream.Free;
+End;
+
+Procedure TBitStream.Clear;
+Begin
+  Fmode := mWrite;
+  fStream.free;
+  fstream := TMemoryStream.Create;
 End;
 
 Procedure TBitStream.Check(Mode: TMode);
 Begin
-  If Not Assigned(Stream) Then
-    Raise exception.create('Error ' + Name + ' Stream is NIL.');
-  Case Mode Of
-    mRead: If fmode = MWrite Then
-        Raise exception.create('Error ' + Name + ' was created in write mode and you tried to read.');
-    mWrite: If fmode = MRead Then
-        Raise exception.create('Error ' + Name + ' was created in read mode and you tried to read.');
+  If Fmode <> Mode Then Begin
+    Case Fmode Of
+      mRead: Raise exception.Create('Error, in read mode is write forbidden.');
+      mWrite: Raise exception.Create('Error, in write mode is read forbidden.');
+    End;
   End;
 End;
 
@@ -162,7 +197,7 @@ Begin
   inc(Findex);
   If Findex = 8 Then Begin
     Findex := 0;
-    stream.write(Fbuffer, sizeof(fbuffer));
+    fstream.write(Fbuffer, sizeof(fbuffer));
   End;
 End;
 
@@ -217,6 +252,24 @@ Begin
   Result := erg;
 End;
 
+Procedure TBitStream.CopyFrom(Source: TStream; Count: int64);
+Begin
+  // Reset old data
+  Clear;
+  fStream.CopyFrom(Source, Count);
+  // Init for Reading ;)
+  fStream.Position := 0;
+  Fmode := mRead;
+End;
+
+Function TBitStream.SaveTo(Dest: TStream): int64;
+Begin
+  Check(mWrite);
+  Finish;
+  fStream.Position := 0;
+  result := dest.CopyFrom(fStream, fStream.Size);
+End;
+
 Function TBitStream.FReadBool: Boolean;
 Var
   m: Byte;
@@ -225,9 +278,9 @@ Begin
   Case Findex Of
     0: Begin
         m := 1 Shl 7;
-        If Stream.Position = Stream.size Then
-          Raise exception.create('Error ' + Name + ' "end of file" reached.');
-        Stream.read(FBuffer, sizeof(FBuffer));
+        If fStream.Position = fStream.size Then
+          Raise exception.create('Error "end of file" reached.');
+        fStream.read(FBuffer, sizeof(FBuffer));
         result := (m And FBuffer <> 0);
         inc(Findex);
       End;
@@ -239,7 +292,7 @@ Begin
   End;
 End;
 
-Procedure TBitStream.Close;
+Procedure TBitStream.Finish;
 Begin
   Case Fmode Of
     mWrite: Begin
