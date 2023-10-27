@@ -84,7 +84,7 @@ Type
     Procedure CopyFrom(Source: TStream; Count: int64);
 
     (*
-     * This is how you "store" the Bitstream to a oder Stream
+     * This is how you "store" the Bitstream to a other Stream
      * Result is the number of bytes that where written
      *
      * Usage: Create, Write*, SaveTo, Free
