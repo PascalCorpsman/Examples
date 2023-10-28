@@ -43,7 +43,9 @@ Collection of classes and examples corresponding to data processing, math and co
 
 | Example | Description |
 | --- | --- |
+| LZW | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | uJSON.pas | JSON-Loader / writer class |
+| uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
 | ucrc.pas | Generic crc calculation class |
 | udomxml.pas | generic xml parser |

@@ -7,6 +7,7 @@ package "Examples" {
    object Animation_Editor
   }
   package "data_control" {
+    object LZW
   }
   package "graphics" {
    object SunburstChart
