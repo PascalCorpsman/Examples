@@ -45,6 +45,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | Example | Description |
 | --- | --- |
 | LZW | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
+| QuadTree | demo application for uquadtree.pas |
 | uJSON.pas | JSON-Loader / writer class |
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
@@ -58,6 +59,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
+| uquadtree.pas | own implementation for a quadtree compression for greyscale .bmp images |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | utokenizer.pas | generic lexer class to lex strings into tokens |
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
