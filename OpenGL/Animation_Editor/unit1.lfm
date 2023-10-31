@@ -1,11 +1,11 @@
 object Form1: TForm1
   Left = 347
-  Height = 635
+  Height = 679
   Top = 111
   Width = 981
   ActiveControl = OpenGLControl1
   Caption = 'Form1'
-  ClientHeight = 613
+  ClientHeight = 679
   ClientWidth = 981
   Menu = MainMenu1
   OnCloseQuery = FormCloseQuery
@@ -184,14 +184,14 @@ object Form1: TForm1
       TabOrder = 5
     end
     object Label10: TLabel
-      Left = 32
+      Left = 16
       Height = 16
       Top = 256
       Width = 77
       Caption = 'Renderwidth'
     end
     object Label11: TLabel
-      Left = 248
+      Left = 232
       Height = 16
       Top = 256
       Width = 82
@@ -333,11 +333,11 @@ object Form1: TForm1
     OnChange = ScrollBar1Change
   end
   object Label2: TLabel
-    Left = 368
+    Left = 352
     Height = 16
-    Top = 472
-    Width = 87
-    Caption = 'Prieview angle'
+    Top = 473
+    Width = 84
+    Caption = 'Preview angle'
   end
   object Label3: TLabel
     Left = 784
@@ -365,9 +365,9 @@ object Form1: TForm1
     TabOrder = 1
   end
   object Label7: TLabel
-    Left = 368
+    Left = 352
     Height = 16
-    Top = 442
+    Top = 450
     Width = 77
     Caption = 'Angle Offset'
   end
@@ -392,7 +392,7 @@ object Form1: TForm1
     OnChange = ScrollBar2Change
   end
   object Label9: TLabel
-    Left = 368
+    Left = 352
     Height = 16
     Top = 528
     Width = 34
@@ -416,10 +416,10 @@ object Form1: TForm1
   end
   object Label18: TLabel
     Left = 352
-    Height = 16
-    Top = 368
-    Width = 108
-    Caption = 'Background color'
+    Height = 32
+    Top = 351
+    Width = 77
+    Caption = 'Background '#10'color'
   end
   object Shape1: TShape
     Left = 456

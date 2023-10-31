@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Animation Editor                                                ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.05                                                         *)
+(* Version     : 0.06                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -31,6 +31,10 @@
 (*               0.05 - Automatisches vorschlagen Renderwidth / Height        *)
 (*                      Automatisches übernehmen von Abgeleiteten Graphik-    *)
 (*                      daten                                                 *)
+(*               0.06 - FIX: Name der Sprites wurde bei Änderung nicht        *)
+(*                           gespeichert                                      *)
+(*                      FIX: Rendering unter Linux kaputt                     *)
+(*                      FIX: div by 0 Error                                   *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -47,9 +51,9 @@ Uses
   (*
    * Kommt ein Linkerfehler wegen OpenGL dann: sudo apt-get install freeglut3-dev
    *)
-  dglOpenGL // http://wiki.delphigl.com/index.php/dglOpenGL.pas
-  , uopengl_graphikengine // Die OpenGLGraphikengine ist eine Eigenproduktion von www.Corpsman.de, und kann getrennt geladen werden.
-  , uopengl_animation
+  dglOpenGL // see https://github.com/PascalCorpsman/Examples#dependencies
+  , uopengl_graphikengine // see https://github.com/PascalCorpsman/Examples/tree/master/OpenGL
+  , uopengl_animation // see https://github.com/PascalCorpsman/Examples/tree/master/OpenGL
   ;
 
 Type
@@ -338,7 +342,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  defcaption := 'Animation Editor ver. 0.05 by Corpsman';
+  defcaption := 'Animation Editor ver. 0.06 by Corpsman';
   caption := defcaption;
   Application.Title := Caption;
   edit2.text := format('%0.1f', [0.0]);
@@ -383,6 +387,7 @@ Begin
    *)
   w := (s.Rect.Right - s.Rect.Left);
   h := (s.Rect.Bottom - s.Rect.Top);
+  If (h = 0) Or (w = 0) Then exit;
   If w / h > Image1.Width / Image1.Height Then Begin
     // Waagrecht gestretched
     scale := Image1.Width / w;
@@ -400,6 +405,7 @@ Begin
   // Umrechnen der X,Y-Koordinaten in den passenden Image Index
   w := (s.Rect.Right - s.Rect.Left) Div strtoint(edit11.text);
   h := (s.Rect.Bottom - s.Rect.Top) Div strtoint(edit10.text);
+  If (h = 0) Or (w = 0) Then exit;
   index := xs Div w + (ys Div h) * strtoint(edit11.text);
   If ssleft In shift Then Begin
     edit13.text := inttostr(index);
@@ -888,7 +894,12 @@ Var
 {$ENDIF}
 Begin
   If Initialized Then Begin
+{$IFDEF Windows}
     OpenGLControl1.Invalidate;
+{$ELSE}
+    // Why the heck does invalidate not work under Linux ?
+    OpenGLControl1.DoOnPaint;
+{$ENDIF}
 {$IFDEF DebuggMode}
     i := glGetError();
     If i <> 0 Then Begin
@@ -953,42 +964,46 @@ End;
 Procedure TForm1.ListBox1Click(Sender: TObject);
 Var
   sb, b, c: TBitmap;
+  Sprite: TAniSprite;
+  Derivedindex: integer;
 Begin
   // Laden eines Sprites in die Vorschau
   If ListBox1.ItemIndex <> -1 Then Begin
-    CheckBox1.Visible := ListBox1.ItemIndex > 0;
-    CheckBox1.Checked := Ani.Sprite[ListBox1.ItemIndex].Derived;
-    CheckBox2.Checked := Ani.Sprite[ListBox1.ItemIndex].AlphaImage;
-    edit7.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Width);
-    edit8.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Height);
-    edit9.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].FrameCount);
-    edit10.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].FramesPerCol);
-    edit11.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].FramesPerRow);
-    edit12.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].TimePerFrame);
-    edit13.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].FrameOffset);
+    CheckBox1.Visible := ListBox1.ItemIndex > 0; // Show derived "option" if image is not the first in list
+    Sprite := Ani.Sprite[ListBox1.ItemIndex];
+    CheckBox1.Checked := Sprite.Derived;
+    CheckBox2.Checked := Sprite.AlphaImage;
+    edit7.text := inttostr(Sprite.Width);
+    edit8.text := inttostr(Sprite.Height);
+    edit9.text := inttostr(Sprite.FrameCount);
+    edit10.text := inttostr(Sprite.FramesPerCol);
+    edit11.text := inttostr(Sprite.FramesPerRow);
+    edit12.text := inttostr(Sprite.TimePerFrame);
+    edit13.text := inttostr(Sprite.FrameOffset);
 
-    edit1.text := Ani.Sprite[ListBox1.ItemIndex].Name;
-    label6.caption := format('[%d..%d]', [Ani.Sprite[ListBox1.ItemIndex].StartAngle, Ani.Sprite[ListBox1.ItemIndex].EndAngle]);
+    edit1.text := Sprite.Name;
+    label6.caption := format('[%d..%d]', [Sprite.StartAngle, Sprite.EndAngle]);
     // Raus Suchen des "Abgeleiteten" Bildes
     sb := ani.GetBitmapOf(ListBox1.ItemIndex);
     If assigned(sb) Then Begin
       b := TBitmap.Create;
-      b.Width := Ani.Sprite[ListBox1.ItemIndex].Rect.Right - Ani.Sprite[ListBox1.ItemIndex].Rect.Left;
-      b.Height := Ani.Sprite[ListBox1.ItemIndex].Rect.Bottom - Ani.Sprite[ListBox1.ItemIndex].Rect.Top;
-      If assigned(Ani.Sprite[ani.GetDerivedIndexOf(ListBox1.ItemIndex)].AlphaMask) Then Begin
-        c := MulImage(sb, Ani.Sprite[ani.GetDerivedIndexOf(ListBox1.ItemIndex)].AlphaMask, true);
-        b.Canvas.Draw(-Ani.Sprite[ListBox1.ItemIndex].Rect.Left, -Ani.Sprite[ListBox1.ItemIndex].Rect.Top, c);
+      b.Width := Sprite.Rect.Right - Sprite.Rect.Left;
+      b.Height := Sprite.Rect.Bottom - Sprite.Rect.Top;
+      Derivedindex := ani.GetDerivedIndexOf(ListBox1.ItemIndex);
+      If assigned(Ani.Sprite[Derivedindex].AlphaMask) Then Begin
+        c := MulImage(sb, Ani.Sprite[Derivedindex].AlphaMask, true);
+        b.Canvas.Draw(-Sprite.Rect.Left, -Sprite.Rect.Top, c);
         c.free;
       End
       Else Begin
-        b.Canvas.Draw(-Ani.Sprite[ListBox1.ItemIndex].Rect.Left, -Ani.Sprite[ListBox1.ItemIndex].Rect.Top, sb);
+        b.Canvas.Draw(-Sprite.Rect.Left, -Sprite.Rect.Top, sb);
       End;
       Image1.Picture.Assign(b);
       b.free;
-      edit3.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Rect.Top);
-      edit6.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Rect.Left);
-      edit4.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Rect.Right);
-      edit5.text := inttostr(Ani.Sprite[ListBox1.ItemIndex].Rect.Bottom);
+      edit3.text := inttostr(Sprite.Rect.Top);
+      edit6.text := inttostr(Sprite.Rect.Left);
+      edit4.text := inttostr(Sprite.Rect.Right);
+      edit5.text := inttostr(Sprite.Rect.Bottom);
     End
     Else Begin
       image1.Picture.Clear;
