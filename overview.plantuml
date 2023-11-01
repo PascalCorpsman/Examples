@@ -12,6 +12,7 @@ package "Examples" {
   }
   package "graphics" {
    object SunburstChart
+   object PNG_Editor
    object CirclePackChart
   }
   package "TCP_IP" {
