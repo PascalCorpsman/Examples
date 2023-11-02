@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Modbus_diagnostic                                               ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.09                                                         *)
+(* Version     : 0.10                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -36,6 +36,7 @@
 (*               0.08 - Anzeigen aller Empfangenen Bytes auch wenn diese      *)
 (*                       "Falsch" waren                                       *)
 (*               0.09 - Umstellen auf TLTCPComponent                          *)
+(*               0.10 - show "Connecting" during startup                      *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -252,8 +253,9 @@ Procedure TForm1.FormCreate(Sender: TObject);
 Var
   s: String;
 Begin
+  edit3.text := 'Connecting...';
   FormatSettings.DecimalSeparator := '.';
-  Caption := 'Modbus Diagnostic ver. 0.09, by Corpsman, www.Corpsman.de';
+  Caption := 'Modbus Diagnostic ver. 0.10, by Corpsman, www.Corpsman.de';
   Tform(self).Constraints.MaxHeight := Tform(self).Height;
   Tform(self).Constraints.MinHeight := Tform(self).Height;
   Tform(self).Constraints.Maxwidth := Tform(self).width;
