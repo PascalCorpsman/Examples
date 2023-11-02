@@ -29,4 +29,3 @@ Animation Editor supports .bmp and .png files. If you use the "animation uses tr
 6. After setting up all needed parameters click the "Create OpenGL preview" button for each sprite (or save and reload the .ani file). In the preview area below you should now see your animation beeing rendered. By using the preview angle slider you should be able to see the "red" line rotating and the numbers beeing scrolled through.
 7. When comparing the red arrow which is shown on the right side of the preview area, you see that there is one last step that needs to be done. Adjust the "Angle Offset" value from 0 to 22.5 (= (360 / 8) / 2) to get a better visual experience (to see why this is needed set the preview angle to 337 degree with and without the correction value and look what happens if you increase preview angle up to 359).
 8. Store the .ani file and we are finished.
-
