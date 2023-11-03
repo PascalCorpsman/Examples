@@ -25,19 +25,21 @@ package "Examples" {
   }
 }
 
-package "External libs" {
-object Bass
-object DGLOpenGL
-object LNet 
-object MP_Arith
-object Synapse
-Synapse <|-- Mapviewer 
-DGLOpenGL <|-- Mapviewer 
-DGLOpenGL <|-- Animation_Editor 
-Synapse <|-- Modbus_Diagnostic
-LNet <|-- Modbus_Diagnostic
-LNet <|-- MQTT_Publisher
-LNet <|-- MQTT_Broker
+package "External libs" 
+{
+  object Bass
+  object DGLOpenGL
+  object LNet 
+  object MP_Arith
+  object Synapse
+
+  Synapse <|-- Mapviewer 
+  DGLOpenGL <|-- Mapviewer 
+  DGLOpenGL <|-- Animation_Editor 
+  Synapse <|-- Modbus_Diagnostic
+  LNet <|-- Modbus_Diagnostic
+  LNet <|-- MQTT_Publisher
+  LNet <|-- MQTT_Broker
 }
 
 @enduml
