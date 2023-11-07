@@ -1,14 +1,14 @@
 object Form1: TForm1
-  Left = 237
-  Height = 155
-  Top = 122
-  Width = 330
+  Left = 347
+  Height = 209
+  Top = 107
+  Width = 335
   ActiveControl = Button1
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Form1'
-  ClientHeight = 155
-  ClientWidth = 330
+  ClientHeight = 209
+  ClientWidth = 335
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
@@ -29,7 +29,7 @@ object Form1: TForm1
       Height = 25
       Top = 4
       Width = 137
-      Caption = '&Open File'
+      Caption = '&Open file'
       OnClick = Button1Click
       TabOrder = 0
     end
@@ -48,7 +48,7 @@ object Form1: TForm1
       Height = 25
       Top = 4
       Width = 137
-      Caption = 'O&pen File'
+      Caption = 'O&pen file'
       OnClick = Button3Click
       TabOrder = 0
     end
@@ -56,7 +56,7 @@ object Form1: TForm1
   object Button5: TButton
     Left = 16
     Height = 25
-    Top = 120
+    Top = 168
     Width = 297
     Caption = '&Close'
     OnClick = Button5Click
@@ -65,21 +65,28 @@ object Form1: TForm1
   object Button6: TButton
     Left = 16
     Height = 25
-    Top = 80
+    Top = 128
     Width = 297
     Caption = '&Help / Support'
     OnClick = Button6Click
     TabOrder = 3
   end
+  object Label1: TLabel
+    Left = 8
+    Height = 14
+    Top = 72
+    Width = 37
+    Caption = 'Label1'
+  end
   object OpenDialog1: TOpenDialog
-    Left = 24
-    Top = 32
+    Left = 32
+    Top = 40
   end
   object SaveDialog1: TSaveDialog
     DefaultExt = '.LZW'
     Filter = 'LZW-File|*.LZW|All|*.*'
-    Left = 120
-    Top = 32
+    Left = 96
+    Top = 40
   end
   object OpenDialog2: TOpenDialog
     DefaultExt = '.LZW'

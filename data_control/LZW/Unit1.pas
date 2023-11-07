@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Lempel-Ziv-Welch Demo                                          28.03.2009  *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Rework code internals, and Update help                *)
+(*               0.03 - replace messagebox by label                           *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -36,6 +38,9 @@ Uses
   StdCtrls, uLZW, LCLIntf, LCLType;
 
 Type
+
+  { TForm1 }
+
   TForm1 = Class(TForm)
     GroupBox1: TGroupBox;
     Button1: TButton;
@@ -43,6 +48,7 @@ Type
     Button3: TButton;
     Button5: TButton;
     Button6: TButton;
+    Label1: TLabel;
     OpenDialog1: TOpenDialog;
     SaveDialog1: TSaveDialog;
     OpenDialog2: TOpenDialog;
@@ -102,15 +108,12 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  (*
-   * Historie: 0.01 = Initialversion
-   *           0.02 = Rework code internals, and Update help
-   *)
-  caption := 'LZW ver. 0.02 by Corpsman';
+  caption := 'LZW ver. 0.03 by Corpsman';
   lzw := TLZW.create;
   OpenDialog1.initialdir := ExtractFilePath(paramstr(0));
   saveDialog1.initialdir := ExtractFilePath(paramstr(0));
   OpenDialog2.initialdir := ExtractFilePath(paramstr(0));
+  label1.caption := 'Click "Open file"';
 End;
 
 Procedure TForm1.FormDestroy(Sender: TObject);
@@ -128,7 +131,7 @@ Begin
 End;
 
 Procedure TForm1.Button1Click(Sender: TObject);
-{.$DEFINE EXACKTINFO}
+{$DEFINE EXACKTINFO}
 Var
 {$IFDEF EXACKTINFO}
   SizeBefore, SizeAfter,
@@ -163,16 +166,21 @@ Begin
       f2.CopyFrom(m2, m2.size);
       m2.free;
       f2.free;
-      showmessage(
-        'Ready ' + LineEnding
-        + 'Time :' + FloattostrF((d2 - d) / 1000, FFFixed, 7, 3)
+      label1.caption :=
+        'Time :' + FloattostrF((d2 - d) / 1000, FFFixed, 7, 3)
 {$IFDEF EXACKTINFO}
-        + LineEnding + 'Compression Rate :' + FloattostrF((SizeBefore / SizeAfter) * 100, FFFixed, 7, 2) + '%' + LineEnding +
-        'M/sec :' + floattostrf(SizeBefore / (d2 - d), fffixed, 7, 3)
+      + LineEnding + 'Compression Rate :' + FloattostrF((SizeBefore / SizeAfter) * 100, FFFixed, 7, 2) + '%' + LineEnding +
+        'Byte/sec :' + floattostrf(SizeBefore / (d2 - d), fffixed, 7, 3)
 {$ENDIF EXACKTINFO}
-        );
+      ;
       button1.enabled := True;
+    End
+    Else Begin
+      label1.caption := '';
     End;
+  End
+  Else Begin
+    label1.caption := '';
   End;
 End;
 
@@ -202,9 +210,15 @@ Begin
       f2 := TFileStream.create(IncludeTrailingBackslash(Path) + s, fmcreate Or fmopenwrite);
       f2.CopyFrom(m2, m2.size);
       f2.free;
-      showmessage('Ready [ Time :' + FloattostrF((d2 - d) / 1000, FFFixed, 7, 3) + ' ].');
+      label1.caption := 'Ready [ Time :' + FloattostrF((d2 - d) / 1000, FFFixed, 7, 3) + ' ].';
       button3.enabled := True;
+    End
+    Else Begin
+      label1.caption := '';
     End;
+  End
+  Else Begin
+    label1.caption := '';
   End;
 End;
 
