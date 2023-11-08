@@ -44,18 +44,21 @@ Type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
-    Edit1: TEdit;
     Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
     OpenDialog1: TOpenDialog;
     OpenDialog2: TOpenDialog;
     SaveDialog1: TSaveDialog;
     SaveDialog2: TSaveDialog;
+    ScrollBar1: TScrollBar;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
     Procedure Button3Click(Sender: TObject);
     Procedure Button4Click(Sender: TObject);
     Procedure FormClose(Sender: TObject; Var CloseAction: TCloseAction);
     Procedure FormCreate(Sender: TObject);
+    Procedure ScrollBar1Change(Sender: TObject);
   private
     { private declarations }
   public
@@ -77,13 +80,19 @@ Uses LazUTF8;
 Procedure TForm1.Button1Click(Sender: TObject);
 Var
   b: TBitmap;
+  SourceSize, destSize: int64;
+
 Begin
+  label3.caption := '';
   If OpenDialog1.execute Then
     If SaveDialog1.execute Then Begin
       b := Tbitmap.create;
       b.loadfromfile(OpenDialog1.FileName);
-      qt.SaveBitmap(b, SaveDialog1.FileName, max(min(255, strtoint(edit1.text)), 0));
+      qt.SaveBitmap(b, SaveDialog1.FileName, ScrollBar1.Position);
       b.free;
+      SourceSize := FileSize(OpenDialog1.FileName);
+      destSize := FileSize(SaveDialog1.FileName);
+      label3.caption := 'Compression Rate: ' + FloattostrF((SourceSize / destSize) * 100, FFFixed, 7, 2) + '%'
     End;
 End;
 
@@ -91,6 +100,7 @@ Procedure TForm1.Button2Click(Sender: TObject);
 Var
   b: Tbitmap;
 Begin
+  label3.caption := '';
   If opendialog2.execute Then
     If SaveDialog2.execute Then Begin
       b := QT.LoadBitmap(opendialog2.FileName);
@@ -128,11 +138,19 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
+  caption := 'Quadtree demo';
   qt := TQuadtree.create;
   OpenDialog1.InitialDir := ExtractFilePath(ParamStrUTF8(0));
   OpenDialog2.InitialDir := ExtractFilePath(ParamStrUTF8(0));
   SaveDialog1.InitialDir := ExtractFilePath(ParamStrUTF8(0));
   SaveDialog2.InitialDir := ExtractFilePath(ParamStrUTF8(0));
+  ScrollBar1Change(Nil);
+  Label3.caption := '';
+End;
+
+Procedure TForm1.ScrollBar1Change(Sender: TObject);
+Begin
+  label2.caption := inttostr(ScrollBar1.Position);
 End;
 
 End.

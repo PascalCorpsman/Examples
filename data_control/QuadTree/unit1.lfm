@@ -1,10 +1,10 @@
 object Form1: TForm1
   Left = 346
-  Height = 216
+  Height = 239
   Top = 107
   Width = 280
   Caption = 'Form1'
-  ClientHeight = 216
+  ClientHeight = 239
   ClientWidth = 280
   OnClose = FormClose
   OnCreate = FormCreate
@@ -15,7 +15,7 @@ object Form1: TForm1
     Height = 25
     Top = 16
     Width = 248
-    Caption = 'Graustufen Bild Komprimieren'
+    Caption = 'Compress grayscale image'
     OnClick = Button1Click
     TabOrder = 0
   end
@@ -23,67 +23,83 @@ object Form1: TForm1
     Left = 16
     Height = 16
     Top = 56
-    Width = 58
-    Caption = 'Toleranz :'
+    Width = 65
+    Caption = 'Tolerance :'
     ParentColor = False
-  end
-  object Edit1: TEdit
-    Left = 88
-    Height = 26
-    Top = 49
-    Width = 176
-    TabOrder = 1
-    Text = '0'
   end
   object Button2: TButton
     Left = 16
     Height = 25
-    Top = 88
+    Top = 80
     Width = 248
-    Caption = 'Graustufen Bild Dekomprimieren'
+    Caption = 'Uncompress to a grayscale image'
     OnClick = Button2Click
-    TabOrder = 2
+    TabOrder = 1
   end
   object Button3: TButton
     Left = 16
     Height = 25
-    Top = 176
+    Top = 200
     Width = 248
-    Caption = 'Beenden'
+    Caption = 'Close'
     OnClick = Button3Click
-    TabOrder = 3
+    TabOrder = 2
   end
   object Button4: TButton
     Left = 16
     Height = 25
-    Top = 128
+    Top = 152
     Width = 248
-    Caption = 'Hilfe'
+    Caption = 'Help'
     OnClick = Button4Click
+    TabOrder = 3
+  end
+  object ScrollBar1: TScrollBar
+    Left = 88
+    Height = 14
+    Top = 56
+    Width = 152
+    Max = 255
+    PageSize = 0
     TabOrder = 4
+    OnChange = ScrollBar1Change
+  end
+  object Label2: TLabel
+    Left = 245
+    Height = 16
+    Top = 56
+    Width = 41
+    Caption = 'Label2'
+  end
+  object Label3: TLabel
+    Left = 16
+    Height = 16
+    Top = 112
+    Width = 41
+    Caption = 'Label3'
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.bmp'
     Filter = 'Bitmap|*.bmp|All|*.*'
-    Left = 24
-    Top = 16
+    Left = 80
+    Top = 80
   end
   object SaveDialog1: TSaveDialog
     DefaultExt = '.qtc'
     Filter = 'Quad Tree Compressed|*.qtc'
-    Left = 128
-    Top = 16
+    Left = 208
+    Top = 80
   end
   object OpenDialog2: TOpenDialog
     DefaultExt = '.qtc'
     Filter = 'Quad Tree Compressed|*.qtc'
-    Left = 24
-    Top = 96
+    Left = 48
+    Top = 16
   end
   object SaveDialog2: TSaveDialog
     DefaultExt = '.bmp'
     Filter = 'Bitmap|*.bmp'
-    Left = 128
-    Top = 96
+    Left = 176
+    Top = 16
   end
 end
