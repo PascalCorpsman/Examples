@@ -77,6 +77,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
+| uyeargrid.pas | LCL-Component to display a year on the formular |
 
 ## sound
 Collection of classes and examples corresponding to sound / music processing
