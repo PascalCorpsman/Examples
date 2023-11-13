@@ -74,6 +74,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | CirclePackChart | Demo application for ucirclepackchart.pas |
 | PNG_Editor | Split and merge alpha channel of .png images |
 | SunburstChart | Demo application for usunburstchart.pas |
+| Yeargrid | Demo application for uyeargrid.pas |
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
