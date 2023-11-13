@@ -1,0 +1,173 @@
+object Form1: TForm1
+  Left = 353
+  Height = 678
+  Top = 124
+  Width = 1144
+  Caption = 'Form1'
+  ClientHeight = 678
+  ClientWidth = 1144
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+  object GroupBox1: TGroupBox
+    Left = 870
+    Height = 657
+    Top = 8
+    Width = 265
+    Anchors = [akTop, akRight, akBottom]
+    ClientHeight = 655
+    ClientWidth = 263
+    TabOrder = 0
+    object Label1: TLabel
+      Left = 64
+      Height = 45
+      Top = 8
+      Width = 136
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Label1'
+      Font.Height = -33
+      Layout = tlCenter
+      ParentFont = False
+    end
+    object Button1: TButton
+      Left = 8
+      Height = 46
+      Top = 8
+      Width = 46
+      Caption = '<'
+      OnClick = Button1Click
+      TabOrder = 0
+    end
+    object Button2: TButton
+      Left = 208
+      Height = 46
+      Top = 0
+      Width = 46
+      Caption = '>'
+      OnClick = Button2Click
+      TabOrder = 1
+    end
+    object CheckGroup1: TCheckGroup
+      Left = 8
+      Height = 105
+      Top = 64
+      Width = 246
+      AutoFill = True
+      Caption = ' Workdays '
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.TopBottomSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 2
+      ClientHeight = 88
+      ClientWidth = 244
+      Columns = 2
+      Items.Strings = (
+        'Monday'
+        'Tuesday'
+        'Wednesday'
+        'Thursday'
+        'Friday'
+        'Saturday'
+        'Sunday'
+      )
+      OnItemClick = CheckGroup1ItemClick
+      TabOrder = 2
+      Data = {
+        0700000002020202020202
+      }
+    end
+    object Label2: TLabel
+      Left = 8
+      Height = 16
+      Top = 184
+      Width = 76
+      Caption = 'Invalid Color'
+    end
+    object Shape1: TShape
+      Left = 122
+      Height = 25
+      Top = 175
+      Width = 132
+    end
+    object Label3: TLabel
+      Left = 8
+      Height = 16
+      Top = 217
+      Width = 89
+      Caption = 'WeekendColor'
+    end
+    object Shape2: TShape
+      Left = 122
+      Height = 25
+      Top = 208
+      Width = 132
+    end
+    object Label4: TLabel
+      Left = 8
+      Height = 16
+      Top = 281
+      Width = 73
+      Caption = 'Today Color'
+    end
+    object Shape3: TShape
+      Left = 122
+      Height = 25
+      Top = 272
+      Width = 132
+    end
+    object CheckBox1: TCheckBox
+      Left = 5
+      Height = 22
+      Top = 320
+      Width = 131
+      Caption = 'OnPrepareCanvas'
+      OnClick = CheckBox1Click
+      TabOrder = 3
+    end
+    object Shape4: TShape
+      Left = 122
+      Height = 25
+      Top = 240
+      Width = 132
+    end
+    object Label5: TLabel
+      Left = 8
+      Height = 16
+      Top = 249
+      Width = 65
+      Caption = 'WorkColor'
+    end
+  end
+  object ColorDialog1: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 196
+    Top = 103
+  end
+end
