@@ -76,6 +76,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | SunburstChart | Demo application for usunburstchart.pas |
 | Yeargrid | Demo application for uyeargrid.pas |
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
+| usimplechart.pas | a Tchart like component to create images with containing pointseries (especially designed to be part of a console application) |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 | uyeargrid.pas | LCL-Component to display a year on the formular |
