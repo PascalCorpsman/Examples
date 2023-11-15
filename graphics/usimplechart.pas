@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* TSimpleChart                                                    01.12.2022 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Corpsman                                                     *)
 (*                                                                            *)
@@ -25,6 +25,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Add ability to "work" with series                     *)
+(*                      FIX: Achsis unit was not rendered                     *)
 (*                                                                            *)
 (******************************************************************************)
 Unit usimplechart;
@@ -38,7 +40,7 @@ Uses
 
 Type
   TDimension = Record
-    MinX, MaxX, MinY, MaxY: Single;
+    MinX, MaxX, MinY, MaxY: TBaseType;
   End;
 
   TYAxesPos = (apLeft, apRight, apNone);
@@ -46,25 +48,25 @@ Type
   TSimpleChart = Class;
 
   TXInterval = Record
-    MinX, MaxX: Single;
+    MinX, MaxX: TBaseType;
   End;
 
   TYAxis = Record
     Pos: TYAxesPos;
     AxisUnit: String;
     UseMinVal: Boolean;
-    MinVal: Single;
+    MinVal: TBaseType;
     UseMaxVal: Boolean;
-    MaxVal: Single;
+    MaxVal: TBaseType;
     MarkFormat: String;
   End;
 
   TXAxis = Record
     AxisUnit: String;
     UseMinVal: Boolean;
-    MinVal: Single;
+    MinVal: TBaseType;
     UseMaxVal: Boolean;
-    MaxVal: Single;
+    MaxVal: TBaseType;
     GridColor: TColor;
     MarkFormat: String;
   End;
@@ -101,11 +103,16 @@ Type
   TSimpleChart = Class
   private
     fSeries: Array Of TSeries;
+    Function GetSeries(Index: integer): TSeries;
+    Procedure SetSeries(Index: integer; AValue: TSeries);
   public
     Title: String;
     ShowLegend: Boolean;
     BackGroundColor: TColor;
     XAXis: TXAxis;
+
+    Property Series[Index: integer]: TSeries read GetSeries write SetSeries;
+
     Constructor Create();
     Destructor Destroy(); override;
 
@@ -129,7 +136,6 @@ Begin
   result.Y := round(ConvertDimension(Dim.MaxY, Dim.MinY, v.y, rect.Top, Rect.Bottom)); // Y-Achse ist gedreht ;)
 End;
 
-
 { TSeries }
 
 Constructor TSeries.Create;
@@ -150,14 +156,28 @@ Begin
 End;
 
 Destructor TSeries.Destroy;
+Var
+  i, j: Integer;
 Begin
   Clear;
+  // Remove Self from Owner
+  If assigned(fOwner) Then Begin
+    For i := 0 To high(fOwner.fSeries) Do Begin
+      If fOwner.fSeries[i] = Self Then Begin
+        For j := i To high(fOwner.fSeries) - 1 Do Begin
+          fOwner.fSeries[j] := fOwner.fSeries[j + 1];
+        End;
+        setlength(fOwner.fSeries, High(fOwner.fSeries));
+        break;
+      End;
+    End;
+  End;
 End;
 
 Function TSeries.RenderLeftYAchsis(Const Canvas: TCanvas; Rect: Trect): integer;
 Var
   dim: TDimension;
-  dy: Single;
+  dy: TBaseType;
   h, i: Integer;
   p: TPoint;
 Begin
@@ -178,7 +198,7 @@ Begin
         For i := 0 To 10 Do Begin
           p := Convert(dim, rect, v2(0, Dim.MinY + dy * i));
           canvas.font.Color := SeriesColor;
-          canvas.TextOut(rect.Left, p.Y - h, format(YAxis.MarkFormat, [Dim.MinY + dy * i]));
+          canvas.TextOut(rect.Left, p.Y - h, format(YAxis.MarkFormat, [Dim.MinY + dy * i]) + YAxis.AxisUnit);
         End;
       End;
   End;
@@ -188,7 +208,7 @@ Function TSeries.RenderRightYAchsis(Const Canvas: TCanvas; Rect: TRect
   ): integer;
 Var
   dim: TDimension;
-  dy: Single;
+  dy: TBaseType;
   p: TPoint;
   h, i: Integer;
 Begin
@@ -209,7 +229,7 @@ Begin
         For i := 0 To 10 Do Begin
           p := Convert(dim, rect, v2(0, Dim.MinY + dy * i));
           canvas.font.Color := SeriesColor;
-          canvas.TextOut(rect.Right - result + Margin, p.Y - h, format(YAxis.MarkFormat, [Dim.MinY + dy * i]));
+          canvas.TextOut(rect.Right - result + Margin, p.Y - h, format(YAxis.MarkFormat, [Dim.MinY + dy * i]) + YAxis.AxisUnit);
         End;
       End;
   End;
@@ -221,7 +241,7 @@ Var
   dim: TDimension;
   tickx, i: Integer;
   p: TPoint;
-  dy: Single;
+  dy: TBaseType;
 Begin
   dim := GetDimension();
   dim.MinX := min(XInterval.MinX, dim.MinX);
@@ -290,15 +310,28 @@ Begin
     Raise exception.Create('TSeries.GetDimension: no datapoints to get dimension of.');
   End;
   result := fDim;
+  // TODO: Which version is correkt ?
   If YAxis.UseMinVal Then Begin
     result.MinY := min(result.MinY, YAxis.MinVal);
+    //    result.MinY := YAxis.MinVal;
   End;
   If YAxis.UseMaxVal Then Begin
     result.MaxY := max(result.MaxY, YAxis.MaxVal);
+    //    result.MaxY := YAxis.MaxVal;
   End;
 End;
 
 { TSimpleChart }
+
+Function TSimpleChart.GetSeries(Index: integer): TSeries;
+Begin
+  result := fSeries[Index];
+End;
+
+Procedure TSimpleChart.SetSeries(Index: integer; AValue: TSeries);
+Begin
+  fSeries[Index] := AValue;
+End;
 
 Constructor TSimpleChart.Create;
 Begin
@@ -329,7 +362,7 @@ Function TSimpleChart.SaveToPngImage(Width, Height: integer
     t: String;
     tw: Integer;
   Begin
-    t := format(XAXis.MarkFormat, [Value]);
+    t := format(XAXis.MarkFormat, [Value]) + XAXis.AxisUnit;
     tw := Canvas.TextWidth(t);
     canvas.Font.Color := clBlack;
     canvas.TextOut(p.x - tw Div 2, p.y + Margin, t);
@@ -342,7 +375,7 @@ Var
   RenderRect: TRect;
   th, tw, t: integer;
   XInterval: TXInterval;
-  dx: Single;
+  dx: TBaseType;
   p: TPoint;
 Begin
   result := TPortableNetworkGraphic.Create;
@@ -365,11 +398,14 @@ Begin
     dim.Miny := min(dim.Miny, dim2.MinY);
     dim.MaxY := max(dim.Maxy, dim2.MaxY);
   End;
+  // TODO: Which version is correkt ?
   If XAXis.UseMinVal Then Begin
     dim.MinX := min(dim.MinX, XAXis.MinVal);
+    //    dim.MinX := XAXis.MinVal;
   End;
   If XAXis.UseMaxVal Then Begin
     dim.MaxX := max(dim.MaxX, XAXis.MaxVal);
+    //    dim.MaxX := XAXis.MaxVal;
   End;
   XInterval.MinX := dim.MinX;
   XInterval.MaxX := dim.MaxX;
@@ -473,6 +509,7 @@ Var
   i: Integer;
 Begin
   For i := 0 To high(fSeries) Do Begin
+    fSeries[i].fOwner := Nil; // Otherwise we get a Loop with "freeing"
     fSeries[i].Free;
   End;
   setlength(fSeries, 0);
