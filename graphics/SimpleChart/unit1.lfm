@@ -1,0 +1,457 @@
+object Form1: TForm1
+  Left = 349
+  Height = 851
+  Top = 107
+  Width = 1227
+  Caption = 'Form1'
+  ClientHeight = 851
+  ClientWidth = 1227
+  OnClose = FormClose
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.3.0.0'
+  object PaintBox1: TPaintBox
+    Left = 8
+    Height = 830
+    Top = 8
+    Width = 816
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    OnPaint = PaintBox1Paint
+  end
+  object GroupBox1: TGroupBox
+    Left = 832
+    Height = 516
+    Top = 8
+    Width = 217
+    Anchors = [akTop, akRight, akBottom]
+    Caption = ' Series settings '
+    ClientHeight = 499
+    ClientWidth = 215
+    TabOrder = 0
+    object Button1: TButton
+      Left = 114
+      Height = 25
+      Top = 472
+      Width = 94
+      Caption = 'Add series'
+      OnClick = Button1Click
+      TabOrder = 0
+    end
+    object Label1: TLabel
+      Left = 8
+      Height = 16
+      Top = 8
+      Width = 47
+      Caption = 'Caption'
+    end
+    object Edit1: TEdit
+      Left = 64
+      Height = 26
+      Top = 0
+      Width = 136
+      TabOrder = 1
+      Text = 'Edit1'
+    end
+    object SpinEdit1: TSpinEdit
+      Left = 64
+      Height = 26
+      Top = 32
+      Width = 136
+      MaxValue = 15
+      MinValue = 1
+      TabOrder = 2
+      Value = 1
+    end
+    object Label2: TLabel
+      Left = 8
+      Height = 16
+      Top = 40
+      Width = 36
+      Caption = 'Width'
+    end
+    object Label3: TLabel
+      Left = 8
+      Height = 16
+      Top = 72
+      Width = 33
+      Caption = 'Color'
+    end
+    object Shape1: TShape
+      Left = 64
+      Height = 23
+      Top = 64
+      Width = 136
+    end
+    object Label4: TLabel
+      Left = 8
+      Height = 16
+      Top = 104
+      Width = 50
+      Caption = 'Gridolor'
+    end
+    object Shape2: TShape
+      Left = 64
+      Height = 23
+      Top = 96
+      Width = 136
+    end
+    object GroupBox2: TGroupBox
+      Left = 8
+      Height = 192
+      Top = 128
+      Width = 200
+      Caption = ' Y-achis '
+      ClientHeight = 175
+      ClientWidth = 198
+      TabOrder = 3
+      object RadioGroup1: TRadioGroup
+        Left = 8
+        Height = 41
+        Top = 0
+        Width = 185
+        AutoFill = True
+        Caption = ' Position '
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 3
+        ClientHeight = 24
+        ClientWidth = 183
+        Columns = 3
+        ItemIndex = 0
+        Items.Strings = (
+          'Left'
+          'Right'
+          'None'
+        )
+        TabOrder = 0
+      end
+      object Label5: TLabel
+        Left = 8
+        Height = 16
+        Top = 56
+        Width = 25
+        Caption = 'Unit'
+      end
+      object Edit2: TEdit
+        Left = 54
+        Height = 26
+        Top = 48
+        Width = 139
+        TabOrder = 1
+        Text = 'Edit2'
+      end
+      object CheckBox1: TCheckBox
+        Left = 8
+        Height = 22
+        Top = 84
+        Width = 106
+        Caption = 'use min value'
+        TabOrder = 2
+      end
+      object Edit3: TEdit
+        Left = 120
+        Height = 26
+        Top = 80
+        Width = 73
+        TabOrder = 3
+        Text = 'Edit3'
+      end
+      object CheckBox2: TCheckBox
+        Left = 8
+        Height = 22
+        Top = 112
+        Width = 109
+        Caption = 'use max value'
+        TabOrder = 4
+      end
+      object Edit4: TEdit
+        Left = 120
+        Height = 26
+        Top = 108
+        Width = 73
+        TabOrder = 5
+        Text = 'Edit4'
+      end
+      object Label6: TLabel
+        Left = 8
+        Height = 16
+        Top = 141
+        Width = 75
+        Caption = 'Mark format'
+      end
+      object Edit5: TEdit
+        Left = 120
+        Height = 26
+        Top = 136
+        Width = 73
+        TabOrder = 6
+        Text = 'Edit5'
+      end
+    end
+    object GroupBox3: TGroupBox
+      Left = 8
+      Height = 136
+      Top = 328
+      Width = 200
+      Caption = ' Random options '
+      ClientHeight = 119
+      ClientWidth = 198
+      TabOrder = 4
+      object Label7: TLabel
+        Left = 8
+        Height = 16
+        Top = 8
+        Width = 41
+        Caption = 'X-Start'
+      end
+      object Edit6: TEdit
+        Left = 120
+        Height = 26
+        Top = 0
+        Width = 73
+        TabOrder = 0
+        Text = 'Edit6'
+      end
+      object Label8: TLabel
+        Left = 8
+        Height = 16
+        Top = 36
+        Width = 36
+        Caption = 'X-End'
+      end
+      object Edit7: TEdit
+        Left = 121
+        Height = 26
+        Top = 28
+        Width = 72
+        TabOrder = 1
+        Text = 'Edit7'
+      end
+      object Label9: TLabel
+        Left = 8
+        Height = 16
+        Top = 64
+        Width = 34
+        Caption = 'Y-Min'
+      end
+      object Label10: TLabel
+        Left = 8
+        Height = 16
+        Top = 92
+        Width = 37
+        Caption = 'Y-Max'
+      end
+      object Edit8: TEdit
+        Left = 121
+        Height = 26
+        Top = 84
+        Width = 72
+        TabOrder = 2
+        Text = 'Edit8'
+      end
+      object Edit9: TEdit
+        Left = 121
+        Height = 26
+        Top = 56
+        Width = 72
+        TabOrder = 3
+        Text = 'Edit9'
+      end
+    end
+    object Button3: TButton
+      Left = 8
+      Height = 25
+      Top = 472
+      Width = 94
+      Caption = 'Update series'
+      OnClick = Button3Click
+      TabOrder = 5
+    end
+  end
+  object Button2: TButton
+    Left = 832
+    Height = 25
+    Top = 813
+    Width = 384
+    Anchors = [akRight, akBottom]
+    Caption = 'Close'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object ListBox1: TListBox
+    Left = 1056
+    Height = 741
+    Top = 32
+    Width = 160
+    Anchors = [akTop, akRight, akBottom]
+    ItemHeight = 0
+    OnClick = ListBox1Click
+    TabOrder = 2
+    TopIndex = -1
+  end
+  object Label11: TLabel
+    Left = 1056
+    Height = 16
+    Top = 8
+    Width = 35
+    Anchors = [akTop, akRight]
+    Caption = 'Series'
+  end
+  object Button4: TButton
+    Left = 1141
+    Height = 25
+    Top = 780
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = 'Del series'
+    OnClick = Button4Click
+    TabOrder = 3
+  end
+  object GroupBox4: TGroupBox
+    Left = 832
+    Height = 240
+    Top = 533
+    Width = 217
+    Anchors = [akRight, akBottom]
+    Caption = ' Chart '
+    ClientHeight = 223
+    ClientWidth = 215
+    TabOrder = 4
+    object Label12: TLabel
+      Left = 8
+      Height = 16
+      Top = 8
+      Width = 27
+      Caption = 'Title'
+    end
+    object Edit10: TEdit
+      Left = 64
+      Height = 26
+      Top = 0
+      Width = 136
+      OnChange = Edit10Change
+      TabOrder = 0
+      Text = 'Edit10'
+    end
+    object CheckBox3: TCheckBox
+      Left = 0
+      Height = 22
+      Top = 32
+      Width = 102
+      Caption = 'Show legend'
+      Checked = True
+      OnClick = CheckBox3Click
+      State = cbChecked
+      TabOrder = 1
+    end
+    object GroupBox5: TGroupBox
+      Left = 8
+      Height = 144
+      Top = 64
+      Width = 200
+      Caption = ' X-achis '
+      ClientHeight = 127
+      ClientWidth = 198
+      TabOrder = 2
+      object Label13: TLabel
+        Left = 8
+        Height = 16
+        Top = 16
+        Width = 25
+        Caption = 'Unit'
+      end
+      object Edit11: TEdit
+        Left = 54
+        Height = 26
+        Top = 8
+        Width = 139
+        OnChange = Edit11Change
+        TabOrder = 0
+        Text = 'Edit11'
+      end
+      object CheckBox4: TCheckBox
+        Left = 8
+        Height = 22
+        Top = 44
+        Width = 106
+        Caption = 'use min value'
+        OnClick = CheckBox4Click
+        TabOrder = 1
+      end
+      object Edit12: TEdit
+        Left = 120
+        Height = 26
+        Top = 40
+        Width = 73
+        OnChange = Edit12Change
+        TabOrder = 2
+        Text = 'Edit12'
+      end
+      object CheckBox5: TCheckBox
+        Left = 8
+        Height = 22
+        Top = 72
+        Width = 109
+        Caption = 'use max value'
+        OnClick = CheckBox5Click
+        TabOrder = 3
+      end
+      object Edit13: TEdit
+        Left = 120
+        Height = 26
+        Top = 68
+        Width = 73
+        OnChange = Edit13Change
+        TabOrder = 4
+        Text = 'Edit13'
+      end
+      object Label14: TLabel
+        Left = 8
+        Height = 16
+        Top = 101
+        Width = 75
+        Caption = 'Mark format'
+      end
+      object Edit14: TEdit
+        Left = 120
+        Height = 26
+        Top = 96
+        Width = 73
+        OnChange = Edit14Change
+        TabOrder = 5
+        Text = 'Edit14'
+      end
+    end
+  end
+  object ColorDialog1: TColorDialog
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 414
+    Top = 133
+  end
+end

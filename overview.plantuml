@@ -3,23 +3,24 @@
 
 package "Examples" {
   package "OpenGL" {
-   object Mapviewer
    object Animation_Editor
+   object Mapviewer
   }
   package "data_control" {
     object LZW
     object QuadTree
   }
   package "graphics" {
-   object SunburstChart
-   object PNG_Editor
    object CirclePackChart
+   object PNG_Editor
+   object SimpleChart
+   object SunburstChart
    object Yeargrid
   }
   package "TCP_IP" {
+   object Modbus_Diagnostic
    object MQTT_Broker
    object MQTT_Publisher
-   object Modbus_Diagnostic
   }
   package "Sound" {
    
