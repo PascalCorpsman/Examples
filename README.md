@@ -72,6 +72,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | Example | Description |
 | --- | --- |
 | CirclePackChart | Demo application for ucirclepackchart.pas |
+| ColorDialog | Demo application for ucolordialog.pas |
 | PNG_Editor | Split and merge alpha channel of .png images |
 | SimpleChart | Demo application for usimplechart.pas |
 | SunburstChart | Demo application for usunburstchart.pas |

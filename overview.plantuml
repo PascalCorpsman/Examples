@@ -12,6 +12,7 @@ package "Examples" {
   }
   package "graphics" {
    object CirclePackChart
+   object ColorDialog
    object PNG_Editor
    object SimpleChart
    object SunburstChart
