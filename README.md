@@ -38,6 +38,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 | uchunkmanager.pas | Server / Client component to send packages of data through a TCP-IP connection (need L-Net) |
 | uhtml.pas | HTML-DOM parser |
 | uip.pas | Some helper routines to work and get IP's |
+| umultipartformdatastream.pas | Class to create HTML Multipartforms as a stream |
 | utcp.pas | abstract wrapper for TLTcp (need L-net) |
 
 ## data_control
