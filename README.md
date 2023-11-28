@@ -46,6 +46,7 @@ Collection of classes and examples corresponding to data processing, math and co
 
 | Example | Description |
 | --- | --- |
+| JSON_Analyzer | demo application for uJSON.pas |
 | LZW | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | QuadTree | demo application for uquadtree.pas |
 | uJSON.pas | JSON-Loader / writer class |
