@@ -21,6 +21,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | uopengl_animation.pas | Class to load and render .ani files (see Animation_Editor) |
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
+| uopengl_primitives.pas | Collection of higher level primitive objects (sphere, cone, cube..) |
 | uopengl_partikelengine.pas | Class to render thousands of particle graphics into the OpenGL window |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
 | uopengl_truetype_font.pas | Class to render truetype fonts to OpenGL windows |
