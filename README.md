@@ -69,6 +69,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | utokenizer.pas | generic lexer class to lex strings into tokens |
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
+| uuart.pas | thread based wrapper for synaser.pas (see Synapse) |
 | uvectormath.pas | Math library for multidimensional things (e.g. OpenGL, Matrix ..) |
 
 ## graphics
