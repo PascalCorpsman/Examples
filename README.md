@@ -34,6 +34,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 | --- | --- |
 | MQTT_Broker | Shows a implementation of uMQTTbroker.pas (only publish / subscibe no evaluations) |
 | MQTT_Publisher | Demo that can send MQTT Publish messages to a given IP-Address (no security login) |
+| Modbus_Client | Application to emulate a MODBUS-Slave device |
 | Modbus_Diagnostic | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
 | uMQTTbroker.pas | a simpliest MQTT broker, only capable of receiving publishing clients (need L-Net) |
 | uchunkmanager.pas | Server / Client component to send packages of data through a TCP-IP connection (need L-Net) |
