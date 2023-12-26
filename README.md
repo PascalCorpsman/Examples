@@ -62,6 +62,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | ufifo.pas | generic first in first out class |
 | ugenmathcalc.pas | generic parser / solver for binary and unary operands (typically used to parse mathematical formulas) |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
+| uinterpreter.pas | Pascal Interpreter |
 | uiwrapper.pas | data source wrapper for uimodbus.pas (Lnet or Synapse) | 
 | ulogger.pas | general data logging framework to be included into own application | 
 | umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
