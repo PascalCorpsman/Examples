@@ -61,6 +61,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | udomxml.pas | generic xml parser |
 | ueventer.pas| class toc reate events for components that are not derived from LCL-Components |
 | ufifo.pas | generic first in first out class |
+| ufilo.pas | generic first in last out clas |
 | ugenmathcalc.pas | generic parser / solver for binary and unary operands (typically used to parse mathematical formulas) |
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
 | uinterpreter.pas | Pascal Interpreter |
