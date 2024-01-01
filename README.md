@@ -102,6 +102,17 @@ Collection of classes and examples corresponding to sound / music processing
 | --- | --- |
 | uwave.pas | class to access .wav files |
 
+## Wii
+
+Collection of classes and examples corresponding to use the Wiimote controller
+
+! Attention !
+the Wii classes and components do only support Linux.
+
+| Example | Description |
+| --- | --- |
+| ulibxwiimote.pas | basic header translation from c to fpc |
+
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 
