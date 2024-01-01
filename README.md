@@ -109,7 +109,9 @@ Collection of classes and examples corresponding to use the Wiimote controller
 ! Attention !
 the Wii classes and components do only support Linux.
 
-Preconditions: "sudo apt install xwiimote"
+Preconditions: 
+- "sudo apt install xwiimote"
+- "sudo apt install libxwiimote-dev"
 
 | Example | Description |
 | --- | --- |
