@@ -109,6 +109,8 @@ Collection of classes and examples corresponding to use the Wiimote controller
 ! Attention !
 the Wii classes and components do only support Linux.
 
+Preconditions: "sudo apt install xwiimote"
+
 | Example | Description |
 | --- | --- |
 | ulibxwiimote.pas | basic header translation from c to fpc |
