@@ -12,7 +12,6 @@
 (*               source file of the project.                                  *)
 (*                                                                            *)
 (******************************************************************************)
-
 Program project1;
 
 {$MODE objfpc}{$H+}
@@ -22,13 +21,13 @@ Uses
   cthreads,
 {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, imagesforlazarus, Unit1, uopengl_spriteengine, uopengl_animation,
-  uvectormath, Unit2;
+  Forms, imagesforlazarus, Unit1, Unit2;
 
 Begin
-  Application.Title:='';
+  Application.Title := '';
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TForm2, Form2);
   Application.Run;
 End.
+

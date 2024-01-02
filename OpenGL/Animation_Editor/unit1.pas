@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Animation Editor                                                ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.06                                                         *)
+(* Version     : 0.07                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -35,6 +35,8 @@
 (*                           gespeichert                                      *)
 (*                      FIX: Rendering unter Linux kaputt                     *)
 (*                      FIX: div by 0 Error                                   *)
+(*               0.07 - FIX: off by 1 error by defining Framecount via mouse  *)
+(*                      Remove unused subimages                               *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -69,6 +71,7 @@ Type
     Button6: TButton;
     Button7: TButton;
     Button8: TButton;
+    Button9: TButton;
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
     ColorDialog1: TColorDialog;
@@ -132,6 +135,7 @@ Type
     Procedure Button6Click(Sender: TObject);
     Procedure Button7Click(Sender: TObject);
     Procedure Button8Click(Sender: TObject);
+    Procedure Button9Click(Sender: TObject);
     Procedure CheckBox1Click(Sender: TObject);
     Procedure CheckBox2Click(Sender: TObject);
     Procedure Edit10Change(Sender: TObject);
@@ -342,7 +346,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  defcaption := 'Animation Editor ver. 0.06 by Corpsman';
+  defcaption := 'Animation Editor ver. 0.07 by Corpsman';
   caption := defcaption;
   Application.Title := Caption;
   edit2.text := format('%0.1f', [0.0]);
@@ -411,7 +415,7 @@ Begin
     edit13.text := inttostr(index);
   End
   Else Begin
-    edit9.text := inttostr(index - strtointdef(edit13.text, 0));
+    edit9.text := inttostr(index - strtointdef(edit13.text, 0) + 1); // +1 weil das ja ein Count ist und kein Index !
   End;
 End;
 
@@ -685,6 +689,18 @@ Begin
   form2.LoadPreview(b);
   b.free;
   form2.ShowModal;
+End;
+
+Procedure TForm1.Button9Click(Sender: TObject);
+Begin
+  If ID_YES = application.MessageBox('Removing unused subimages will delete content of all images, this can not be undone. Do this only at the very end of the creating process and have a bakup of the images in case you want to extend your animation at a later point. Are you shure you want to continue ?', 'Warning', MB_YESNO Or MB_ICONEXCLAMATION) Then Begin
+    If Ani.RemoveUnusedSubImagex() Then Begin
+      AniToLCL();
+      ListBox1.ItemIndex := 0;
+      ListBox1Click(Nil);
+      GuessZoom();
+    End;
+  End;
 End;
 
 Procedure TForm1.CheckBox1Click(Sender: TObject);
