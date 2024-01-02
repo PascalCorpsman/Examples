@@ -457,6 +457,7 @@ Begin
     stream.Write(fSprites[i].FramesPerCol, sizeof(fSprites[i].FramesPerCol));
   End;
   result := true;
+  fchanged := false;
 End;
 
 Function TOpenGL_Animation.LoadFromStream(Const Stream: TStream): Boolean;
@@ -836,6 +837,7 @@ Begin
     inc(SpriteIndex);
     result := true;
   End;
+  If result Then fchanged := true;
 End;
 
 Function TOpenGL_Animation.SaveToFile(Const Filename: String): Boolean;
