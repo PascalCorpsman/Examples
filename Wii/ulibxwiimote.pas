@@ -17,6 +17,7 @@
 (*                                                                            *)
 (* Preconditions:                                                             *)
 (*        - sudo apt install xwiimote                                         *)
+(*        - sudo apt install libxwiimote-dev                                  *)
 (*                                                                            *)
 (* Usage: - install driver                                                    *)
 (*        - bind WIImote via os                                               *)
