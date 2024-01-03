@@ -116,6 +116,7 @@ Preconditions:
 | Example | Description |
 | --- | --- |
 | ulibxwiimote.pas | basic header translation from c to fpc |
+| uxwiimote.pas | Lazarus wrapper for ulibxwiimote.pas |
 
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
