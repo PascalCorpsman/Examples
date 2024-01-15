@@ -115,6 +115,7 @@ Preconditions:
 
 | Example | Description |
 | --- | --- |
+| WiiMote | Demo application for uxwiimote.pas |
 | ulibxwiimote.pas | basic header translation from c to fpc |
 | uxwiimote.pas | Lazarus wrapper for ulibxwiimote.pas |
 
