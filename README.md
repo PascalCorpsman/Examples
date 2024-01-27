@@ -53,7 +53,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | JSON_Analyzer | demo application for uJSON.pas |
 | LZW | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | QuadTree | demo application for uquadtree.pas |
-| Vectormath | Testcases for uvectormath.pas |
+| Vectormath | unit tests for uvectormath.pas |
 | uJSON.pas | JSON-Loader / writer class |
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
@@ -84,6 +84,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | --- | --- |
 | CirclePackChart | Demo application for ucirclepackchart.pas |
 | ColorDialog | Demo application for ucolordialog.pas |
+| Graphics | unit tests for ugraphics.pas |
 | SimpleChart | Demo application for usimplechart.pas |
 | SunburstChart | Demo application for usunburstchart.pas |
 | Yeargrid | Demo application for uyeargrid.pas |
