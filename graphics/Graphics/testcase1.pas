@@ -127,6 +127,9 @@ End;
 Procedure TTestCase1.SetUp;
 Begin
   Lena1 := TBitmap.Create;
+  If Not FileExists('..' + PathDelim + 'Lena.bmp') Then Begin
+    AssertTrue('..' + PathDelim + 'Lena.bmp does not exist.', false);
+  End;
   Lena1.LoadFromFile('..' + PathDelim + 'Lena.bmp');
   lena2 := TBitmap.Create;
   lena2.Assign(lena1);
