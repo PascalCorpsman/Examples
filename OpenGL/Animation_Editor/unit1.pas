@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Animation Editor                                                ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.07                                                         *)
+(* Version     : 0.09                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -37,6 +37,8 @@
 (*                      FIX: div by 0 Error                                   *)
 (*               0.07 - FIX: off by 1 error by defining Framecount via mouse  *)
 (*                      Remove unused subimages                               *)
+(*               0.08 - ADD: drop .ani files on app                           *)
+(*               0.09 - FIX: Preview image was not correct                    *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -149,6 +151,7 @@ Type
     Procedure Edit9Change(Sender: TObject);
     Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
     Procedure FormCreate(Sender: TObject);
+    Procedure FormDropFiles(Sender: TObject; Const FileNames: Array Of String);
     Procedure Image1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     Procedure ListBox1Click(Sender: TObject);
@@ -346,7 +349,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  defcaption := 'Animation Editor ver. 0.07 by Corpsman';
+  defcaption := 'Animation Editor ver. 0.09 by Corpsman';
   caption := defcaption;
   Application.Title := Caption;
   edit2.text := format('%0.1f', [0.0]);
@@ -369,6 +372,23 @@ Begin
   Constraints.MinWidth := Width;
   Constraints.MaxHeight := Height;
   Constraints.MaxWidth := Width;
+End;
+
+Procedure TForm1.FormDropFiles(Sender: TObject; Const FileNames: Array Of String
+  );
+Var
+  i: Integer;
+Begin
+  For i := 0 To high(FileNames) Do Begin
+    If lowercase(ExtractFileExt(FileNames[i])) = '.ani' Then Begin
+      If Ani.Changed Then Begin
+        If ID_YES = Application.MessageBox('Animation was changed, but not saved, do you want to save now ?', 'Warning', MB_YESNO Or MB_ICONQUESTION) Then Begin
+          MenuItem3Click(Nil);
+        End;
+      End;
+      LoadAniFile(FileNames[i]);
+    End;
+  End;
 End;
 
 Procedure TForm1.Image1MouseDown(Sender: TObject; Button: TMouseButton;

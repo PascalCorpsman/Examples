@@ -1,17 +1,19 @@
 object Form1: TForm1
   Left = 347
-  Height = 654
+  Height = 609
   Top = 111
   Width = 981
   ActiveControl = OpenGLControl1
+  AllowDropFiles = True
   Caption = 'Form1'
-  ClientHeight = 654
+  ClientHeight = 609
   ClientWidth = 981
   Menu = MainMenu1
   Position = poScreenCenter
   LCLVersion = '3.99.0.0'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
+  OnDropFiles = FormDropFiles
   object OpenGLControl1: TOpenGLControl
     Left = 24
     Height = 246

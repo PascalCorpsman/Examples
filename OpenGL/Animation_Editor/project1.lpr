@@ -25,6 +25,7 @@ Uses
 
 Begin
   Application.Title := '';
+  Application.Title:='';
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
   Application.CreateForm(TForm2, Form2);
