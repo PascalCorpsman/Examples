@@ -20,13 +20,15 @@ Type
     Procedure SetUp; override;
     Procedure TearDown; override;
   published
-    Procedure TeadUpDown_Valid;
+    Procedure TearUpDown_Valid;
     Procedure Rotate_90_Grad;
     Procedure Rotate_Counter_90_Grad;
     Procedure Rotate_90_for_and_back;
     Procedure Rotate_90_for_and_back_2;
+    Procedure Rotate_90_for_and_back_3;
     Procedure Rotate_180;
     Procedure Rotate_180_2;
+    Procedure Rotate_180_3;
     Procedure UpDown;
     Procedure LeftRight;
     Procedure Flip_Rotate;
@@ -36,7 +38,7 @@ Implementation
 
 Procedure TTestCase1.Rotate_90_Grad;
 Begin
-
+  // Rotate 4 times -> get same as started with
   RotateClockWise90Degrees(Lena1);
   RotateClockWise90Degrees(Lena1);
   RotateClockWise90Degrees(Lena1);
@@ -47,6 +49,7 @@ End;
 
 Procedure TTestCase1.Rotate_Counter_90_Grad;
 Begin
+  // Rotate 4 times -> get same as started with
   RotateCounterClockWise90Degrees(Lena1);
   RotateCounterClockWise90Degrees(Lena1);
   RotateCounterClockWise90Degrees(Lena1);
@@ -56,6 +59,7 @@ End;
 
 Procedure TTestCase1.Rotate_90_for_and_back;
 Begin
+  // Rotate 90 is revertable by Rotate -90
   RotateClockWise90Degrees(Lena1);
   RotateCounterClockWise90Degrees(Lena1);
   CheckLenaEqual();
@@ -63,9 +67,20 @@ End;
 
 Procedure TTestCase1.Rotate_90_for_and_back_2;
 Begin
+  // Rotate 270 is same as rotate -90
   RotateClockWise90Degrees(Lena1);
   RotateClockWise90Degrees(Lena1);
   RotateClockWise90Degrees(Lena1);
+  RotateCounterClockWise90Degrees(Lena2);
+  CheckLenaEqual();
+End;
+
+Procedure TTestCase1.Rotate_90_for_and_back_3;
+Begin
+  // Rotate 90 is same as rotate -270
+  RotateClockWise90Degrees(Lena1);
+  RotateCounterClockWise90Degrees(Lena2);
+  RotateCounterClockWise90Degrees(Lena2);
   RotateCounterClockWise90Degrees(Lena2);
   CheckLenaEqual();
 End;
@@ -82,6 +97,14 @@ Begin
   Rotate180Degrees(Lena1);
   RotateCounterClockWise90Degrees(Lena2);
   RotateCounterClockWise90Degrees(Lena2);
+  CheckLenaEqual();
+End;
+
+Procedure TTestCase1.Rotate_180_3;
+Begin
+  Rotate180Degrees(Lena1);
+  RotateClockWise90Degrees(Lena2);
+  RotateClockWise90Degrees(Lena2);
   CheckLenaEqual();
 End;
 
@@ -111,17 +134,19 @@ Procedure TTestCase1.CheckLenaEqual;
 Var
   i, j: Integer;
 Begin
-  AssertEquals('Error, dimension after rotate wrong.', Lena1.Width, Lena2.Width);
-  AssertEquals('Error, dimension after rotate wrong.', Lena1.Height, Lena2.Height);
+  AssertEquals('Error, dimension [Width] wrong.', Lena1.Width, Lena2.Width);
+  AssertEquals('Error, dimension [Height] wrong.', Lena1.Height, Lena2.Height);
   Lena1_intf := TLazIntfImage.Create(0, 0);
   Lena1_intf.LoadFromBitmap(Lena1.Handle, Lena1.MaskHandle);
   Lena2_intf := TLazIntfImage.Create(0, 0);
   Lena2_intf.LoadFromBitmap(Lena2.Handle, Lena2.MaskHandle);
-
+  // Der Eigentliche Test Pixel für Pixel
   For i := 0 To Lena1.Width - 1 Do
     For j := 0 To Lena1.Height - 1 Do Begin
       AssertTrue('Eror, pixel data invalid', FPColorToColor(Lena1_intf.Colors[i, j]) = FPColorToColor(Lena2_intf.Colors[i, j]))
     End;
+  Lena1_intf.Free;
+  Lena2_intf.Free;
 End;
 
 Procedure TTestCase1.SetUp;
@@ -137,13 +162,11 @@ End;
 
 Procedure TTestCase1.TearDown;
 Begin
-  Lena1_intf.Free;
-  Lena2_intf.Free;
   Lena1.Free;
   Lena2.Free;
 End;
 
-Procedure TTestCase1.TeadUpDown_Valid;
+Procedure TTestCase1.TearUpDown_Valid;
 Begin
   // Nichts, testet nur ob Setup und Teardown alles richtig machen.
   CheckLenaEqual();
