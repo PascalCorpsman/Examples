@@ -15,6 +15,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 
 | Example | Description |
 | --- | --- |
+| 0_Clear_Engine | Basic Example that shows the minimum needed to create a OpenGL application |
 | Animation_Editor | Editor to create and edit .ani files |
 | Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
 | umapviewer.pas | LCL-Component to make google mapviewer in OpenGL possible |
