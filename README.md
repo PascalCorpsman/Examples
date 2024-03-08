@@ -83,6 +83,7 @@ Collection of classes and examples corresponding to graphic / image processing
 
 | Example | Description |
 | --- | --- |
+| AVI Creator | Demo for ugwavi.pas |
 | CirclePackChart | Demo application for ucirclepackchart.pas |
 | ColorDialog | Demo application for ucolordialog.pas |
 | Graphics | unit tests for ugraphics.pas |
