@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uopengl_animation.pas                                           15.09.2021 *)
 (*                                                                            *)
-(* Version     : 0.12                                                         *)
+(* Version     : 0.13                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -37,6 +37,7 @@
 (*               0.10 - FIX: changing only sprite name was not stored         *)
 (*               0.11 - RemoveUnusedSubImagex                                 *)
 (*               0.12 - FIX: GetFirstBitmap was not correct scaled            *)
+(*               0.13 - Speedup loading by using TMemorystream ?              *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -843,22 +844,24 @@ End;
 
 Function TOpenGL_Animation.SaveToFile(Const Filename: String): Boolean;
 Var
-  fs: TFileStream;
+  fs: TMemoryStream;
 Begin
   result := false;
-  fs := TFileStream.Create(Filename, fmCreate Or fmOpenWrite);
+  fs := TMemoryStream.Create();
   result := SaveToStream(fs);
+  fs.SaveToFile(Filename);
   fs.free;
 End;
 
 Function TOpenGL_Animation.LoadFromFile(Const Filename: String;
   InitOpenGLData: Boolean): Boolean;
 Var
-  fs: TFileStream;
+  fs: TMemoryStream;
   i: Integer;
 Begin
   result := false;
-  fs := TFileStream.Create(Filename, fmOpenRead);
+  fs := TMemoryStream.Create();
+  fs.LoadFromFile(Filename);
   result := LoadFromStream(fs);
   fName := Filename;
   // Alles Geladen, nun initialisieren wir den OpenGL Teil direkt mal mit
