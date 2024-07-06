@@ -68,7 +68,7 @@ Type
     Procedure Exit2d(); //< Aus Kompatibilitätsgründen werden nicht oder nur Teilweise unterstützt
   public
 
-    Constructor Create();
+    Constructor Create(); override;
     Destructor Destroy; override;
 
     Procedure Init_Create_Font_by_Bitmaps();

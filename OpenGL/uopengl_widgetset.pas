@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uOpenGL_WidgetSet.pas                                           ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.07                                                         *)
+(* Version     : 0.08                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -33,6 +33,7 @@
 (*               0.05 = Erlauben OnClick für TOpenGl_Image                    *)
 (*               0.06 = Umbau auf ueventer.pas                                *)
 (*               0.07 = Umstellen auf smClamp => deutlich bessere Graphiken   *)
+(*               0.08 = Support für OpenGLASCIIFont                           *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -57,6 +58,7 @@ Uses
   LCLType,
   lclintf,
   uopengl_graphikengine,
+  uopengl_font_common,
   ueventer;
 
 Type
@@ -84,7 +86,7 @@ Type
     Function FGetFontSize: single;
     Procedure FSetFontSize(value: Single);
   protected
-    FFont: TOpenGL_TrueType_Font; // Das Kontrollelement bekommt noch zusätzlich eine OpenGLFont
+    FFont: TOpenGL_Font; // Das Kontrollelement bekommt noch zusätzlich eine OpenGLFont
     Property FontColor: TVector3 read fGetFontColor write fSetFontColor;
     Property FontSize: Single read FGetFontSize write FSetFontSize;
   public
@@ -849,7 +851,7 @@ Begin
         glvertex2f(left + 2, 4 + top + round(ffont.TextHeight('8') * (i + 0)));
         glend;
       End;
-      ffont.Color3v := FLineColors[fTopIndex + i];
+      ffont.Colorv3 := FLineColors[fTopIndex + i];
       s := FItems[i + fTopIndex];
       While (ffont.TextWidth(s) > width - 4 - ScrollbarWidth) And (s <> '') Do Begin
         delete(s, length(s), 1);
@@ -1173,7 +1175,7 @@ Begin
   While (FFont.TextWidth(tex) > Width - 6) And (tex <> '') Do Begin
     delete(tex, 1, 1);
   End;
-  FFont.Color3v := FontColor;
+  FFont.Colorv3 := FontColor;
   FFont.Textout(left + 2, top + 2, tex);
   // Dann den Cursor
   If FFocus Then Begin
@@ -1234,12 +1236,12 @@ End;
 
 Function TOpenGL_BaseFontClass.fGetFontColor: TVector3;
 Begin
-  result := FFont.Color3v;
+  result := FFont.ColorV3;
 End;
 
 Procedure TOpenGL_BaseFontClass.fSetFontColor(Value: TVector3);
 Begin
-  FFont.Color3v := value;
+  FFont.Colorv3 := value;
 End;
 
 Function TOpenGL_BaseFontClass.FGetFontSize: single;
@@ -1255,14 +1257,24 @@ End;
 Constructor TOpenGL_BaseFontClass.create(Owner: TOpenGLControl; FontFile: String
   );
 Begin
-  FFont := TOpenGL_TrueType_Font.Create();
-  ffont.LoadfromFile(FontFile);
+  If (FontFile <> '') And FileExists(FontFile) Then Begin
+    FFont := TOpenGL_TrueType_Font.Create();
+    TOpenGL_TrueType_Font(ffont).LoadfromFile(FontFile);
+  End
+  Else Begin
+    If Not assigned(OpenGL_ASCII_Font) Then Begin
+      Create_ASCII_Font;
+    End;
+    FFont := OpenGL_ASCII_Font;
+  End;
   Inherited create(Owner);
 End;
 
 Destructor TOpenGL_BaseFontClass.destroy;
 Begin
-  ffont.free;
+  If OpenGL_ASCII_Font <> FFont Then Begin
+    ffont.free;
+  End;
   Inherited destroy;
 End;
 
