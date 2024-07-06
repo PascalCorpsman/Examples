@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uOpenGL_WidgetSet.pas                                           ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.08                                                         *)
+(* Version     : 0.09                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -34,6 +34,7 @@
 (*               0.06 = Umbau auf ueventer.pas                                *)
 (*               0.07 = Umstellen auf smClamp => deutlich bessere Graphiken   *)
 (*               0.08 = Support für OpenGLASCIIFont                           *)
+(*               0.09 = TOpenGL_Radiobutton                                   *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -282,6 +283,29 @@ Type
     Constructor Create(Owner: TOpenGLControl; FontFile: String); override;
   End;
 
+  { TOpenGL_Radiobutton }
+
+  TOpenGL_Radiobutton = Class(TOpenGL_BaseFontClass)
+  private
+    fChecked: Boolean;
+    Procedure setChecked(AValue: Boolean);
+    Procedure UncheckOthers(Sender: TObject);
+  protected
+    Procedure OnRender(); override;
+    Procedure Click; override;
+  public
+    Caption: String;
+
+    CircleColor: TVector3; // Die Farbe des "Selectiert" Bobbels
+    CircleBackColor: TVector3; // Die Hintergrundfarbe, des "Selectiert" Bobbels
+
+    GroupIndex: Integer; // Will man mehrere Groupboxen haben die auch mehrere Selektierungen zulassen benötigt man Gruppierungen!
+
+    Property Checked: Boolean read fChecked write setChecked;
+
+    Constructor Create(Owner: TOpenGLControl; FontFile: String); override;
+  End;
+
 Procedure WidgetSetGo2d(Width_2D, Height_2d: Integer);
 Procedure WidgetSetExit2d();
 Function ColorToVector(Color: TColor): TVector3;
@@ -289,7 +313,8 @@ Function ColorToVector(Color: TColor): TVector3;
 Implementation
 
 Var
-  _2DWidth, _2DHeight: integer;
+  _2DWidth: integer = 0;
+  _2DHeight: integer = 0;
 
 Procedure WidgetSetGo2d(Width_2D, Height_2d: Integer);
 Begin
@@ -1230,6 +1255,85 @@ Begin
       End;
     End;
   End;
+End;
+
+{ TOpenGL_Radiobutton }
+
+Procedure TOpenGL_Radiobutton.setChecked(AValue: Boolean);
+Begin
+  If fChecked = AValue Then Exit;
+  fChecked := AValue;
+  // Wenn Wir den "Checked" Bobbel bekommen haben, dann müssen alle in unserer Gruppe diesen Verlieren
+  If fChecked Then Begin
+    IterateAllEventClasses(@UncheckOthers);
+  End;
+End;
+
+Procedure TOpenGL_Radiobutton.UncheckOthers(Sender: TObject);
+Begin
+  If Sender = self Then exit; // Sonst würden wir uns ja gleich selber wieder "löschen"
+  If Not (sender Is TOpenGL_Radiobutton) Then exit;
+  // Nur die aus der Gleichen Gruppe werden Platt gemacht ;)
+  If TOpenGL_Radiobutton(sender).GroupIndex = GroupIndex Then Begin
+    TOpenGL_Radiobutton(sender).Checked := false;
+  End;
+End;
+
+Procedure TOpenGL_Radiobutton.OnRender;
+  Procedure RenderCircle(x, y, r: integer);
+  Var
+    s, c: single;
+    i: Integer;
+  Begin
+    glPushMatrix();
+    glTranslatef(x, y, 0);
+    glScalef(r, r, 0);
+    glbegin(GL_TRIANGLE_FAN);
+    glVertex2f(0, 0);
+    For i := 0 To 36 Do Begin
+      SinCos(2 * pi * i / 36, s, c);
+      glVertex2f(c, s);
+    End;
+    glend;
+    glPopMatrix();
+  End;
+
+Var
+  tex: String;
+  ch: Single;
+Begin
+  glBindTexture(GL_TEXTURE_2D, 0);
+  ch := FFont.TextHeight('A');
+  // Zuerst den "Punkt" sammt Hintergrund
+  glcolor3f(CircleBackColor.x, CircleBackColor.y, CircleBackColor.z);
+  RenderCircle(left + round(ch / 2), top + round(ch / 2), round(ch / 2) - 1);
+  If fChecked Then Begin
+    glcolor3f(CircleColor.x, CircleColor.y, CircleColor.z);
+    RenderCircle(left + round(ch / 2), top + round(ch / 2), round(ch / 3) - 1);
+  End;
+  // Dann den Text
+  tex := caption;
+  While (FFont.TextWidth(tex) > Width - 6 - ch) And (tex <> '') Do Begin
+    delete(tex, 1, 1);
+  End;
+  FFont.Colorv3 := FontColor;
+  FFont.Textout(left + 2 + round(ch), top + 2, tex);
+End;
+
+Procedure TOpenGL_Radiobutton.Click;
+Begin
+  Inherited Click;
+  SetChecked(true);
+End;
+
+Constructor TOpenGL_Radiobutton.Create(Owner: TOpenGLControl; FontFile: String);
+Begin
+  Inherited Create(Owner, FontFile);
+  Caption := self.ClassName;
+  fChecked := false;
+  CircleColor := v3(0, 0, 0);
+  CircleBackColor := v3(1, 1, 1);
+  GroupIndex := 0;
 End;
 
 { TOpenGL_BaseFontClass }

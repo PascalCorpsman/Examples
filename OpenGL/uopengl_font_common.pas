@@ -85,6 +85,7 @@ Constructor TOpenGL_Font.Create;
 Begin
   Inherited Create();
   fColor := v3(1, 1, 1);
+  fsize := 0; // Needs to be set by child.
 End;
 
 Function TOpenGL_Font.TextWidth(Text: String): single;

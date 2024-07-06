@@ -130,8 +130,6 @@ Begin
     fCharWidths[i] := 0;
   End;
   fCharheight := 0;
-  fColor := v3(1, 1, 1);
-  fsize := 0;
   FFontGo2D := false;
 End;
 
