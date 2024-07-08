@@ -123,6 +123,10 @@ Preconditions:
 | ulibxwiimote.pas | basic header translation from c to fpc |
 | uxwiimote.pas | Lazarus wrapper for ulibxwiimote.pas |
 
+## What do i need to compile the source of the examples
+
+At least you need to have the [Lazarus IDE](https://www.lazarus-ide.org/index.php?page=downloads) installed. If the example needs more than that, see below for missing dependencies.
+
 ## Dependencies
 Some examples may have dependencies to external libraries here is the collection where to find and download this libraries (as they are not part of this repository):
 
