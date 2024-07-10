@@ -1057,6 +1057,7 @@ Begin
   glColor4f(1, 1, 1, 1);
   If fMouseDown Then Begin
     If fDownTex.Image = 0 Then Begin
+      glBindTexture(GL_TEXTURE_2D, 0);
       glcolor3f(0.8, 0, 0); // TODO: das könnte Konfigurierbar sein ..
       glbegin(GL_LINE_LOOP);
       glVertex2f(left, top + Height);
@@ -1072,6 +1073,7 @@ Begin
   Else Begin
     If FMouseHover Then Begin
       If fHoverTex.Image = 0 Then Begin
+        glBindTexture(GL_TEXTURE_2D, 0);
         glcolor3f(0.8, 0.8, 0.0); // TODO: das könnte Konfigurierbar sein ..
         glbegin(GL_LINE_LOOP);
         glVertex2f(left, top + Height);
@@ -1086,6 +1088,7 @@ Begin
     End
     Else Begin
       If FNormalTex.Image = 0 Then Begin
+        glBindTexture(GL_TEXTURE_2D, 0);
         glcolor3f(0.8, 0.8, 0.8); // TODO: das könnte Konfigurierbar sein ..
         glbegin(GL_LINE_LOOP);
         glVertex2f(left, top + Height);
