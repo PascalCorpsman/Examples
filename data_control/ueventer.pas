@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Eventer                                                         09.05.2019 *)
 (*                                                                            *)
-(* Version     : 0.02                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - IterateAllEventClasses                                *)
+(*               0.03 - improve .click detection                              *)
 (*                                                                            *)
 (* Known Bugs  : none                                                         *)
 (*                                                                            *)
@@ -89,6 +90,7 @@ Type
     fOnMouseDown: TMouseEvent;
     fOnKeyPress: TKeyPressEvent;
   protected
+    fOwner: TOwnerClass;
     FFocus: Boolean; // Hat das Kontrollelement gerade den Focus ( Achtung wird nur mittels MouseDown bestimmt, ist also nur bedingt zuverlässig )
     FMouseDown: Boolean; // Wurde die Maus gedrückt ( auf dem Kontollelement )
     FMouseHover: Boolean; // Befindet sich die Maus gerade über dem Kontrollelement
@@ -371,7 +373,7 @@ Var
 Begin
   ox := x;
   oy := y;
-  If ssleft In shift Then fskipMouseUp := true;
+  // If ssleft In shift Then fskipMouseUp := true; -- Deactivated, makes click event much more intuitive
   If Assigned(TransformRoutine) Then Begin
     p := TransformRoutine(x, y);
     x := p.x;
@@ -498,6 +500,7 @@ End;
 Constructor TEventerClass.Create(Owner: TOwnerClass);
 Begin
   Inherited create;
+  fOwner := Owner;
   fVisible := true;
   fEnabled := true;
   EventerHandler.RegisterEventer(owner, self);

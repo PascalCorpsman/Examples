@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uGraphiks.pas                                                   ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.11                                                         *)
+(* Version     : 0.13                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -40,6 +40,7 @@
 (*               0.11 - FIX: revert 90* Rotations to matrix multiplications   *)
 (*               0.12 - add wmFuchsia                                         *)
 (*                      FIX: glitch on rotating images                        *)
+(*               0.13 - RGBAToFPColor, FPColorToRGBA                          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -100,6 +101,7 @@ Type
   // Farb Konvertierungen
 Function Color565ToRGB(value: Word): TRGB; // Wandelt eine 2Byte Farbe in eine 3 Byte RGB Farbe um
 Function RGB(r, g, b: Byte): TRGB;
+Function RGBA(R, G, B, A: Byte): TRGBA;
 Function ColorToRGB(c: TColor): TRGB;
 Function ColorToRGBA(c: TColor; AlphaValue: byte = 0): TRGBA;
 Function RGBToColor(rgb: TRGB): TColor;
@@ -107,6 +109,8 @@ Function FPColorToColor(Const Color: TFPColor): TColor; // Wandelt eine FPColor 
 Function ColorToFPColor(Const Color: TColor): TFPColor; // Wandelt eine TColor in eine FPColor um
 Function FPColorToV4(Const Color: TFPColor): TVector4; // Wandelt eine FPColor in TVector4 um
 Function V4ToFPColor(Const V: TVector4): TFPColor; // Wandelt eine TVector4 in eine FPColor um
+Function RGBAToFPColor(Const Color: TRGBA): TFPColor;
+Function FPColorToRGBA(Const Color: TFPColor): TRGBA;
 
 Function FPColorToHSL(Const Color: TFPColor): THSL;
 Function HSLToFPColor(Const hsl: THSL): TFPColor;
@@ -226,6 +230,8 @@ Procedure RenderArrow(Const Canvas: TCanvas; StartPoint: TPoint; EndPoint: TPoin
 Function StringToInterpolationMode(Value: String): TInterpolationMode;
 Function InterpolationModeToString(Value: TInterpolationMode): String;
 
+Operator = (a, b: TRGBA): Boolean;
+
 Implementation
 
 Uses sysutils, ufifo; // Exception
@@ -256,6 +262,15 @@ Begin
   End;
 End;
 
+Operator = (a, b: TRGBA): Boolean;
+Begin
+  result :=
+    (a.r = b.r) And
+    (a.g = b.g) And
+    (a.b = b.b) And
+    (a.a = b.a);
+End;
+
 Function Color565ToRGB(value: Word): TRGB;
 Begin
   result.r := clamp(round(((value Shr 11) And $1F) * 255 / $1F), 0, 255);
@@ -268,6 +283,14 @@ Begin
   result.r := r;
   result.g := g;
   result.b := b;
+End;
+
+Function RGBA(R, G, B, A: Byte): TRGBA;
+Begin
+  result.r := r;
+  result.g := g;
+  result.b := b;
+  result.a := a;
 End;
 
 Function ColorToRGB(c: TColor): TRGB;
@@ -320,6 +343,22 @@ Begin
   result.Green := clamp(round(v.y * 255), 0, 255) Shl 8;
   result.Blue := clamp(round(v.z * 255), 0, 255) Shl 8;
   result.Alpha := clamp(round(v.w * 255), 0, 255) Shl 8;
+End;
+
+Function RGBAToFPColor(Const Color: TRGBA): TFPColor;
+Begin
+  result.Red := Color.r Shl 8;
+  result.Green := Color.g Shl 8;
+  result.Blue := Color.b Shl 8;
+  result.Alpha := Color.a Shl 8;
+End;
+
+Function FPColorToRGBA(Const Color: TFPColor): TRGBA;
+Begin
+  result.r := Color.Red Shr 8;
+  result.g := Color.Green Shr 8;
+  result.b := Color.Blue Shr 8;
+  result.a := Color.Alpha Shr 8;
 End;
 
 // Quelle: https://www.pocketmagic.net/enhance-saturation-in-images-programatically/
