@@ -15,9 +15,9 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 
 | Example | Description |
 | --- | --- |
-| 0_Clear_Engine | Basic Example that shows the minimum needed to create a OpenGL application |
-| Animation_Editor | Editor to create and edit .ani files |
-| Mapviewer | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
+| [Clear_Engine](OpenGL/0_Clear_Engine) | Basic Example that shows the minimum needed to create a OpenGL application |
+| [Animation_Editor](OpenGL/Animation_Editor) | Editor to create and edit .ani files |
+| [Mapviewer](OpenGL/Mapviewer) | Include Google maps into your own application using OpenGL as render engine. Chaches maptiles on local drive for offline use. |
 | umapviewer.pas | LCL-Component to make google mapviewer in OpenGL possible |
 | uopengl_animation.pas | Class to load and render .ani files (see Animation_Editor) |
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
@@ -34,11 +34,11 @@ Collection of classes and examples that are mainly related to Serial and Network
 
 | Example | Description |
 | --- | --- |
-| MQTT_Broker | Shows a implementation of uMQTTbroker.pas (only publish / subscibe no evaluations) |
-| MQTT_Publisher | Demo that can send MQTT Publish messages to a given IP-Address (no security login) |
-| Modbus_Client | Application to emulate a MODBUS-Slave device |
-| Modbus_Diagnostic | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
-| Socket | Demo application that shows how to establish a TCP-IP connection with L-Net |
+| [MQTT_Broker](TCP_IP/MQTT_Broker) | Shows a implementation of uMQTTbroker.pas (only publish / subscibe no evaluations) |
+| [MQTT_Publisher](TCP_IP/MQTT_Publisher) | Demo that can send MQTT Publish messages to a given IP-Address (no security login) |
+| [Modbus_Client](TCP_IP/Modbus_Client) | Application to emulate a MODBUS-Slave device |
+| [Modbus_Diagnostic](TCP_IP/Modbus_Diagnostic) | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
+| [Socket](TCP_IP/Socket) | Demo application that shows how to establish a TCP-IP connection with L-Net |
 | uMQTTbroker.pas | a simpliest MQTT broker, only capable of receiving publishing clients (need L-Net) |
 | uchunkmanager.pas | Server / Client component to send packages of data through a TCP-IP connection (need L-Net) |
 | uhtml.pas | HTML-DOM parser |
@@ -52,10 +52,10 @@ Collection of classes and examples corresponding to data processing, math and co
 
 | Example | Description |
 | --- | --- |
-| JSON_Analyzer | demo application for uJSON.pas |
-| LZW | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
-| QuadTree | demo application for uquadtree.pas |
-| Vectormath | unit tests for uvectormath.pas |
+| [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
+| [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
+| [QuadTree](data_control/QuadTree) | demo application for uquadtree.pas |
+| [Vectormath](data_control/Vectormath) | unit tests for uvectormath.pas |
 | uJSON.pas | JSON-Loader / writer class |
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
@@ -84,13 +84,13 @@ Collection of classes and examples corresponding to graphic / image processing
 
 | Example | Description |
 | --- | --- |
-| AVI Creator | Demo for ugwavi.pas |
-| CirclePackChart | Demo application for ucirclepackchart.pas |
-| ColorDialog | Demo application for ucolordialog.pas |
-| Graphics | unit tests for ugraphics.pas |
-| SimpleChart | Demo application for usimplechart.pas |
-| SunburstChart | Demo application for usunburstchart.pas |
-| Yeargrid | Demo application for uyeargrid.pas |
+| [AVI Creator](graphics/AVI_Creator) | Demo for ugwavi.pas |
+| [CirclePackChart](graphics/CirclePackChart) | Demo application for ucirclepackchart.pas |
+| [ColorDialog](graphics/ColorDialog) | Demo application for ucolordialog.pas |
+| [Graphics](graphics/Graphics) | unit tests for ugraphics.pas |
+| [SimpleChart](graphics/SimpleChart) | Demo application for usimplechart.pas |
+| [SunburstChart](graphics/SunburstChart) | Demo application for usunburstchart.pas |
+| [Yeargrid](graphics/Yeargrid) | Demo application for uyeargrid.pas |
 | ubmp_graphikengine.pas | Class to organise multiple graphiks within a application  |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | ucolordialog.pas | A alternate TColordialog variant (oriented on KDE Colour Picker) |
@@ -119,7 +119,7 @@ Preconditions:
 
 | Example | Description |
 | --- | --- |
-| WiiMote | Demo application for uxwiimote.pas |
+| [WiiMote](Wii/WiiMote) | Demo application for uxwiimote.pas |
 | ulibxwiimote.pas | basic header translation from c to fpc |
 | uxwiimote.pas | Lazarus wrapper for ulibxwiimote.pas |
 
