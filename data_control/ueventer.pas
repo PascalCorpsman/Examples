@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Eventer                                                         09.05.2019 *)
 (*                                                                            *)
-(* Version     : 0.03                                                         *)
+(* Version     : 0.04                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,7 @@
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - IterateAllEventClasses                                *)
 (*               0.03 - improve .click detection                              *)
+(*               0.04 - MouseEnter / MouseLeave                               *)
 (*                                                                            *)
 (* Known Bugs  : none                                                         *)
 (*                                                                            *)
@@ -85,9 +86,11 @@ Type
     fEnabled: Boolean; // Visible, alle Auswertungen werden aber Blockiert.
     fOnClick: TNotifyEvent;
     FOnDblClick: TNotifyEvent;
+    fOnMouseEnter: TNotifyEvent;
     fOnMouseMove: TMouseMoveEvent;
     fOnMouseUp: TMouseEvent;
     fOnMouseDown: TMouseEvent;
+    fOnMouseLeave: TNotifyEvent;
     fOnKeyPress: TKeyPressEvent;
   protected
     fOwner: TOwnerClass;
@@ -114,9 +117,11 @@ Type
     Procedure TripleClick; virtual;
     Procedure QuadClick; virtual;
 
+    Procedure MouseEnter(Sender: TObject); virtual;
     Procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     Procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     Procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
+    Procedure MouseLeave(Sender: TObject); virtual;
 
     Procedure KeyDown(Sender: TObject; Var Key: Word; Shift: TShiftState); virtual;
     Procedure KeyPress(Sender: TObject; Var Key: char); virtual;
@@ -134,9 +139,11 @@ Type
     Property OnClick: TNotifyEvent read fOnClick write Fonclick;
     Property OnDblClick: TNotifyEvent read fOnDblClick write FOnDblClick;
 
+    Property OnMouseEnter: TNotifyEvent read fOnMouseEnter write fOnMouseEnter;
     Property OnMouseDown: TMouseEvent read fOnMouseDown write fOnMouseDown;
     Property OnMouseMove: TMouseMoveEvent read fOnMouseMove write fOnMouseMove;
     Property OnMouseUp: TMouseEvent read fOnMouseUp write fOnMouseUp;
+    Property OnMouseLeave: TNotifyEvent read fOnMouseLeave write fOnMouseLeave;
 
     Property OnKeyPress: TKeyPressEvent read fOnKeyPress write FOnKeyPress;
 
@@ -280,9 +287,11 @@ Procedure TEventerHandler.OnMouseUp(Sender: TObject; Button: TMouseButton;
 Var
   ox, oy, i: Integer;
   p: Tpoint;
+  handled: Boolean;
 Begin
   ox := x;
   oy := y;
+  handled := false;
   If Assigned(TransformRoutine) Then Begin
     p := TransformRoutine(x, y);
     x := p.x;
@@ -294,6 +303,7 @@ Begin
   For i := 0 To high(fEventer) Do Begin
     If i > high(fEventer) Then break; // Da im Event das Eventer element auch freigegeben werden darf, braucht es dieses if
     If PointInRect(point(x, y), fEventer[i].ClientRect) And fEventer[i].fVisible And fEventer[i].fEnabled Then Begin
+      handled := true;
       If fMouseDownEventer = fEventer[i] Then fMouseDownEventer := Nil;
       fEventer[i].MouseUp(button, shift, x - fEventer[i].Left, y - fEventer[i].Top);
       If i > high(fEventer) Then break; // Da im Event das Eventer element auch freigegeben werden darf, braucht es dieses if
@@ -307,8 +317,10 @@ Begin
       break; // Der Event wurde behandelt, also raus .. (aber kein Exit, damit das evtl MouseUp des DownEventer noch gesetzt werden kann !)
     End;
   End;
-  If assigned(fMouseDownEventer) And fMouseDownEventer.Visible And fMouseDownEventer.Enabled Then fMouseDownEventer.MouseUp(button, shift, x - fMouseDownEventer.Left, y - fMouseDownEventer.Top);
-  If assigned(fOnMouseUpCapture) Then Begin
+  If assigned(fMouseDownEventer) And fMouseDownEventer.Visible And fMouseDownEventer.Enabled Then Begin
+    fMouseDownEventer.MouseUp(button, shift, x - fMouseDownEventer.Left, y - fMouseDownEventer.Top);
+  End;
+  If assigned(fOnMouseUpCapture) And (Not handled) Then Begin
     fOnMouseUpCapture(sender, button, shift, ox, oy);
   End;
 End;
@@ -383,12 +395,14 @@ Begin
   capfound := false;
   For i := 0 To high(fEventer) Do Begin
     If PointInRect(point(x, y), fEventer[i].ClientRect) And fEventer[i].Visible And fEventer[i].fEnabled Then Begin
+      If Not fEventer[i].FMouseHover Then fEventer[i].MouseEnter(fEventer[i]);
       fEventer[i].FMouseHover := true;
       fEventer[i].MouseMove(Shift, x - fEventer[i].Left, y - fEventer[i].Top);
       found := true;
       If fEventer[i] = fMouseDownEventer Then capfound := true;
     End
     Else Begin
+      If fEventer[i].FMouseHover Then fEventer[i].MouseLeave(fEventer[i]);
       fEventer[i].FMouseHover := false;
     End;
   End;
@@ -505,9 +519,11 @@ Begin
   fEnabled := true;
   EventerHandler.RegisterEventer(owner, self);
   fMouseDown := false;
+  fOnMouseEnter := Nil;
   fOnMouseUp := Nil;
   fOnMouseMove := Nil;
   fOnMouseDown := Nil;
+  fOnMouseLeave := Nil;
   fOnClick := Nil;
   FOnDblClick := Nil;
   fOnKeyPress := Nil;
@@ -598,6 +614,13 @@ Begin
   // TODO: Wie Click implementieren
 End;
 
+Procedure TEventerClass.MouseEnter(Sender: TObject);
+Begin
+  If assigned(fOnMouseEnter) Then Begin
+    fOnMouseEnter(self);
+  End;
+End;
+
 Procedure TEventerClass.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
   Y: Integer);
 Begin
@@ -618,6 +641,13 @@ Procedure TEventerClass.MouseUp(Button: TMouseButton; Shift: TShiftState; X,
 Begin
   If assigned(fOnMouseUp) Then Begin
     fOnMouseUp(self, Button, shift, x, y);
+  End;
+End;
+
+Procedure TEventerClass.MouseLeave(Sender: TObject);
+Begin
+  If assigned(fOnMouseLeave) Then Begin
+    fOnMouseLeave(self);
   End;
 End;
 
