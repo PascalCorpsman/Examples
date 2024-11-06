@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uuart.pas                                                       01.02.2021 *)
 (*                                                                            *)
-(* Version     : 0.02                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,7 @@
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - do not kill uart connection on a error                *)
+(*               0.03 - Add: "Purge"                                          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -101,6 +102,7 @@ Type
 
     FOnReceive: TOnReceive;
     fNeedDisconnect: Boolean;
+    fNeedPurge: Boolean;
 
     fCom: TBlockSerial; // Handle auf die COM-Schnittstelle
 
@@ -133,6 +135,8 @@ Type
 
     Function Connect(aPort: String; aBaudrate, aBits: Integer; aParity: Char; aStop: Integer; asoftflow, ahardflow: boolean): Boolean;
     Procedure Disconnect();
+
+    Procedure Purge;
 
     Function SendBytes(Value: TBytes): Boolean;
     Function SendString(Value: String): Boolean;
@@ -256,6 +260,7 @@ Begin
   freceived := TBytesFifo.create;
   fSend := TBytesFifo.create;
   fNeedDisconnect := false;
+  fNeedPurge := false;
 End;
 
 Procedure TUart.Shutdown();
@@ -362,6 +367,11 @@ Begin
   fNeedDisconnect := true;
 End;
 
+Procedure TUart.Purge();
+Begin
+  fNeedPurge := true;
+End;
+
 Function TUart.SendBytes(Value: TBytes): Boolean;
 Begin
   result := IsConnected;
@@ -407,6 +417,10 @@ Begin
   Init();
   fIsRunning := true;
   While Not Terminated Do Begin
+    If fNeedPurge And assigned(fCom) Then Begin
+      fCom.Purge;
+      fNeedPurge := false;
+    End;
     If fNeedDisconnect And assigned(fCom) Then Begin
       fNeedDisconnect := false;
       CheckComState(true);
