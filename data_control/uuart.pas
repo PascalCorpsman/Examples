@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uuart.pas                                                       01.02.2021 *)
 (*                                                                            *)
-(* Version     : 0.03                                                         *)
+(* Version     : 0.04                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -25,6 +25,7 @@
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - do not kill uart connection on a error                *)
 (*               0.03 - Add: "Purge"                                          *)
+(*               0.04 - FIX crash when disconnect before connect              *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -417,13 +418,17 @@ Begin
   Init();
   fIsRunning := true;
   While Not Terminated Do Begin
-    If fNeedPurge And assigned(fCom) Then Begin
-      fCom.Purge;
+    If fNeedPurge Then Begin
       fNeedPurge := false;
+      If assigned(fCom) Then Begin
+        fCom.Purge;
+      End;
     End;
-    If fNeedDisconnect And assigned(fCom) Then Begin
+    If fNeedDisconnect Then Begin
       fNeedDisconnect := false;
-      CheckComState(true);
+      If assigned(fCom) Then Begin
+        CheckComState(true);
+      End;
     End;
     If assigned(fCom) Then Begin
       While Not fSend.isempty Do Begin
