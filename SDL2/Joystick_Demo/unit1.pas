@@ -7,7 +7,7 @@
 (*                                                                            *)
 (* Support     : www.Corpsman.de                                              *)
 (*                                                                            *)
-(* Description : <Module_description>                                         *)
+(* Description : Demo to show using of usdl_joystick.pas                      *)
 (*                                                                            *)
 (* License     : See the file license.md, located under:                      *)
 (*  https://github.com/PascalCorpsman/Software_Licenses/blob/main/license.md  *)
