@@ -29,6 +29,13 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | uopengl_truetype_font.pas | Class to render truetype fonts to OpenGL windows |
 | uopengl_widgetset.pas | TButton, TScrollbar, TListbox.. for a OpenGL Renderingcontext |
 
+## SDL2
+Collection of classes and examples corresponding to the usement of SDL2
+| Example | Description |
+| --- | --- |
+| [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas |
+| usdl_joystick.pas | class to easy access to joysticks |
+
 ## TCP_IP
 Collection of classes and examples that are mainly related to Serial and Network communications
 
@@ -99,13 +106,6 @@ Collection of classes and examples corresponding to graphic / image processing
 | usimplechart.pas | a Tchart like component to create images with containing pointseries (especially designed to be part of a console application) |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 | uyeargrid.pas | LCL-Component to display a year on the formular |
-
-## SDL2
-Collection of classes and examples corresponding to the usement of SDL2
-| Example | Description |
-| --- | --- |
-| [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas |
-| usdl_joystick.pas | class to easy access to joysticks |
 
 ## sound
 Collection of classes and examples corresponding to sound / music processing
