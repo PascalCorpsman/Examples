@@ -100,6 +100,13 @@ Collection of classes and examples corresponding to graphic / image processing
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 | uyeargrid.pas | LCL-Component to display a year on the formular |
 
+## SDL2
+Collection of classes and examples corresponding to the usement of SDL2
+| Example | Description |
+| --- | --- |
+| [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas |
+| usdl_joystick.pas | class to easy access to joysticks |
+
 ## sound
 Collection of classes and examples corresponding to sound / music processing
 | Example | Description |
@@ -136,6 +143,7 @@ Some examples may have dependencies to external libraries here is the collection
 | DGLOpenGL | OpenGL header translation | https://github.com/saschawillems/dglopengl |
 | Lnet | Lightweight Networking library | https://github.com/almindor/lnet |
 | MP-Arith | Math library for big numbers | https://web.archive.org/web/20190628091417/http://www.wolfgang-ehrhardt.de/index.html |
+| SDL2 | Lib to access to pc hardware| https://github.com/PascalCorpsman/SDL2-for-Pascal |
 | Synapse | Synapse TCP/IP and serial library | http://www.ararat.cz/synapse/doku.php/download |
 
 ## License
