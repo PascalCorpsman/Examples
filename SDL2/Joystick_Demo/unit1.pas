@@ -102,7 +102,7 @@ Var
   ver: TSDL_Version;
   i: Integer;
 Begin
-{$IFDEF SDL_DYNAMIC_LINKING}
+{$IFDEF SDL_RUNTIME_LOADING}
   If Not SDL_LoadLib('') Then Begin
     ShowMessage('Error, unable to load sdl lib');
     halt;
