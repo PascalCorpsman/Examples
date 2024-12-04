@@ -160,8 +160,6 @@ Function TSynapesDownloader.DownloadFile(URL: String; Filename: String
 Var
   f: TFileStream;
   s, dir: String;
-  //  http: THTTPSend;
-  //  dir: String;
 Begin
   result := false;
   If assigned(fInstance) Then fInstance.free;
