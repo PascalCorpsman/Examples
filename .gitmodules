@@ -1,0 +1,6 @@
+[submodule "use/dglOpenGL"]
+	path = use/dglOpenGL
+	url = https://github.com/SaschaWillems/dglOpenGL.git
+[submodule "use/SDL2-for-Pascal"]
+	path = use/SDL2-for-Pascal
+	url = git@github.com:PascalGameDevelopment/SDL2-for-Pascal.git
