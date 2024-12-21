@@ -58,8 +58,8 @@ function priv_lazbuild
         if (lazbuild --no-write-project --recursive --no-write-project --widgetset=qt5 --build-mode=release "${REPLY}" > "${VAR[out]}"); then
             printf '\x1b[32m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
         else
+            cat "${VAR[out]}"
             printf '\x1b[31m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
-            grep --color='always' --before-context=10 'Error: (lazbuild) failed compiling of project' "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
     done < <(find 'src' -type 'f' -name '*.lpi' | grep -vE '(backup|Joystick_Demo|MQTT)' | sort)
