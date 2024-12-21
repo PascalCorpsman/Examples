@@ -24,7 +24,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+            <OtherUnitFiles Value="..;..\..\data_control"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -65,7 +65,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+            <OtherUnitFiles Value="..;..\..\data_control"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -119,11 +119,11 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="..\..\DatenSteuerung\uvectormath.pas"/>
+        <Filename Value="uvectormath.inc"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="uvectormath.inc"/>
+        <Filename Value="..\..\data_control\uvectormath.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
@@ -136,7 +136,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+      <OtherUnitFiles Value="..;..\..\data_control"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

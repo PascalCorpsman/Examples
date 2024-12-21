@@ -17,7 +17,7 @@ function priv_lazbuild
             debian | ubuntu)
                 printf '\x1b[32mInstall Lazarus.\x1b[0m\n' 1>&2
                 sudo apt-get update
-                sudo apt-get install -y lazarus{-ide-qt5,}
+                sudo apt-get install -y lazarus{-ide-qt5,} libxwiimote-dev
                 ;;
         esac
     fi

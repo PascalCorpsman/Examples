@@ -24,7 +24,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+            <OtherUnitFiles Value="..;..\..\data_control"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -65,7 +65,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+            <OtherUnitFiles Value="..;..\..\data_control"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -127,7 +127,7 @@
         <UnitName Value="Unit2"/>
       </Unit>
       <Unit>
-        <Filename Value="..\..\DatenSteuerung\ufifo.pas"/>
+        <Filename Value="..\..\data_control\ufifo.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
@@ -140,7 +140,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..;..\..\DatenSteuerung"/>
+      <OtherUnitFiles Value="..;..\..\data_control"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
