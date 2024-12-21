@@ -22,7 +22,7 @@ Uses
 {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lazopenglcontext, Unit1, uopengl_graphikengine, umapviewer,
-  uopengl_font_common
+  uopengl_font_common, dglOpenGL
   { you can add units after this };
 
 {$R *.res}
