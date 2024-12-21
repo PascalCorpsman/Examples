@@ -27,18 +27,17 @@ function priv_lazbuild
             git submodule update --init --recursive --force --remote
         fi
         if [[ -f "${COMPONENTS}" ]]; then
-            printf '\x1b[32mDownload packages:\x1b[0m\n' 1>&2
             while read -r; do
                 if [[ -n "${REPLY}" ]] &&
                     ! (lazbuild --verbose-pkgsearch "${REPLY}") &&
                     ! (lazbuild --add-package "${REPLY}") &&
                     ! [[ -d "${COMPONENTS%%/*}/${REPLY}" ]]; then
-                        printf '\x1b[32m\tdownwoad package %s\x1b[0m\n' "${REPLY}" 1>&2
+                        printf '\x1b[32m\tdownload package %s\x1b[0m\n' "${REPLY}" 1>&2
                         declare -A VAR=(
                             [url]="https://packages.lazarus-ide.org/${REPLY}.zip"
                             [out]=$(mktemp)
                         )
-                        wget --output-document "${VAR[out]}" "${VAR[url]}" >/dev/null
+                        wget --quiet --output-document "${VAR[out]}" "${VAR[url]}" >/dev/null
                         unzip -o "${VAR[out]}" -d "${COMPONENTS%%/*}/${REPLY}"
                         rm --verbose "${VAR[out]}"
                     fi
@@ -60,7 +59,7 @@ function priv_lazbuild
             printf '\x1b[32m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
         else
             printf '\x1b[31m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
-            grep --before-context=5 "${REPLY}" "${VAR[out]}"
+            grep --before-context=10 'Error: (lazbuild) failed compiling of project' "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
     done < <(find 'src' -type 'f' -name '*.lpi' | grep -v 'backup' | sort)
