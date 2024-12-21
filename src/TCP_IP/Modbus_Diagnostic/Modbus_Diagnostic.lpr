@@ -21,7 +21,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lnetvisual, Unit1, Unit2;
+  Forms, lnetvisual, Unit1, Unit2, uuart_deprecated;
 
 {$R *.res}
 

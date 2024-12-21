@@ -43,11 +43,8 @@ function priv_lazbuild
                     fi
             done < "${COMPONENTS}"
         fi
-        while read -r; do
-            if (lazbuild --add-package-link "${REPLY}"); then
-                printf '\x1b[32m\tadd dependence %s\x1b[0m\n' "${REPLY}"
-            fi 1>&2
-        done < <(find "${COMPONENTS%%/*}" -type 'f' -name '*.lpk' | sort)
+        find "${COMPONENTS%%/*}" -type 'f' -name '*.lpk' -exec \
+            lazbuild --add-package-link {} +
     fi
     printf '\x1b[32mBuild projects:\x1b[0m\n' 1>&2
     declare -i errors=0
@@ -55,14 +52,14 @@ function priv_lazbuild
         declare -A VAR=(
             [out]=$(mktemp)
         )
-        if (lazbuild --no-write-project --recursive --no-write-project --widgetset=qt5 --build-mode=release "${REPLY}" > "${VAR[out]}"); then
+        if (lazbuild --build-all --no-write-project --recursive --no-write-project --build-mode=release "${REPLY}" > "${VAR[out]}"); then
             printf '\x1b[32m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
         else
             printf '\x1b[31m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
             grep --color='always' --before-context=10 'Error:' "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
-    done < <(find 'src' -type 'f' -name '*.lpi' | grep -vE '(backup|Joystick_Demo|TCP_IP)' | sort)
+    done < <(find 'src' -type 'f' -name '*.lpi' | grep -vE '(backup|Joystick_Demo)' | sort)
     exit "${errors}"
 )
 

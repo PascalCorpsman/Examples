@@ -21,7 +21,7 @@ Uses
   cthreads,
 {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lnetbase, lnetvisual, Unit1, Unit2
+  Forms, lnetbase, lnetvisual, Unit1, Unit2, uuart
   { you can add units after this };
 
 {$R *.res}
