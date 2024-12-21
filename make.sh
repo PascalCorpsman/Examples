@@ -59,10 +59,10 @@ function priv_lazbuild
             printf '\x1b[32m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
         else
             printf '\x1b[31m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
-            grep --before-context=10 'Error: (lazbuild) failed compiling of project' "${VAR[out]}"
+            grep --color='auto' --before-context=10 'Error: (lazbuild) failed compiling of project' "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
-    done < <(find 'src' -type 'f' -name '*.lpi' | grep -v 'backup' | sort)
+    done < <(find 'src' -type 'f' -name '*.lpi' | grep -vE '(backup|Joystick_Demo|MQTT_Broker)' | sort)
     exit "${errors}"
 )
 
