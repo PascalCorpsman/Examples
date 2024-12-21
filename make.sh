@@ -60,7 +60,7 @@ function priv_lazbuild
             printf '\x1b[32m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
         else
             printf '\x1b[31m\t[%s]\tbuild project\t%s\x1b[0m\n' "${?}" "${REPLY}"
-            cat --squeeze-blank "${VAR[out]}"
+            grep --before-context=5 "${REPLY}" "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
     done < <(find 'src' -type 'f' -name '*.lpi' | grep -v 'backup' | sort)
