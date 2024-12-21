@@ -59,7 +59,7 @@ function priv_lazbuild
             grep --color='always' --before-context=10 'Error:' "${VAR[out]}"
             ((errors+=1))
         fi 1>&2
-    done < <(find 'src' -type 'f' -name '*.lpi' | grep -vE '(backup|Joystick_Demo)' | sort)
+    done < <(find 'src' -type 'f' -name '*.lpi' | grep -v 'backup' | sort)
     exit "${errors}"
 )
 
