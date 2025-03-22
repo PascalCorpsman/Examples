@@ -61,6 +61,7 @@ Collection of classes and examples corresponding to data processing, math and co
 
 | Example | Description |
 | --- | --- |
+| [Complex](data_control/Complex) | demo for ucomplex.pas |
 | [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | [QuadTree](data_control/QuadTree) | demo application for uquadtree.pas |
@@ -69,6 +70,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
 | ucrc.pas | Generic crc calculation class |
+| ucomplex.pas | Basic component to do calculations with complex numbers |
 | udomxml.pas | generic xml parser |
 | ueventer.pas| class toc reate events for components that are not derived from LCL-Components |
 | ufifo.pas | generic first in first out class |
