@@ -4,24 +4,38 @@
 package "Examples" {
   package "OpenGL" {
    object Animation_Editor
+   object 0_Clear_Engine
    object Mapviewer
   }
+  package "SDL2" {
+   object Joystich_Demo
+  }
+  package "TCP_IP" {
+   object MQTT_Broker
+   object MQTT_Publisher
+   object Modbus_Client
+   object Modbus_Diagnostic
+   object Send_get_file
+   object Socket
+  }
+  package "Wii" {
+    object WiiMote
+  }
   package "data_control" {
+    object Complex
+    object JSON_Analyzer
     object LZW
     object QuadTree
+    object Vectormath
   }
   package "graphics" {
+   object AVI_Creator
    object CirclePackChart
    object ColorDialog
-   object PNG_Editor
+   object Graphics
    object SimpleChart
    object SunburstChart
    object Yeargrid
-  }
-  package "TCP_IP" {
-   object Modbus_Diagnostic
-   object MQTT_Broker
-   object MQTT_Publisher
   }
   package "Sound" {
    
@@ -34,15 +48,25 @@ package "External libs"
   object DGLOpenGL
   object LNet 
   object MP_Arith
+  object libSDL2
   object Synapse
 
-  Synapse <|-- Mapviewer 
-  DGLOpenGL <|-- Mapviewer 
+  DGLOpenGL <|-- 0_Clear_Engine
   DGLOpenGL <|-- Animation_Editor 
-  Synapse <|-- Modbus_Diagnostic
-  LNet <|-- Modbus_Diagnostic
-  LNet <|-- MQTT_Publisher
+  DGLOpenGL <|-- Mapviewer 
+  Synapse <|-- Mapviewer 
+
+  Joystich_Demo <|-- libSDL2
+
   LNet <|-- MQTT_Broker
+  LNet <|-- MQTT_Publisher
+  LNet <|-- Modbus_Client
+  Synapse <|-- Modbus_Client
+  LNet <|-- Modbus_Diagnostic
+  Synapse <|-- Modbus_Diagnostic
+  LNet <|-- Send_get_file
+  LNet <|-- Socket
+
 }
 
 @enduml
