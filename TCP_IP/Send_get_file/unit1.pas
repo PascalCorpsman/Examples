@@ -31,7 +31,7 @@
 (*                               unter Linux                                  *)
 (*                      Neues Feature : Detailreichere Fortschrittsanzeige    *)
 (*                                      (immer eine Nachkomma Einheit mit)    *)
-(*               0.08 - publish reenable SSL                                  *)
+(*               0.08 - publish reenable SSL - Linux Only                     *)
 (*                                                                            *)
 (*                                                                            *)
 (*                                                                            *)
@@ -44,8 +44,11 @@ Interface
 
 Uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, ComCtrls, lNetComponents, lcommon, lNet, lclintf, lHTTPUtil, lhttp,
-  lNetSSL;
+  ExtCtrls, ComCtrls, lNetComponents, lcommon, lNet, lclintf, lHTTPUtil, lhttp
+{$IFDEF Linux}
+  , lNetSSL, openssl
+{$ENDIF}
+  ;
 
 (*
  * LNet von : http://lnet.wordpress.com/download/
@@ -99,8 +102,6 @@ Type
     Label8: TLabel;
     Label9: TLabel;
     LHTTPClientComponent1: TLHTTPClientComponent;
-    LSSLSessionComponent1: TLSSLSessionComponent;
-    LSSLSessionComponent2: TLSSLSessionComponent;
     LTCPComponent1: TLTCPComponent;
     OpenDialog1: TOpenDialog;
     OpenDialog2: TOpenDialog;
@@ -108,6 +109,10 @@ Type
     RadioGroup1: TRadioGroup;
     SaveDialog1: TSaveDialog;
     Timer1: TTimer;
+{$IFDEF Linux}
+    LSSLSessionComponent1: TLSSLSessionComponent;
+    LSSLSessionComponent2: TLSSLSessionComponent;
+{$ENDIF}
     Procedure Button10Click(Sender: TObject);
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
@@ -289,6 +294,20 @@ Begin
   TransmitFile.Stream := Nil;
   TransmitFile.Filename := '';
   TransmitFile.Filesize := 0;
+{$IFDEF Windows}
+  GroupBox3.Enabled := false;
+  label17.caption := 'No ssl support for Windows systems, sorry ..';
+{$ENDIF}
+{$IFDEF Linux}
+  InitSSLInterface;
+  LSSLSessionComponent1 := TLSSLSessionComponent.create(self);
+  LSSLSessionComponent1.Method := msTLS;
+  LSSLSessionComponent2 := TLSSLSessionComponent.create(self);
+  LSSLSessionComponent2.Method := msTLS;
+  LSSLSessionComponent2.SSLActive := False;
+  LHTTPClientComponent1.Session := LSSLSessionComponent2;
+  LTCPComponent1.Session;
+{$ENDIF}
 End;
 
 Procedure TForm1.FormDropFiles(Sender: TObject; Const FileNames: Array Of String
@@ -594,10 +613,12 @@ End;
 
 Procedure TForm1.RadioGroup1Click(Sender: TObject);
 Begin
+{$IFDEF Linux}
   Case RadioGroup1.ItemIndex Of
     0: LSSLSessionComponent2.Method := msTLS;
     1: LSSLSessionComponent2.Method := msTLSv1_2;
   End;
+{$ENDIF}
 End;
 
 Procedure TForm1.Timer1Timer(Sender: TObject);
@@ -609,12 +630,14 @@ Procedure TForm1.Button1Click(Sender: TObject);
 Begin
   // receiver Connect
   Button4.OnClick(Nil);
+{$IFDEF Linux}
   If CheckBox1.Checked Then Begin
     LSSLSessionComponent2.CAFile := edit6.Text;
     LSSLSessionComponent2.KeyFile := edit7.Text;
     LSSLSessionComponent2.Password := edit8.Text;
   End;
   LSSLSessionComponent2.SSLActive := CheckBox1.Checked;
+{$ENDIF}
   If CheckBox2.Checked Then Begin
     LTCPComponent1.SocketNet := LAF_INET6;
   End
@@ -658,12 +681,14 @@ Procedure TForm1.Button3Click(Sender: TObject);
 Begin
   // Sender Connect
   Button2.OnClick(Nil);
+{$IFDEF Linux}
   If CheckBox1.Checked Then Begin
     LSSLSessionComponent2.CAFile := edit6.Text;
     LSSLSessionComponent2.KeyFile := edit7.Text;
     LSSLSessionComponent2.Password := edit8.Text;
   End;
   LSSLSessionComponent2.SSLActive := CheckBox1.Checked;
+{$ENDIF}
   If CheckBox3.Checked Then Begin
     LTCPComponent1.SocketNet := LAF_INET6;
   End
@@ -750,7 +775,9 @@ End;
 
 Procedure TForm1.CheckBox1Change(Sender: TObject);
 Begin
+{$IFDEF Linux}
   LSSLSessionComponent2.SSLActive := CheckBox1.Checked;
+{$ENDIF}
 End;
 
 Procedure TForm1.CheckBox4Change(Sender: TObject);

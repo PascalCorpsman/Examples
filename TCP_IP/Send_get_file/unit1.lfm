@@ -407,7 +407,6 @@ object Form1: TForm1
     OnCanSend = LTCPComponent1CanSend
     Timeout = 0
     ReuseAddress = True
-    Session = LSSLSessionComponent2
     Left = 416
     Top = 320
   end
@@ -432,7 +431,6 @@ object Form1: TForm1
   object LHTTPClientComponent1: TLHTTPClientComponent
     OnInput = LHTTPClientComponent1Input
     Timeout = 0
-    Session = LSSLSessionComponent1
     Left = 560
     Top = 224
   end
@@ -441,16 +439,5 @@ object Form1: TForm1
     Filter = 'All|*.*'
     Left = 568
     Top = 112
-  end
-  object LSSLSessionComponent1: TLSSLSessionComponent
-    Method = msTLS
-    Left = 736
-    Top = 224
-  end
-  object LSSLSessionComponent2: TLSSLSessionComponent
-    Method = msTLS
-    SSLActive = False
-    Left = 552
-    Top = 320
   end
 end
