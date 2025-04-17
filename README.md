@@ -124,6 +124,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | ucolordialog.pas | A alternate TColordialog variant (oriented on KDE Colour Picker) |
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ugwavi.pas | Class to create .avi files out of images and waves |
+| ulineedit.pas | Class to edit a segmented transfer function |
 | usimplechart.pas | a Tchart like component to create images with containing pointseries (especially designed to be part of a console application) |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 | uyeargrid.pas | LCL-Component to display a year on the formular |
