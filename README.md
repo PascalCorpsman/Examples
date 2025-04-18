@@ -116,6 +116,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | [CirclePackChart](graphics/CirclePackChart) | Demo application for ucirclepackchart.pas |
 | [ColorDialog](graphics/ColorDialog) | Demo application for ucolordialog.pas |
 | [Graphics](graphics/Graphics) | unit tests for ugraphics.pas |
+| [LineEdit](graphics/LineEdit) | Demo application for ulineedit.pas |
 | [SimpleChart](graphics/SimpleChart) | Demo application for usimplechart.pas |
 | [SunburstChart](graphics/SunburstChart) | Demo application for usunburstchart.pas |
 | [Yeargrid](graphics/Yeargrid) | Demo application for uyeargrid.pas |
