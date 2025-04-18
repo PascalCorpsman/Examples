@@ -147,31 +147,33 @@ Begin
   Invalidate;
 End;
 
-Function TLineEdit.AddPoint(aPoint: TPercentPoint): integer;
+Function TLineEdit.AddPoint(aPoint: TPercentPoint): Integer;
 Var
-  xli, xri, i: Integer;
+  i, insertIndex: Integer;
 Begin
-  result := -1;
-  If (aPoint.X < 0) Or (aPoint.X > 100) Or
-    (aPoint.Y < 0) Or (aPoint.Y > 100) Then exit;
+  Result := -1;
+  If (aPoint.X <= 0) Or (aPoint.X >= 100) Or
+    (aPoint.Y < 0) Or (aPoint.Y > 100) Then Exit;
+
   // 1. Suchen des "Segmentes" zwischem dem der Potentielle neue Punkt erstellt werden soll
-  xli := high(fPoints);
-  While fPoints[xli].x > aPoint.x Do Begin
-    xli := xli - 1;
+  insertIndex := Length(fPoints);
+  For i := 0 To High(fPoints) Do Begin
+    If aPoint.X < fPoints[i].X Then Begin
+      insertIndex := i;
+      Break;
+    End;
   End;
-  xri := 0;
-  While fPoints[xri].x < aPoint.x Do Begin
-    xri := xri + 1;
-  End;
+
   // 2. Erstellen des neuen Punktes
-  setlength(fPoints, high(fPoints) + 2);
-  For i := high(fPoints) Downto xri + 1 Do Begin
+  SetLength(fPoints, high(fPoints) + 2);
+  For i := High(fPoints) Downto insertIndex + 1 Do
     fPoints[i] := fPoints[i - 1];
-  End;
-  fPoints[xri] := aPoint;
+
+  fPoints[insertIndex] := aPoint;
+
   Invalidate;
   // If assigned(fOnPointsChange) Then fOnPointsChange(self); -- Rein oder Raus ?, wenn rein muss es an anderen Stellen wieder gelöscht werden !
-  result := xri; // Den neuen Punkt wählen wir auch gleich mal an ;)
+  Result := insertIndex;
 End;
 
 Function TLineEdit.DelPoint(aIndex: integer): Boolean;
@@ -206,36 +208,30 @@ Function TLineEdit.SetPointYValue(aIndex: integer; YValue: Single): Boolean;
 Begin
   result := false;
   If (aIndex < 0) Or (aIndex > High(fPoints)) Then exit;
-  If (YValue < 0) Or (YValue > 100) Then exit;
-  fPoints[aIndex].Y := YValue;
+  fPoints[aIndex].Y := min(100, max(0, YValue));
   Invalidate;
   // If assigned(fOnPointsChange) Then fOnPointsChange(self); -- Rein oder Raus ?, wenn rein muss es an anderen Stellen wieder gelöscht werden !
   result := true;
 End;
 
 Function TLineEdit.F(x: Single): Single;
+// This code was created using ChatGTP, and it worked on the first try (y)
 Var
-  xli, xri: Integer;
-  dx, dy, s: Single;
+  i: Integer;
+  x0, y0, x1, y1, t: Single;
 Begin
-  // 1. Finden des Liniensegmentes
-  xli := high(fPoints);
-  While (xli > 0) And (fPoints[xli].x >= x) Do Begin
-    xli := xli - 1;
-  End;
-  xri := 0;
-  While (xri < high(fPoints)) And (fPoints[xri].x <= x) Do Begin
-    xri := xri + 1;
-  End;
-  // 2. Anwenden f(x) durch Lineare Interpolation
-  dx := fPoints[xri].x - fPoints[xli].x;
-  dy := fPoints[xri].Y - fPoints[xli].Y;
-  If dx = 0 Then Begin
-    result := fPoints[xli].Y;
-  End
-  Else Begin
-    s := x / dx; // Scallieren des X Bereiches auf 0..1
-    result := fPoints[xli].Y + s * dy;
+  // Find the interval that contains x
+  For i := 0 To high(fPoints) - 1 Do Begin
+    If (x >= fPoints[i].x) And (x <= fPoints[i + 1].x) Then Begin
+      x0 := fPoints[i].x;
+      y0 := fPoints[i].y;
+      x1 := fPoints[i + 1].x;
+      y1 := fPoints[i + 1].y;
+      // Linear interpolation
+      t := (x - x0) / (x1 - x0);
+      Result := y0 + t * (y1 - y0);
+      Exit;
+    End;
   End;
 End;
 
