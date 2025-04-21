@@ -66,6 +66,15 @@ Type
     Procedure LoadFromSaveToStream;
   End;
 
+  { TOtherTests }
+
+  TOtherTests = Class(TTestCase)
+  protected
+  published
+    Procedure Convolve1D;
+    Procedure ConvolveAVG;
+  End;
+
 Implementation
 
 { TMatrix4x4Tests }
@@ -421,6 +430,47 @@ Begin
   m.free;
 End;
 
+{ TOtherTests }
+
+Procedure TOtherTests.Convolve1D;
+Var
+  a, b, c: TVectorN;
+Begin
+  (*
+   * Falten mit "nicht symmetrischem" filter kern
+   *)
+  a := VN([1, 2, 3]);
+  b := VN([4, 5, 6]);
+  c := Convolve(a, b);
+  AssertEquals('Invalid len', 5, length(c));
+  AssertEquals('Invalid result [0]', 4, c[0]);
+  AssertEquals('Invalid result [1]', 13, c[1]);
+  AssertEquals('Invalid result [2]', 28, c[2]);
+  AssertEquals('Invalid result [3]', 27, c[3]);
+  AssertEquals('Invalid result [4]', 18, c[4]);
+End;
+
+Procedure TOtherTests.ConvolveAVG;
+Var
+  a, b, c: TVectorN;
+Begin
+  (*
+   * Faltung als Mittelwert filter
+   *)
+  a := vn([0, 0, 10, 10, 10, 0, 0]);
+  b := vn([0.5, 0.5]);
+  c := Convolve(a, b);
+  AssertEquals('Invalid len', 8, length(c));
+  AssertEquals('Invalid result [0]', 0, c[0]);
+  AssertEquals('Invalid result [1]', 0, c[1]);
+  AssertEquals('Invalid result [2]', 5, c[2]);
+  AssertEquals('Invalid result [3]', 10, c[3]);
+  AssertEquals('Invalid result [4]', 10, c[4]);
+  AssertEquals('Invalid result [5]', 5, c[5]);
+  AssertEquals('Invalid result [6]', 0, c[6]);
+  AssertEquals('Invalid result [7]', 0, c[7]);
+End;
+
 Initialization
   Randomize;
   DefaultFormatSettings.DecimalSeparator := '.';
@@ -429,5 +479,7 @@ Initialization
   RegisterTest(TMatrix3x3Tests);
   RegisterTest(TMatrix4x4Tests);
   RegisterTest(TMatrixNxMTests);
+  RegisterTest(TOtherTests);
+
 End.
 
