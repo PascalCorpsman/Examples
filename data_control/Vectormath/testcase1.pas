@@ -66,13 +66,15 @@ Type
     Procedure LoadFromSaveToStream;
   End;
 
-  { TOtherTests }
+  { TGeneralTests }
 
-  TOtherTests = Class(TTestCase)
+  TGeneralTests = Class(TTestCase)
   protected
+    //Procedure SetUp; override;
+    //Procedure TearDown; override;
   published
-    Procedure Convolve1D;
-    Procedure ConvolveAVG;
+    Procedure RectIsInRect;
+    Procedure RectIsNotInRect;
   End;
 
 Implementation
@@ -430,45 +432,103 @@ Begin
   m.free;
 End;
 
-{ TOtherTests }
+{ TGeneralTests }
 
-Procedure TOtherTests.Convolve1D;
+Procedure TGeneralTests.RectIsInRect;
 Var
-  a, b, c: TVectorN;
+  TL1, BR1, TL2, BR2: TVector2;
 Begin
   (*
-   * Falten mit "nicht symmetrischem" filter kern
+   * Overlapping Edges
    *)
-  a := VN([1, 2, 3]);
-  b := VN([4, 5, 6]);
-  c := Convolve(a, b);
-  AssertEquals('Invalid len', 5, length(c));
-  AssertEquals('Invalid result [0]', 4, c[0]);
-  AssertEquals('Invalid result [1]', 13, c[1]);
-  AssertEquals('Invalid result [2]', 28, c[2]);
-  AssertEquals('Invalid result [3]', 27, c[3]);
-  AssertEquals('Invalid result [4]', 18, c[4]);
+  TL1 := v2(-1, 1);
+  BR1 := v2(1, -1);
+  TL2 := v2(0.5, 2);
+  BR2 := v2(2, 0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(0.5, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-2, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  (*
+   * Overlapping Sides
+   *)
+  TL2 := v2(0.5, 0.5);
+  BR2 := v2(2, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-0.5, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2, 0.5);
+  BR2 := v2(-0.5, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(0.5, 2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  (*
+   * complete in each other
+   *)
+  TL2 := v2(-2, 2);
+  BR2 := v2(2, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 0.5);
+  BR2 := v2(0.5, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
 End;
 
-Procedure TOtherTests.ConvolveAVG;
+Procedure TGeneralTests.RectIsNotInRect;
 Var
-  a, b, c: TVectorN;
+  TL1, BR1, TL2, BR2: TVector2;
 Begin
-  (*
-   * Faltung als Mittelwert filter
-   *)
-  a := vn([0, 0, 10, 10, 10, 0, 0]);
-  b := vn([0.5, 0.5]);
-  c := Convolve(a, b);
-  AssertEquals('Invalid len', 8, length(c));
-  AssertEquals('Invalid result [0]', 0, c[0]);
-  AssertEquals('Invalid result [1]', 0, c[1]);
-  AssertEquals('Invalid result [2]', 5, c[2]);
-  AssertEquals('Invalid result [3]', 10, c[3]);
-  AssertEquals('Invalid result [4]', 10, c[4]);
-  AssertEquals('Invalid result [5]', 5, c[5]);
-  AssertEquals('Invalid result [6]', 0, c[6]);
-  AssertEquals('Invalid result [7]', 0, c[7]);
+  // Above
+  TL1 := v2(-1, 1);
+  BR1 := v2(1, -1);
+  TL2 := v2(-2.5, 3.5);
+  BR2 := v2(-1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(0.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(1.5, 3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(2.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  // Side by side
+  TL2 := v2(-2.5, 3.5); // left
+  BR2 := v2(-1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2.5, 0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-1.5, -0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-1.5, -2.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, 3.5); // right
+  BR2 := v2(1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, 0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(1.5, -0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(1.5, -2.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  // Below
+  TL2 := v2(-2.5, -3.5);
+  BR2 := v2(-1.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, -3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(0.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(1.5, -3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
 End;
 
 Initialization
@@ -479,7 +539,6 @@ Initialization
   RegisterTest(TMatrix3x3Tests);
   RegisterTest(TMatrix4x4Tests);
   RegisterTest(TMatrixNxMTests);
-  RegisterTest(TOtherTests);
-
+  RegisterTest(TGeneralTests);
 End.
 
