@@ -23,6 +23,14 @@ Type
     Procedure InvertMatrix2;
   End;
 
+  { TVector3Tests }
+
+  TVector3Tests = Class(TTestCase)
+  protected
+  published
+    Procedure LinearDependent;
+  End;
+
   { TMatrix3x3Tests }
 
   TMatrix3x3Tests = Class(TTestCase)
@@ -231,6 +239,60 @@ Begin
   m := M2x2(1, 3, 2, 6);
   mi := uvectormath.InvertMatrix2(m); //
   AssertTrue(Print(zero) + ' = ' + Print(mi), zero.Equal(mi));
+End;
+
+{ TVector3Tests }
+
+Procedure TVector3Tests.LinearDependent;
+Var
+  x1, x2, x3, sx1, sx2, sx3, a, b: TVector3;
+Begin
+  x1 := v3(1, 0, 0);
+  x2 := v3(0, 1, 0);
+  x3 := v3(0, 0, 1);
+  sx1 := v3(2, 0, 0);
+  sx2 := v3(0, 3, 0);
+  sx3 := v3(0, 0, 4);
+  // Trivial Cases
+  // Not Dependent
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
+  // Dependent
+  AssertTrue(IsLinearDependent(x1, -x1));
+  AssertTrue(IsLinearDependent(x2, -x2));
+  AssertTrue(IsLinearDependent(x3, -x3));
+  AssertTrue(IsLinearDependent(-x1, x1));
+  AssertTrue(IsLinearDependent(-x2, x2));
+  AssertTrue(IsLinearDependent(-x3, x3));
+  AssertTrue(IsLinearDependent(x1, sx1));
+  AssertTrue(IsLinearDependent(x2, sx2));
+  AssertTrue(IsLinearDependent(x3, sx3));
+  AssertTrue(IsLinearDependent(sx1, x1));
+  AssertTrue(IsLinearDependent(sx2, x2));
+  AssertTrue(IsLinearDependent(sx3, x3));
+  a := v3(1, 2, 3);
+  AssertTrue(IsLinearDependent(a, a * 2));
+  AssertTrue(IsLinearDependent(2 * a, a));
+  b := v3(1, 2, 4);
+  AssertFalse(IsLinearDependent(a, b));
+  AssertFalse(IsLinearDependent(b, a));
+  AssertFalse(IsLinearDependent(2 * a, b));
+  AssertFalse(IsLinearDependent(a, 2 * b));
+  b := v3(2, 2, 3);
+  AssertFalse(IsLinearDependent(a, b));
+  AssertFalse(IsLinearDependent(b, a));
+  AssertFalse(IsLinearDependent(2 * a, b));
+  AssertFalse(IsLinearDependent(a, 2 * b));
 End;
 
 { TMatrix3x3 }
@@ -536,6 +598,7 @@ Initialization
   DefaultFormatSettings.DecimalSeparator := '.';
 
   RegisterTest(TMatrix2x2Tests);
+  RegisterTest(TVector3Tests);
   RegisterTest(TMatrix3x3Tests);
   RegisterTest(TMatrix4x4Tests);
   RegisterTest(TMatrixNxMTests);

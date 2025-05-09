@@ -63,6 +63,7 @@
 (*               0.19 Convolve                                                *)
 (*                    speedup RectIntersectRect code                          *)
 (*               0.20 PointsToConvexHull for Tvertex3Array                    *)
+(*                    IsLinearDependent                                       *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uvectormath;
@@ -167,7 +168,7 @@ Type
 
   TCircle = Record // Ein Kreis
     Center: TVector2; // Kreismittelpunkt
-    radius: TBaseType; // Sein Radius
+    Radius: TBaseType; // Sein Radius
   End;
 
   TMapFunction = Function(x: Single): Single; // Funktionsprototyp für MapFunction
@@ -178,6 +179,11 @@ Type
   End;
 
   TFaceArray = Array Of TFace;
+
+  TSphere = Record // Eine Kugel
+    Center: TVector3;
+    Radius: TBaseType;
+  End;
 
   { TVector2helper }
 
@@ -390,6 +396,9 @@ Function HadamardNxM(Const a, b: TMatrixNxM): TMatrixNxM; // Komponentenweise Mu
 
 Function CrossV2(Const a, b: Tvector2): Tvector2;
 Function CrossV3(Const a, b: Tvector3): Tvector3;
+
+Function IsLinearDependent(Const a, b: TVector2): Boolean; overload;
+Function IsLinearDependent(Const a, b: TVector3): Boolean; overload;
 
 Function MulVectorMatrix(Const V: TVector2; Const M: TMatrix2x2): TVector2; overload;
 Function MulVectorMatrix(Const V: TVector3; Const M: TMatrix3x3): TVector3; overload;
@@ -2153,6 +2162,22 @@ Begin
       result[i, j] := m[i, j] * s;
     End;
   End;
+End;
+
+Function IsLinearDependent(Const a, b: TVector2): Boolean;
+Var
+  Cross: TVector2;
+Begin
+  Cross := CrossV2(a, b);
+  Result := (Cross.x = 0) And (Cross.y = 0);
+End;
+
+Function IsLinearDependent(Const a, b: TVector3): Boolean;
+Var
+  Cross: TVector3;
+Begin
+  Cross := CrossV3(a, b);
+  Result := (Cross.x = 0) And (Cross.y = 0) And (Cross.z = 0);
 End;
 
 Function MulVectorMatrix(Const V: TVector2; Const M: TMatrix2x2): TVector2;
