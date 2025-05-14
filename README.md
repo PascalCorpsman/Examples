@@ -21,6 +21,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | umapviewer.pas | LCL-Component to make google mapviewer in OpenGL possible |
 | uopengl_animation.pas | Class to load and render .ani files (see Animation_Editor) |
 | uopengl_ascii_font.pas | DOS-stile ASCII-Font to easily show texts in OpenGL windows |
+| uopengl_camera.pas | Helper class to correct set OpenGL modelview matrix in a scene |
 | uopengl_font_common.pas | Anchestorclass for TOpenGL_TrueType_Font and TOpenGL_ASCII_Font |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
 | uopengl_partikelengine.pas | Class to render thousands of particle graphics into the OpenGL window |
