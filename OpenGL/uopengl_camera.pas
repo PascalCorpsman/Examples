@@ -94,6 +94,7 @@ Type
     Procedure RenderGizmo(aBorder, aWidth, aHeight: Integer; aSize: Single); // Size (= Size) -> -2 = Big, -9 = tiny
 
     Procedure SaveToStream(Const aStream: TStream);
+    Function LoadFromStream(Const aStream: TStream): Boolean;
   End;
 
 Implementation
@@ -105,7 +106,8 @@ Const
 
   { TOpenGLCamera }
 
-Procedure TOpenGLCamera.RenderGizmo(aBorder, aWidth, aHeight: Integer; aSize: Single);
+Procedure TOpenGLCamera.RenderGizmo(aBorder, aWidth, aHeight: Integer;
+  aSize: Single);
 Var
   vp: Array[0..3] Of GLint;
   mv: TMatrix4x4;
@@ -173,6 +175,26 @@ Begin
   aStream.Write(fPos, sizeof(fPos));
   aStream.Write(fTarget, sizeof(fTarget));
   aStream.Write(fup, sizeof(fup));
+End;
+
+Function TOpenGLCamera.LoadFromStream(Const aStream: TStream): Boolean;
+Var
+  aFileVersion: integer;
+Begin
+  result := false;
+  aFileVersion := -1;
+
+  aStream.Read(aFileVersion, sizeof(aFileVersion));
+  If aFileVersion > FileVersion Then exit;
+  result := true;
+
+  aStream.Read(fDefPos, sizeof(fDefPos));
+  aStream.Read(fDefTarget, sizeof(fDefTarget));
+  aStream.Read(fDefUp, sizeof(fDefUp));
+
+  aStream.Read(fPos, sizeof(fPos));
+  aStream.Read(fTarget, sizeof(fTarget));
+  aStream.Read(fup, sizeof(fup));
 End;
 
 Constructor TOpenGLCamera.Create(aPos, aTarget, aUp: TVector3);
