@@ -56,7 +56,6 @@ Type
 
 {$IFDEF UseOperandOverloading}
 
-
 Operator + (Const a, b: TQuaternion): TQuaternion;
 Operator + (Const a: TQuaternion; Const b: TBaseType): TQuaternion;
 

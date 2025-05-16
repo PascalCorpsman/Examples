@@ -92,13 +92,18 @@ Type
      * If used, call directly after SetCam (
      *)
     Procedure RenderGizmo(aBorder, aWidth, aHeight: Integer; aSize: Single); // Size (= Size) -> -2 = Big, -9 = tiny
+
+    Procedure SaveToStream(Const aStream: TStream);
   End;
 
 Implementation
 
 Uses uquaternion;
 
-{ TOpenGLCamera }
+Const
+  FileVersion: Integer = 001;
+
+  { TOpenGLCamera }
 
 Procedure TOpenGLCamera.RenderGizmo(aBorder, aWidth, aHeight: Integer; aSize: Single);
 Var
@@ -155,6 +160,19 @@ Begin
   glPopMatrix;
   glMatrixMode(GL_MODELVIEW);
   glViewport(vp[0], vp[1], vp[2], vp[3]);
+End;
+
+Procedure TOpenGLCamera.SaveToStream(Const aStream: TStream);
+Begin
+  aStream.Write(FileVersion, sizeof(FileVersion));
+
+  aStream.Write(fDefPos, sizeof(fDefPos));
+  aStream.Write(fDefTarget, sizeof(fDefTarget));
+  aStream.Write(fDefUp, sizeof(fDefUp));
+
+  aStream.Write(fPos, sizeof(fPos));
+  aStream.Write(fTarget, sizeof(fTarget));
+  aStream.Write(fup, sizeof(fup));
 End;
 
 Constructor TOpenGLCamera.Create(aPos, aTarget, aUp: TVector3);
