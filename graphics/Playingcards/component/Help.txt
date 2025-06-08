@@ -1,0 +1,173 @@
+TPlayingCard Component
+======================
+
+Properties
+==========
+
+Show property - TShowOption
+
+  One of three values (soFace, soBack and soTool) determining
+  which type of image is to be displayed.
+
+  soFace: The card is face up, and displays the image determined by
+    the FaceIndex or Value and Suit properties.
+
+  soBack: The card is face down, and displays one of the images in the
+    global back image list, as identified by the BackIndex property.
+
+  soTool: The card displays an image from the global tool image list,
+    as identified by the ToolIndex property.
+
+FaceIndex property - Integer;
+
+  A value between 0 and 53 inclusive, identifying which playing card
+  face image to display when Show = soFace. 
+
+  0 represents the red Joker, and 53 the black joker.
+  1 to 13 represent ace, two, three .. king of clubs; 14..26 are
+  diamonds; 27 to 39 are hearts; 40 to 52 are spades.
+
+Value property - Integer
+
+  A value between 0 and 13 inclusive, identifying which playing card
+  face value to display when Show = soFace.
+
+  0 represents the joker of the same color as the suit identified by
+  the Suit property. 1..13 represents ace, two, three .. king.
+
+Suit property - Integer
+
+  A value between 0 and 3 inclusive, identifying which playing card
+  suit to display when Show = soFace.
+
+  0 = Clubs, 1 = Diamonds, 2 = Hearts, 3 = Spades.
+
+BackIndex property - Integer
+
+  A value 0 or above which identifies the image in the global list
+  of back image bitmaps, to be displayed when Show = soBack.
+  This index must be between 0 and BackCount-1 inclusive.
+
+ToolIndex property - Integer
+
+  A value 0 or above which identifies the image in the global list
+  of tool image bitmaps, to be displayed when Show = soTool.
+  This index must be between 0 and ToolCount-1 inclusive.
+
+BackCount property - Integer, read only
+
+  Indicates the number of images available to all TPlayingCard
+  components in the application, for use as back images. Each time
+  the AddBack method is called, BackCount increments by one.
+
+ToolCount property - Integer, read only
+
+  Indicates the number of images available to all TPlayingCard
+  components in the application, for use as tool images. Each time
+  the AddTool method is called, ToolCount increments by one.
+
+Selected property - Boolean
+
+  Determines whether the card should be display highlighted or not
+
+
+Methods
+=======
+
+function AddTool(Bitmap: TBitmap): Integer;
+
+  Adds 'Bitmap' to the list of bitmap images available to all
+  TPlayingCard components, and returns an index to that image, to
+  be used with the ToolIndex property.
+  The TBitmap object passed to the function becomes owned by the
+  cards unit, and must not be freed by the user - it shall be freed
+  when the application terminates. It cannot be removed from the list
+  either, so the user should be conservative with the use of AddTool
+
+function AddBack(Bitmap: TBitmap): Integer;
+
+  Adds 'Bitmap' to the list of bitmap images available to all
+  TPlayingCard components, and returns an index to that image, to
+  be used with the ToolIndex property.
+  The TBitmap object passed to the function becomes owned by the
+  cards unit, and must not be freed by the user - it shall be freed
+  when the application terminates. It cannot be removed from the list
+  either, so the user should be conservative with the use of AddBack
+
+  The methods AddTool and and AddBack are provided for flexibility
+  only - use the global functions AddCardTool, AddCardBack,
+  LoadCardTool and LoadCardBack instead, when your application starts.
+  Add all of the bitmap images required by your TPlayingCard 
+  components at application start-up. You must load them before
+  the BackIndex and ToolIndex properties can refer to them.
+
+function LoadTool(const Filename: string): Integer;
+
+  Similar to AddTool, this will load a bitmap file for use as a
+  tool image, and return the Index to that image. Again the bitmap
+  will not be freed until the application terminates.
+
+function LoadBack(const Filename: string): Integer;
+
+  Similar to AddBack, this will load a bitmap file for use as a
+  back image, and return the Index to that image. Again the bitmap
+  will not be freed until the application terminates.
+
+Global Functions
+================
+
+function AddCardTool(Bitmap: TBitmap): Integer;
+
+  Identical to the 'AddTool' method of TPlayingCard
+
+
+function LoadCardTool(const Filename: string): Integer;
+
+  Identical to the 'LoadTool' method of TPlayingCard
+
+
+function GetCardTool(Index: Integer): TBitmap;
+
+  Retrieves the TBitmap object at position Index in the tool image list.
+  Use the Draw method of TCanvas with this function to display the raw
+  bitmap on a canvas.
+
+ 
+function GetCardToolCount: Integer;
+
+  Returns the number of TBitmap objects that can be indexed using
+  the property ToolIndex. Returns the same value as the ToolCount
+  property.
+
+function AddCardBack(Bitmap: TBitmap): Integer;
+
+  Identical to the 'AddTool' method of TPlayingCard
+
+
+function LoadCardBack(const Filename: string): Integer;
+
+  Identical to the 'LoadBack' method of TPlayingCard
+
+
+function GetCardBack(Index: Integer): TBitmap;
+
+  Returns the TBitmap object at position Index in the back image list.
+  Use the Draw method of TCanvas with this function to display the raw
+  bitmap on a canvas.
+
+
+function GetCardBackCount: Integer;
+
+  Returns the number of TBitmap objects that can be indexed using
+  the property BackIndex. Returns the same value as the BackCount
+  property.
+
+
+procedure DrawCardFace(Index: Integer; Canvas: TCanvas; CRect: TRect; Invert: Boolean);
+procedure DrawCardBack(Index: Integer; Canvas: TCanvas; CRect: TRect; Invert: Boolean);
+procedure DrawCardTool(Index: Integer; Canvas: TCanvas; CRect: TRect; Invert: Boolean);
+
+  Draws the face, back or tool image (specified by Index) inside the
+  rectangle CRect on Canvas. If Invert is True, the card image is
+  draw in it's highlighted state.
+
