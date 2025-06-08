@@ -2,30 +2,12 @@
 @startuml
 
 package "Examples" {
-  package "OpenGL" {
-   object Animation_Editor
-   object 0_Clear_Engine
-   object Mapviewer
-  }
-  package "SDL2" {
-   object Joystich_Demo
-  }
-  package "TCP_IP" {
-   object MQTT_Broker
-   object MQTT_Publisher
-   object Modbus_Client
-   object Modbus_Diagnostic
-   object Send_get_file
-   object Socket
-  }
-  package "Wii" {
-    object WiiMote
-  }
   package "data_control" {
     object Complex
     object JSON_Analyzer
     object LZW
     object QuadTree
+    object Quaternion
     object Vectormath
   }
   package "graphics" {
@@ -33,12 +15,33 @@ package "Examples" {
    object CirclePackChart
    object ColorDialog
    object Graphics
+   object LineEdit
+   object Playingcards
    object SimpleChart
    object SunburstChart
    object Yeargrid
   }
-  package "Sound" {
+  package "OpenGL" {
+   object 0_Clear_Engine
+   object Animation_Editor
+   object Mapviewer
+  }
+  package "SDL2" {
+   object Joystich_Demo
+  }
+  package "sound" {
    
+  }
+  package "TCP_IP" {
+   object Modbus_Client
+   object Modbus_Diagnostic
+   object MQTT_Broker
+   object MQTT_Publisher
+   object Send_get_file
+   object Socket
+  }
+  package "Wii" {
+    object WiiMote
   }
 }
 
