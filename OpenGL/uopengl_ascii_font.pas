@@ -140,8 +140,14 @@ Type
 Var
   OpenGL_ASCII_Font: TOpenGL_ASCII_Font = Nil;
 
-Procedure Create_ASCII_Font(); // Muss in Make Current aufgerufen werden, da es OpenGLBefehle nutzt.
-Procedure Create_ASCII_BigFont(); // Muss in Make Current aufgerufen werden, da es OpenGLBefehle nutzt.
+  (*
+   * Es stehen 2 Schriftarten als "OpenGL_ASCII_Font" zur Verfügung.
+   *
+   * Create_ASCII_Font(); -> erzeugt eine alte "DOS" like Schrift (8x12)
+   * Create_ASCII_BigFont(); -> erzeugt eine alte "Dos" like schrift, aber mit 1-Pixel Rahmen (10x14) (ist besser for buntem Hintergrund erkennbar)
+   *)
+Procedure Create_ASCII_Font();
+Procedure Create_ASCII_BigFont();
 
 // Switcher zwischen 2D und 3D-Modus
 Procedure Go2d(Width_2D, Height_2d: Integer);
@@ -539,11 +545,15 @@ End;
 Constructor TOpenGL_ASCII_BIG_Font.Create(Const Bitmap, Mask: Tbitmap;
   CharWidth, CharHeight, CharCount: Integer);
 Begin
+  If (bitmap.Width <> mask.Width) Or
+    (bitmap.Height <> mask.Height) Then Begin
+    Raise exception.Create('TOpenGL_ASCII_BIG_Font.Create: bitmap and mask need to have same size!');
+  End;
   Font1 := Nil;
   Font2 := Nil;
   Clear;
-  Font1 := TOpenGL_ASCII_Font.Create(bitmap, 10, 14, 256);
-  Font2 := TOpenGL_ASCII_Font.Create(Mask, 10, 14, 256);
+  Font1 := TOpenGL_ASCII_Font.Create(bitmap, CharWidth, CharHeight, CharCount);
+  Font2 := TOpenGL_ASCII_Font.Create(Mask, CharWidth, CharHeight, CharCount);
   Font1.Color := clWhite;
   Font2.Color := clBlack;
 End;
