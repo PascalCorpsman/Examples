@@ -1579,43 +1579,6 @@ object Form1: TForm1
     Top = 288
     Width = 128
   end
-  object SpeedButton1: TSpeedButton
-    Left = 328
-    Height = 25
-    Top = 56
-    Width = 25
-    Caption = 'R'
-    GroupIndex = 1
-    OnClick = SpeedButton1Click
-  end
-  object SpeedButton2: TSpeedButton
-    Left = 360
-    Height = 25
-    Top = 56
-    Width = 25
-    Caption = 'G'
-    GroupIndex = 1
-    OnClick = SpeedButton1Click
-  end
-  object SpeedButton3: TSpeedButton
-    Left = 392
-    Height = 25
-    Top = 56
-    Width = 25
-    Caption = 'B'
-    GroupIndex = 1
-    OnClick = SpeedButton1Click
-  end
-  object SpeedButton4: TSpeedButton
-    Left = 424
-    Height = 25
-    Top = 56
-    Width = 25
-    Caption = 'A'
-    Down = True
-    GroupIndex = 1
-    OnClick = SpeedButton1Click
-  end
   object Button1: TButton
     Left = 328
     Height = 25
@@ -1709,5 +1672,33 @@ object Form1: TForm1
     Caption = 'Rainbow 2'
     TabOrder = 9
     OnClick = Button8Click
+  end
+  object SpeedButton1: TToggleBox
+    Left = 328
+    Height = 25
+    Top = 56
+    Width = 25
+    Caption = 'R'
+    TabOrder = 10
+    OnClick = SpeedButton1Click
+    OnMouseUp = SpeedButton1MouseUp
+  end
+  object SpeedButton2: TToggleBox
+    Left = 360
+    Height = 25
+    Top = 56
+    Width = 25
+    Caption = 'G'
+    TabOrder = 11
+    OnClick = SpeedButton1Click
+  end
+  object SpeedButton3: TToggleBox
+    Left = 392
+    Height = 25
+    Top = 56
+    Width = 25
+    Caption = 'B'
+    TabOrder = 12
+    OnClick = SpeedButton1Click
   end
 end

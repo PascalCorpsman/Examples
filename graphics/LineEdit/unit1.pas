@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Demo for uLinedit.pas                                           15.04.2025 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - made Ux more intuitive                                *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -33,7 +34,7 @@ Interface
 
 Uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  Buttons, uLineEdit;
+  Buttons, ComCtrls, uLineEdit;
 
 Type
 
@@ -54,10 +55,9 @@ Type
     Label2: TLabel;
     ScrollBar1: TScrollBar;
     ScrollBar2: TScrollBar;
-    SpeedButton1: TSpeedButton;
-    SpeedButton2: TSpeedButton;
-    SpeedButton3: TSpeedButton;
-    SpeedButton4: TSpeedButton;
+    SpeedButton1: TToggleBox;
+    SpeedButton2: TToggleBox;
+    SpeedButton3: TToggleBox;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
     Procedure Button3Click(Sender: TObject);
@@ -70,6 +70,8 @@ Type
     Procedure ScrollBar1Change(Sender: TObject);
     Procedure ScrollBar2Change(Sender: TObject);
     Procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton1MouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     Procedure OnLineEdit1PointChange(Sender: TObject);
     Function Scale(value: Word): Word;
@@ -136,7 +138,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  caption := 'LineEdit demo ver. 0.01';
+  caption := 'LineEdit demo ver. 0.02';
   LineEdit1 := TLineEdit.Create(self);
   LineEdit1.Name := 'LineEdit1';
   LineEdit1.Parent := self;
@@ -283,8 +285,16 @@ End;
 
 Procedure TForm1.SpeedButton1Click(Sender: TObject);
 Begin
+
   OnLineEdit1PointChange(Nil);
 End;
+
+procedure TForm1.SpeedButton1MouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+//  If TSpeedButton(sender).Down Then
+  TSpeedButton(sender).Down := false;
+end;
 
 Function TForm1.Scale(value: Word): Word;
 Var
@@ -310,24 +320,14 @@ Begin
   For i := 0 To SourceIntf.Width - 1 Do Begin
     For j := 0 To SourceIntf.Height - 1 Do Begin
       col := SourceIntf.Colors[i, j];
-      If SpeedButton1.Down Then Begin
+      If SpeedButton1.State = cbChecked Then Begin
         col.Red := Scale(col.Red);
-      End
-      Else Begin
-        If SpeedButton2.Down Then Begin
-          col.Green := Scale(col.Green);
-        End
-        Else Begin
-          If SpeedButton3.Down Then Begin
-            col.Blue := Scale(col.Blue);
-          End
-          Else Begin
-            // RGB
-            col.Red := Scale(col.Red);
-            col.Green := Scale(col.Green);
-            col.Blue := Scale(col.Blue);
-          End;
-        End;
+      End;
+      If SpeedButton2.State = cbChecked Then Begin
+        col.Green := Scale(col.Green);
+      End;
+      If SpeedButton3.State = cbChecked Then Begin
+        col.Blue := Scale(col.Blue);
       End;
       SourceIntf.Colors[i, j] := col;
     End;
@@ -340,4 +340,5 @@ Begin
 End;
 
 End.
+
 
