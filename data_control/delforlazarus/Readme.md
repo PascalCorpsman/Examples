@@ -17,3 +17,12 @@ After installation, you can "format" the current opened file, by pressing STRG +
 
 Known Bug:
 - if a line of code holds more then 1024 chars, the formater crashes.
+
+! Attention !
+The sourcecode of this component is not 100% written by me, the original inventor was:
+
+> Egbert van Nes <br>
+> http://www.dow.wau.nl/aew/DelForExp.html (NOTE: HAS CHANGED) <br>
+> egbert.vannes@wur.nl 
+
+Please read readme.txt for further informations.
