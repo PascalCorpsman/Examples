@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <Name Value="delforlazarus"/>
+    <Type Value="RunAndDesignTime"/>
+    <Author Value="Corpsman, original by  Egbert van Nes"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <SearchPaths>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="Code Formating via shortcut (CTRL+D)"/>
+    <License Value="This component is postcardware, see www.Corpsman.de for further informations."/>
+    <Files Count="5">
+      <Item1>
+        <Filename Value="delforengine.pas"/>
+        <UnitName Value="delforengine"/>
+      </Item1>
+      <Item2>
+        <Filename Value="delforinterf.pas"/>
+        <UnitName Value="delforinterf"/>
+      </Item2>
+      <Item3>
+        <Filename Value="delforsource.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="delforsource"/>
+      </Item3>
+      <Item4>
+        <Filename Value="delfortypes.pas"/>
+        <UnitName Value="delfortypes"/>
+      </Item4>
+      <Item5>
+        <Filename Value="oobjects.pas"/>
+        <UnitName Value="oobjects"/>
+      </Item5>
+    </Files>
+    <CompatibilityMode Value="True"/>
+    <RequiredPkgs Count="3">
+      <Item1>
+        <PackageName Value="IDEIntf"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="SynEdit"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="FCL"/>
+      </Item3>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
