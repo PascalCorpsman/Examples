@@ -2,6 +2,8 @@
 
 This is a component to be used at designtime (only inside the IDE, during editing sourcecode). If you write your own FreePascal IDE (or a application that can show and format source code), than for shure you can also include the component into this application as well.
 
+Its purpose is to "Format" the code by given rules (like uncrustify but for FreePascal).
+
 Below is the preview of the settings editor, which is also shipped with this component.
 
 ![](preview.png)

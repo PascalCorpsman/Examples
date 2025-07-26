@@ -82,6 +82,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | [Complex](data_control/Complex) | demo for ucomplex.pas |
 | [delforlazarus](data_control/delforlazarus) | designtime component for codeformating inside the IDE |
 | [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
+| [lazcomment](data_control/lazcomment) | designtime component to comment / uncomment code inside the IDE |
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | [QuadTree](data_control/QuadTree) | demo application for uquadtree.pas |
 | [Quaternion](data_control/Quaternion) | unit tests for uquaternion.pas |
