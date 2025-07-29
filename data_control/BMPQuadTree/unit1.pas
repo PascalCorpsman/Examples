@@ -33,7 +33,7 @@ Interface
 
 Uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, uquadtree, math;
+  StdCtrls, ubmpquadtree, math;
 
 Type
 
@@ -67,7 +67,7 @@ Type
 
 Var
   Form1: TForm1;
-  QT: tquadtree;
+  QT: TBMPQuadtree;
 
 Implementation
 
@@ -139,7 +139,7 @@ End;
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
   caption := 'Quadtree demo';
-  qt := TQuadtree.create;
+  qt := TBMPQuadtree.create;
   OpenDialog1.InitialDir := ExtractFilePath(ParamStrUTF8(0));
   OpenDialog2.InitialDir := ExtractFilePath(ParamStrUTF8(0));
   SaveDialog1.InitialDir := ExtractFilePath(ParamStrUTF8(0));

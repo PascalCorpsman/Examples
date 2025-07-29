@@ -79,17 +79,18 @@ Collection of classes and examples corresponding to data processing, math and co
 
 | Example | Description |
 | --- | --- |
+| [BMPQuadTree](data_control/BMPQuadTree) | demo application for ubmpquadtree.pas |
 | [Complex](data_control/Complex) | demo for ucomplex.pas |
 | [delforlazarus](data_control/delforlazarus) | designtime component for codeformating inside the IDE |
 | [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
 | [lazcomment](data_control/lazcomment) | designtime component to comment / uncomment code inside the IDE |
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
-| [QuadTree](data_control/QuadTree) | demo application for uquadtree.pas |
 | [Quaternion](data_control/Quaternion) | unit tests for uquaternion.pas |
 | [Vectormath](data_control/Vectormath) | unit tests for uvectormath.pas |
 | uJSON.pas | JSON-Loader / writer class |
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
 | ubitstream.pas | Stream to store and load bitwise data (typically only needed in compression algorithms) |
+| ubmpquadtree.pas | own implementation for a quadtree compression for greyscale .bmp images |
 | ucomplex.pas | Basic component to do calculations with complex numbers |
 | ucrc.pas | Generic crc calculation class |
 | udomxml.pas | generic xml parser |
@@ -104,7 +105,6 @@ Collection of classes and examples corresponding to data processing, math and co
 | umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
-| uquadtree.pas | own implementation for a quadtree compression for greyscale .bmp images |
 | uquaternion.pas | library to do math with quaternions |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | utokenizer.pas | generic lexer class to lex strings into tokens |

@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* uquadtree.pas                                                   15.04.2010 *)
+(* ubmpquadtree.pas                                                15.04.2010 *)
 (*                                                                            *)
 (* Version     : 0.01                                                         *)
 (*                                                                            *)
@@ -30,7 +30,7 @@
 (* History     : 0.01 - Initial version                                       *)
 (*                                                                            *)
 (******************************************************************************)
-Unit uquadtree;
+Unit ubmpquadtree;
 
 {$MODE objfpc}{$H+}
 
@@ -42,9 +42,9 @@ Uses
 
 Type
 
-  { TQuadtree }
+  { TBMPQuadtree }
 
-  TQuadtree = Class
+  TBMPQuadtree = Class
   private
     FSafeData: Array Of Array Of Byte;
     Procedure QuadPart(Const Stream: TBitStream; x, y, w, Tol: Integer);
@@ -67,22 +67,22 @@ Begin
     )));
 End;
 
-{ TQuadtree }
+{ TBMPQuadtree }
 
-Constructor TQuadtree.create;
+Constructor TBMPQuadtree.create;
 Begin
   Inherited create;
   setlength(FSafeData, 0, 0);
 End;
 
-Destructor TQuadtree.destroy;
+Destructor TBMPQuadtree.destroy;
 Begin
   setlength(FSafeData, 0, 0);
 End;
 
 // Do the Compression
 
-Procedure TQuadtree.QuadPart(Const Stream: TBitStream; x, y, w, tol: Integer);
+Procedure TBMPQuadtree.QuadPart(Const Stream: TBitStream; x, y, w, tol: Integer);
 Var
   b: Boolean;
   i, j: Integer;
@@ -113,7 +113,7 @@ End;
 
 // Undo the Compression
 
-Procedure TQuadtree.UnQuadPart(Const Stream: TBitStream; x, y, w: integer);
+Procedure TBMPQuadtree.UnQuadPart(Const Stream: TBitStream; x, y, w: integer);
 Var
   i, j: Integer;
   s: Boolean;
@@ -137,7 +137,7 @@ End;
 
 // Save A TBitmap in a Compressed File
 
-Procedure TQuadtree.SaveBitmap(Const Bitmap: TBitmap; Filename: String;
+Procedure TBMPQuadtree.SaveBitmap(Const Bitmap: TBitmap; Filename: String;
   Toleranz: Integer);
 Var
   TempIntfImg: TLazIntfImage;
@@ -182,7 +182,7 @@ End;
 
 // Load a TBitmap from a Compressed File
 
-Function TQuadtree.LoadBitmap(Filename: String): TBitmap;
+Function TBMPQuadtree.LoadBitmap(Filename: String): TBitmap;
 Var
   f: TFilestream;
   FBitstream: TBitStream;
