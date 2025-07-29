@@ -219,6 +219,7 @@ End;
 
 Procedure TForm1.Button1Click(Sender: TObject);
 Begin
+  // Apply settings to preview
   settings := LCLToSettings();
   // Wenn das nicht Doppelt ist, dann wird das Casing der Identifier nicht korrekt übernommen, nur warum ist noch nicht verstanden
   SynEdit1Change(Nil);

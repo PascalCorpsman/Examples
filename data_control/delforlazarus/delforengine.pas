@@ -2,7 +2,7 @@ Unit delforengine;
 
 (*
  * Modified by Corpsman, to Support Lazarus Linux. 01.09.2009
- * Modified by Corpsman, to Support Class, Recordd, Type Helper 07.10.2020
+ * Modified by Corpsman, to Support Class, Record, Type Helper 07.10.2020
  * Modified by Corpsman, add rudimentary support for C-Operands 04.04.2021
  * Modified by Corpsman, Fix Crash, when Expression is nil 04.04.2021
  * Modified by Corpsman, to Support Identifier Caseing 21.04.2021
