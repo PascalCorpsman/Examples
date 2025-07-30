@@ -85,6 +85,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
 | [lazcomment](data_control/lazcomment) | designtime component to comment / uncomment code inside the IDE |
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
+| [Quadtree](data_control/QuadTree) | unit tests for uquadtree.pas |
 | [Quaternion](data_control/Quaternion) | unit tests for uquaternion.pas |
 | [Vectormath](data_control/Vectormath) | unit tests for uvectormath.pas |
 | uJSON.pas | JSON-Loader / writer class |
@@ -105,6 +106,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
+| uquadtree.pas | generic quadtree class |
 | uquaternion.pas | library to do math with quaternions |
 | usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
 | utokenizer.pas | generic lexer class to lex strings into tokens |

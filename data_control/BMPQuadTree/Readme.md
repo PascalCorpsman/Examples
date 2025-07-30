@@ -1,6 +1,6 @@
 # Quadtree demo
 
-This application shows how the uquadtree.pas can be used.
+This application shows how the ubmpquadtree.pas can be used.
 
 ![](preview.png)
 
