@@ -65,7 +65,7 @@ Type
   End;
 {$ENDIF}
 
-  TQuadRect = Record
+  TQuadTreeRect = Record
     TopLeft, BottomRight: TVector2;
   End;
 
@@ -80,7 +80,7 @@ Type
 
   Generic TQuadTree < T > = Class
   private
-    fBoundary: TQuadRect;
+    fBoundary: TQuadTreeRect;
     fCapacity: integer;
     fActualCapacity: integer;
   public
@@ -98,17 +98,17 @@ Type
     fSubtrees: Array[TQuadTreeDirection] Of TQuadTree;
     fdivided: Boolean;
     Procedure Subdivide;
-    Procedure Query2Internal(Const aRange: TQuadRect; Const Buffer: PQuadTreeElement; Var resultElements: integer; Const maxAllowedElements: integer);
+    Procedure Query2Internal(Const aRange: TQuadTreeRect; Const Buffer: PQuadTreeElement; Var resultElements: integer; Const maxAllowedElements: integer);
   public
     OnFreeElement: TOnFreeElement;
 
-    Constructor Create(Const aBoundary: TQuadRect; aCapacity: Integer = 4); virtual;
+    Constructor Create(Const aBoundary: TQuadTreeRect; aCapacity: Integer = 4); virtual;
     Destructor Destroy; override;
 
     Function Add(Const aElement: TQuadTreeElement): Boolean;
     Procedure Clear;
 
-    Function Query(Const aRange: TQuadRect): TQuadTreeElementArray;
+    Function Query(Const aRange: TQuadTreeRect): TQuadTreeElementArray;
 
     (*
      * Wie Query, nur das keine Dynamischen Allokationen stattfinden und stattdessen Buffer verwendet wird
@@ -121,15 +121,15 @@ Type
      *     Buffer[maxAllowedElements]
      *     resultElements         - number of actual "found" Elements
      *)
-    Procedure Query2(Const aRange: TQuadRect; Const Buffer: PQuadTreeElement; Out resultElements: integer; Const maxAllowedElements: integer);
+    Procedure Query2(Const aRange: TQuadTreeRect; Const Buffer: PQuadTreeElement; Out resultElements: integer; Const maxAllowedElements: integer);
   End;
 
   (*
    * Some Helper functions
    *)
-Function QuadRect(Const TopLeft, BottomRight: TVector2): TQuadRect;
-Function QuadRectIntersects(Const A, B: TQuadRect): Boolean;
-Function QuadRectContainsPoint(Const R: TQuadRect; Const P: TVector2): Boolean;
+Function QuadTreeRect(Const TopLeft, BottomRight: TVector2): TQuadTreeRect;
+Function QuadTreeRectIntersects(Const A, B: TQuadTreeRect): Boolean;
+Function QuadTreeRectContainsPoint(Const R: TQuadTreeRect; Const P: TVector2): Boolean;
 
 {$IFNDEF UseVectormath}
 Function V2(Const X, Y: Single): TVector2;
@@ -145,13 +145,13 @@ Begin
 End;
 {$ENDIF}
 
-Function QuadRect(Const TopLeft, BottomRight: TVector2): TQuadRect;
+Function QuadTreeRect(Const TopLeft, BottomRight: TVector2): TQuadTreeRect;
 Begin
   result.TopLeft := TopLeft;
   result.BottomRight := BottomRight;
 End;
 
-Function QuadRectIntersects(Const A, B: TQuadRect): Boolean;
+Function QuadTreeRectIntersects(Const A, B: TQuadTreeRect): Boolean;
 Begin
   result := Not (
     (A.TopLeft.x > B.BottomRight.x) Or
@@ -161,7 +161,7 @@ Begin
     );
 End;
 
-Function QuadRectContainsPoint(Const R: TQuadRect; Const P: TVector2): Boolean;
+Function QuadTreeRectContainsPoint(Const R: TQuadTreeRect; Const P: TVector2): Boolean;
 Begin
   result :=
     (p.X >= r.TopLeft.x) And
@@ -172,7 +172,7 @@ End;
 
 { TQuadTree }
 
-Constructor TQuadTree.Create(Const aBoundary: TQuadRect; aCapacity: Integer);
+Constructor TQuadTree.Create(Const aBoundary: TQuadTreeRect; aCapacity: Integer);
 Var
   i: TQuadTreeDirection;
 Begin
@@ -220,17 +220,17 @@ Begin
   M.y := (fBoundary.TopLeft.y + fBoundary.BottomRight.y) / 2;
   tl := fBoundary.TopLeft;
   br := fBoundary.BottomRight;
-  fSubtrees[qtdNorthWest] := TQuadTree.Create(QuadRect(tl, m), fCapacity);
-  fSubtrees[qtdNorthEast] := TQuadTree.Create(QuadRect(v2(m.x, tl.y), v2(br.x, m.y)), fCapacity);
-  fSubtrees[qtdSouthWest] := TQuadTree.Create(QuadRect(v2(tl.x, m.y), v2(m.x, br.y)), fCapacity);
-  fSubtrees[qtdSouthEast] := TQuadTree.Create(QuadRect(m, br), fCapacity);
+  fSubtrees[qtdNorthWest] := TQuadTree.Create(QuadTreeRect(tl, m), fCapacity);
+  fSubtrees[qtdNorthEast] := TQuadTree.Create(QuadTreeRect(v2(m.x, tl.y), v2(br.x, m.y)), fCapacity);
+  fSubtrees[qtdSouthWest] := TQuadTree.Create(QuadTreeRect(v2(tl.x, m.y), v2(m.x, br.y)), fCapacity);
+  fSubtrees[qtdSouthEast] := TQuadTree.Create(QuadTreeRect(m, br), fCapacity);
   fdivided := true;
 End;
 
 Function TQuadTree.Add(Const aElement: TQuadTreeElement): Boolean;
 Begin
   result := false;
-  If (Not QuadRectContainsPoint(fBoundary, aElement.Position)) Then exit;
+  If (Not QuadTreeRectContainsPoint(fBoundary, aElement.Position)) Then exit;
   If fActualCapacity < fCapacity Then Begin
     fElements[fActualCapacity] := aElement;
     inc(fActualCapacity);
@@ -251,15 +251,15 @@ Begin
   End;
 End;
 
-Function TQuadTree.Query(Const aRange: TQuadRect): TQuadTreeElementArray;
+Function TQuadTree.Query(Const aRange: TQuadTreeRect): TQuadTreeElementArray;
 Var
   i: Integer;
   j: TQuadTreeDirection;
 Begin
   result := Nil;
-  If (Not QuadRectIntersects(fBoundary, aRange)) Then exit;
+  If (Not QuadTreeRectIntersects(fBoundary, aRange)) Then exit;
   For i := 0 To fActualCapacity - 1 Do Begin
-    If (QuadRectContainsPoint(aRange, fElements[i].Position)) Then Begin
+    If (QuadTreeRectContainsPoint(aRange, fElements[i].Position)) Then Begin
       setlength(result, high(result) + 2);
       result[high(result)] := fElements[i];
     End;
@@ -271,17 +271,17 @@ Begin
   End;
 End;
 
-Procedure TQuadTree.Query2Internal(Const aRange: TQuadRect;
+Procedure TQuadTree.Query2Internal(Const aRange: TQuadTreeRect;
   Const Buffer: PQuadTreeElement; Var resultElements: integer;
   Const maxAllowedElements: integer);
 Var
   i: Integer;
   j: TQuadTreeDirection;
 Begin
-  If (Not QuadRectIntersects(fBoundary, aRange)) Then exit;
+  If (Not QuadTreeRectIntersects(fBoundary, aRange)) Then exit;
   If resultElements >= maxAllowedElements Then exit;
   For i := 0 To fActualCapacity - 1 Do Begin
-    If (QuadRectContainsPoint(aRange, fElements[i].Position)) Then Begin
+    If (QuadTreeRectContainsPoint(aRange, fElements[i].Position)) Then Begin
       buffer[resultElements] := fElements[i];
       inc(resultElements);
       If resultElements >= maxAllowedElements Then exit;
@@ -294,7 +294,7 @@ Begin
   End;
 End;
 
-Procedure TQuadTree.Query2(Const aRange: TQuadRect;
+Procedure TQuadTree.Query2(Const aRange: TQuadTreeRect;
   Const Buffer: PQuadTreeElement; Out resultElements: integer;
   Const maxAllowedElements: integer);
 Begin
