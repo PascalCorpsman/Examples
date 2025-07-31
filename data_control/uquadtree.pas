@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uquadtree                                                       29.07.2025 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - bufferd queue function                                *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uquadtree;
@@ -88,6 +89,7 @@ Type
         Position: TVector2;
         Data: T;
       End;
+      PQuadTreeElement = ^TQuadTreeElement;
       TQuadTreeElementArray = Array Of TQuadTreeElement;
 
       TOnFreeElement = Procedure(Sender: TObject; Var aElement: TQuadTreeElement) Of Object;
@@ -96,6 +98,7 @@ Type
     fSubtrees: Array[TQuadTreeDirection] Of TQuadTree;
     fdivided: Boolean;
     Procedure Subdivide;
+    Procedure Query2Internal(Const aRange: TQuadRect; Const Buffer: PQuadTreeElement; Var resultElements: integer; Const maxAllowedElements: integer);
   public
     OnFreeElement: TOnFreeElement;
 
@@ -106,6 +109,19 @@ Type
     Procedure Clear;
 
     Function Query(Const aRange: TQuadRect): TQuadTreeElementArray;
+
+    (*
+     * Wie Query, nur das keine Dynamischen Allokationen stattfinden und stattdessen Buffer verwendet wird
+     * Dieser muss vorher allokiert worden sein und Platz für mindestens maxAllowedElements Elemente beinhalten.
+     * In:
+     *     aRange
+     *     Buffer[maxAllowedElements]
+     *     maxAllowedElements         - max size that can be used from Buffer
+     * Out:
+     *     Buffer[maxAllowedElements]
+     *     resultElements         - number of actual "found" Elements
+     *)
+    Procedure Query2(Const aRange: TQuadRect; Const Buffer: PQuadTreeElement; Out resultElements: integer; Const maxAllowedElements: integer);
   End;
 
   (*
@@ -253,6 +269,37 @@ Begin
       result := Concat(result, fSubtrees[j].Query(aRange));
     End;
   End;
+End;
+
+Procedure TQuadTree.Query2Internal(Const aRange: TQuadRect;
+  Const Buffer: PQuadTreeElement; Var resultElements: integer;
+  Const maxAllowedElements: integer);
+Var
+  i: Integer;
+  j: TQuadTreeDirection;
+Begin
+  If (Not QuadRectIntersects(fBoundary, aRange)) Then exit;
+  If resultElements >= maxAllowedElements Then exit;
+  For i := 0 To fActualCapacity - 1 Do Begin
+    If (QuadRectContainsPoint(aRange, fElements[i].Position)) Then Begin
+      buffer[resultElements] := fElements[i];
+      inc(resultElements);
+      If resultElements >= maxAllowedElements Then exit;
+    End;
+  End;
+  If fdivided Then Begin
+    For j In TQuadTreeDirection Do Begin
+      fSubtrees[j].Query2Internal(aRange, Buffer, resultElements, maxAllowedElements);
+    End;
+  End;
+End;
+
+Procedure TQuadTree.Query2(Const aRange: TQuadRect;
+  Const Buffer: PQuadTreeElement; Out resultElements: integer;
+  Const maxAllowedElements: integer);
+Begin
+  resultElements := 0;
+  Query2Internal(aRange, Buffer, resultElements, maxAllowedElements);
 End;
 
 End.

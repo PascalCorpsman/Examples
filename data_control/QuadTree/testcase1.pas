@@ -53,6 +53,7 @@ Type
     Procedure AddPointsUpUntilFirstSubdivide;
     Procedure RandomMassTest;
     Procedure RandomPartialMassTest;
+    Procedure RandomPartialMassTestWithBuffer;
   End;
 
 Implementation
@@ -196,6 +197,38 @@ Begin
    *)
   res := dut.Query(TopRightRect);
   AssertEquals(ptsCnt, length(res));
+  // TODO: hier könnte ggf. noch geprüft werden ob e.Data auch alles stimmt
+
+End;
+
+Procedure TTestCase1.RandomPartialMassTestWithBuffer;
+Const
+  Cnt = 1000;
+Var
+  e: TIntQuadTree.TQuadTreeElement;
+  i: Integer;
+  bufCnt, ptsCnt: integer;
+  Buffer: Array[0..CNT + 1] Of TIntQuadTree.TQuadTreeElement;
+Begin
+  RandSeed := 44;
+  ptsCnt := 0;
+  For i := 0 To Cnt - 1 Do Begin
+    e.Data := i;
+    e.Position := v2(
+      random(20) - 10,
+      random(20) - 10
+      );
+    If QuadRectContainsPoint(TopRightRect, e.Position) Then Begin
+      inc(ptsCnt);
+    End;
+    AssertTrue('Error, could not add element.', dut.Add(e));
+  End;
+  (*
+   * Und auch gleich Prüfen ob die Elemente auch wieder Auslesbar sind
+   *)
+  bufCnt := CNT; // -- Absichtlich Falsch initialisiert ;)
+  dut.Query2(TopRightRect, @Buffer[0], bufCnt, cnt);
+  AssertEquals(ptsCnt, bufCnt);
   // TODO: hier könnte ggf. noch geprüft werden ob e.Data auch alles stimmt
 
 End;
