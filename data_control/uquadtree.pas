@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uquadtree                                                       29.07.2025 *)
 (*                                                                            *)
-(* Version     : 0.02                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,7 @@
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - bufferd queue function                                *)
+(*               0.03 - ADD: Property Count                                   *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uquadtree;
@@ -97,10 +98,12 @@ Type
     fElements: TQuadTreeElementArray;
     fSubtrees: Array[TQuadTreeDirection] Of TQuadTree;
     fdivided: Boolean;
+    fCount: integer;
     Procedure Subdivide;
     Procedure Query2Internal(Const aRange: TQuadTreeRect; Const Buffer: PQuadTreeElement; Var resultElements: integer; Const maxAllowedElements: integer);
   public
     OnFreeElement: TOnFreeElement;
+    Property Count: integer read fCount; // Number of elements stored in the Quadtree (and all its subtrees)
 
     Constructor Create(Const aBoundary: TQuadTreeRect; aCapacity: Integer = 4); virtual;
     Destructor Destroy; override;
@@ -184,6 +187,7 @@ Begin
   For i In TQuadTreeDirection Do
     fSubtrees[i] := Nil;
   fdivided := false;
+  fCount := 0;
 End;
 
 Destructor TQuadTree.Destroy;
@@ -210,6 +214,7 @@ Begin
   End;
   fActualCapacity := 0;
   fdivided := false;
+  fCount := 0;
 End;
 
 Procedure TQuadTree.Subdivide;
@@ -231,6 +236,7 @@ Function TQuadTree.Add(Const aElement: TQuadTreeElement): Boolean;
 Begin
   result := false;
   If (Not QuadTreeRectContainsPoint(fBoundary, aElement.Position)) Then exit;
+  inc(fCount);
   If fActualCapacity < fCapacity Then Begin
     fElements[fActualCapacity] := aElement;
     inc(fActualCapacity);
