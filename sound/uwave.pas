@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uwave.pas                                                       ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.02                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -26,6 +26,7 @@
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 - Support "LIST", "id3 " Chunk                          *)
+(*               0.03 - Improve Info parsing and handling                     *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -140,6 +141,8 @@ Type
     Procedure ClearRawData;
     Procedure ClearInfo;
   public
+    Property Info: TInfo read fInfo; // Aus dem Wave gelesene Info (wird beim Save aktuell nicht geschrieben..)
+
     Property ChannelCount: uint32 read GetChannelCount; // Anzahl der Kanäle (1 = Mono, 2 = Stereo, .. )
     Property SampleRate: uInt32 read GetSampleRate; // Frequenz in derer das Wave Vorliegt (= Samples Pro Sekunde)
     Property SampleCount: uInt32 read GetSampleCount; // Anzahl der Samples
@@ -362,10 +365,94 @@ Begin
         stream.Read(aInfoIDSize, sizeof(aInfoIDSize));
         result := result + 8;
         Case aInfoId Of
+          'IARL': Begin
+              setlength(fInfo.IARL, aInfoIDSize);
+              Stream.Read(fInfo.IARL[1], aInfoIDSize);
+            End;
+          'IART': Begin
+              setlength(fInfo.IART, aInfoIDSize);
+              Stream.Read(fInfo.IART[1], aInfoIDSize);
+            End;
+          'ICMS': Begin
+              setlength(fInfo.ICMS, aInfoIDSize);
+              Stream.Read(fInfo.ICMS[1], aInfoIDSize);
+            End;
+          'ICMT': Begin
+              setlength(fInfo.ICMT, aInfoIDSize);
+              Stream.Read(fInfo.ICMT[1], aInfoIDSize);
+            End;
+          'ICOP': Begin
+              setlength(fInfo.ICOP, aInfoIDSize);
+              Stream.Read(fInfo.ICOP[1], aInfoIDSize);
+            End;
+          'ICRD': Begin
+              setlength(fInfo.ICRD, aInfoIDSize);
+              Stream.Read(fInfo.ICRD[1], aInfoIDSize);
+            End;
+          'ICRP': Begin
+              setlength(fInfo.ICRP, aInfoIDSize);
+              Stream.Read(fInfo.ICRP[1], aInfoIDSize);
+            End;
+          'IDIM': Begin
+              setlength(fInfo.IDIM, aInfoIDSize);
+              Stream.Read(fInfo.IDIM[1], aInfoIDSize);
+            End;
+          'IDPI': Begin
+              setlength(fInfo.IDPI, aInfoIDSize);
+              Stream.Read(fInfo.IDPI[1], aInfoIDSize);
+            End;
+          'IENG': Begin
+              setlength(fInfo.IENG, aInfoIDSize);
+              Stream.Read(fInfo.IENG[1], aInfoIDSize);
+            End;
           'IGNR': Begin
               setlength(fInfo.IGNR, aInfoIDSize);
               Stream.Read(fInfo.IGNR[1], aInfoIDSize);
-            End
+            End;
+          'IKEY': Begin
+              setlength(fInfo.IKEY, aInfoIDSize);
+              Stream.Read(fInfo.IKEY[1], aInfoIDSize);
+            End;
+          'ILGT': Begin
+              setlength(fInfo.ILGT, aInfoIDSize);
+              Stream.Read(fInfo.ILGT[1], aInfoIDSize);
+            End;
+          'IMED': Begin
+              setlength(fInfo.IMED, aInfoIDSize);
+              Stream.Read(fInfo.IMED[1], aInfoIDSize);
+            End;
+          'INAM': Begin
+              setlength(fInfo.INAM, aInfoIDSize);
+              Stream.Read(fInfo.INAM[1], aInfoIDSize);
+            End;
+          'IPLT': Begin
+              setlength(fInfo.IPLT, aInfoIDSize);
+              Stream.Read(fInfo.IPLT[1], aInfoIDSize);
+            End;
+          'IPRD': Begin
+              setlength(fInfo.IPRD, aInfoIDSize);
+              Stream.Read(fInfo.IPRD[1], aInfoIDSize);
+            End;
+          'ISBJ': Begin
+              setlength(fInfo.ISBJ, aInfoIDSize);
+              Stream.Read(fInfo.ISBJ[1], aInfoIDSize);
+            End;
+          'ISFT': Begin
+              setlength(fInfo.ISFT, aInfoIDSize);
+              Stream.Read(fInfo.ISFT[1], aInfoIDSize);
+            End;
+          'ISRC': Begin
+              setlength(fInfo.ISRC, aInfoIDSize);
+              Stream.Read(fInfo.ISRC[1], aInfoIDSize);
+            End;
+          'ISRF': Begin
+              setlength(fInfo.ISRF, aInfoIDSize);
+              Stream.Read(fInfo.ISRF[1], aInfoIDSize);
+            End;
+          'ITCH': Begin
+              setlength(fInfo.ITCH, aInfoIDSize);
+              Stream.Read(fInfo.ITCH[1], aInfoIDSize);
+            End;
         Else Begin
             Raise exception.Create('TWave.ReadListChunk, Error: unknown aInfoId: ' + aInfoId);
           End;
