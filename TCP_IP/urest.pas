@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uRest.pas                                                       11.08.2025 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.03                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version (server)                              *)
+(*               0.02 - Initial version (client)                              *)
+(*               0.03 - ADD HTTPHeader to getHandler                          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -43,8 +45,11 @@ Type
    * Theoretisch könnte man die HTTP Header mit durchreichen, das gäbe dann die Möglichkeit "Cookies" zu setzen
    * -> Dann wäre das ganze nicht Stateless, aber die bisherige Anforderung hat dies nicht benötigt.
    *)
-  TGetHandler = Function(Sender: TObject; Const aPath: String): TJSONobj Of Object;
+  TGetHandler = Function(Sender: TObject; Const aPath: String; Const HTTPHeader: tstrings): TJSONobj Of Object;
   TPostHandler = Function(Sender: TObject; Const aPath: String; Const aContent: TJSONObj): Boolean Of Object;
+
+  TOnGetResultCallback = Procedure(Sender: TObject; Const aPath: String; Const aContent: TJSONObj) Of Object;
+  TOnPostResultCallback = Procedure(Sender: TObject; Const aPath: String; aResult: TJSONObj) Of Object;
 
   THTTPReceivingState = (
     rsHeader,
@@ -53,14 +58,14 @@ Type
 
   { THTTPReceiver }
 
-  THTTPReceiver = Class // Simple HTTP Decoder Class
+  THTTPReceiver = Class // Simple HTTP Decoder Class // TODO: Auslagern in eine Eigene File
   private
     fHTTPReceivingState: THTTPReceivingState;
     fHeader: TStringList;
     fBody: TStringList; // TODO: Das wäre als TMemoryStream wahrscheinlich Sinnvoller !
     fBodyByteCount: integer;
     fBodyBuffer: String;
-    fActualReceivedLine, fLastReceivedLine: String;
+    fActualReceivedLine: String;
     Procedure Reset;
     Procedure EvaluateReceivedHeader;
   public
@@ -96,6 +101,8 @@ Type
     Handler: TPostHandler;
   End;
 
+  TStatus = (sIdle, sGet, sPost); // Für den Client, könnte auch Private sein ..
+
   { TRestServer }
 
   TRestServer = Class
@@ -128,7 +135,6 @@ Type
 
     Procedure SendResponceString(Const aData: String; Const aSocket: TLSocket);
   public
-
     (*
      * OnAccept, OnDisconnect, OnError, dürfen von "außen" genutzt werden (indem sie vorher initialisiert werden)
      * aTCPConnection wird nicht freigegeben !
@@ -149,14 +155,68 @@ Type
 
   TRestClient = Class
   private
+    fhttpReceiver: THTTPReceiver;
+    fStatus: TStatus;
     fTCPConnection: TLTcp;
+
+    FOnConnect_Captured: TLSocketEvent;
+    FOnDisconnect_Captured: TLSocketEvent;
+    FOnError_Captured: TLSocketErrorEvent;
+
+    Procedure OnConnect(aSocket: TLSocket);
+    Procedure OnDisconnect(aSocket: TLSocket);
+    Procedure OnError(Const msg: String; aSocket: TLSocket);
+    //Procedure OnCanSend(aSocket: TLSocket); -- Eigentlich können wir uns das sparen, weil die Lnet Komponente einen 64K Puffer hat und der Reichen müsste, sonst muss das rein wie beim Server
+    Procedure OnReceive(aSocket: TLSocket);
+
+    Procedure OnReceiveHTTPDocument(Sender: TObject; Const Header: TStrings; Body: TStrings);
+    // Schaut ob noch Callbacks offen sind und Sendet an diese die msg
+    Procedure HandleMessage(Const msg: String);
+  private
+    (*
+     * Get
+     *)
+    fGetCallback: TOnGetResultCallback;
+    fGetPath: String;
+    Procedure HandleGetCommand(Const Header, Body: TStrings);
+  private
+    (*
+     * Post
+     *)
+    fPostCallback: TOnPostResultCallback;
+    fPostPath: String;
+    Procedure HandlePostCommand(Const Header, Body: TStrings);
   public
+    (*
+     * OnConnect, OnDisconnect, OnError, dürfen von "außen" genutzt werden (indem sie vorher initialisiert werden)
+     * aTCPConnection wird nicht freigegeben !
+     *)
     Constructor Create(Const aTCPConnection: TLTcp); virtual;
     Destructor Destroy(); override;
+
+    Procedure CallAction; // Ruft die Callaction der TCP-Komponente auf (nur notwendig, wenn keine LCL variante verwendet wird.)
+
+    Function Get(Const Path: String; Const Callback: TOnGetResultCallback): Boolean;
+    Function Post(Const Path: String; Const Data: TJSONObj; Const Callback: TOnPostResultCallback): Boolean;
 
     Function Connect(IP: String; Port: integer): Boolean;
     Procedure DisConnect(Const Forced: Boolean);
   End;
+
+  TUriParameter = Record
+    Name: String;
+    Value: String;
+  End;
+
+  TUriParameters = Array Of TUriParameter;
+
+  (*
+   * In: "param1=value&param2=Value%20with%20Spaces
+   *
+   * Out:
+   * Array of parsed Uri Parameters
+   *)
+Function ParseQueryParams(Const Query: String): TUriParameters;
 
 Implementation
 
@@ -169,14 +229,6 @@ Procedure Nop; // Debug Only ..
 Begin
 
 End;
-
-Type
-  TUriParameter = Record
-    Name: String;
-    Value: String;
-  End;
-
-  TUriParameters = Array Of TUriParameter;
 
 Function DecodeURLElement(Const S: String): String; // Created by Microsoft Copilot
 Var
@@ -252,7 +304,6 @@ Begin
   fHTTPReceivingState := rsHeader;
   fHeader.Clear;
   fBody.Clear;
-  fLastReceivedLine := '';
   fActualReceivedLine := '';
   fBodyByteCount := 0;
 End;
@@ -279,7 +330,9 @@ Begin
   End
   Else Begin
     fHTTPReceivingState := rsBody;
-    fBodyBuffer := '';
+    // Vor Allokieren des Empfangspuffers ;)
+    setlength(fBodyBuffer, fBodyByteCount);
+    fBodyByteCount := 1;
   End;
 End;
 
@@ -298,15 +351,14 @@ Begin
           If (fActualReceivedLine[length(fActualReceivedLine) - 1] = #13) And
           (fActualReceivedLine[length(fActualReceivedLine)] = #10) Then Begin
             fHeader.Add(trim(fActualReceivedLine));
-            fLastReceivedLine := fActualReceivedLine;
             fActualReceivedLine := '';
           End;
         End;
       End;
     rsBody: Begin
-        fBodyBuffer := fBodyBuffer + chr(aData);
-        dec(fBodyByteCount);
-        If fBodyByteCount <= 0 Then Begin
+        fBodyBuffer[fBodyByteCount] := chr(aData);
+        inc(fBodyByteCount);
+        If fBodyByteCount > length(fBodyBuffer) Then Begin
           If assigned(OnReceiveHTTPDocument) Then Begin
             fBody.Text := fBodyBuffer;
             OnReceiveHTTPDocument(self, fHeader, fBody);
@@ -477,17 +529,20 @@ Var
   i: Integer;
   j: TJSONobj;
 Begin
-  //pu := aSocket.UserData;
   // 1. Extrahieren der Path
   Path := Uppercase(header[0]);
   Path := trim(copy(Path, 4, length(Path))); // "Get " abschneiden
-  If pos(' ', Path) <> 0 Then Begin // einen ggf Suffix abschneiden (typisch "HTTP/1.1")
+  If pos(' ', Path) <> 0 Then Begin // einen ggf. Suffix abschneiden (typisch "HTTP/1.1")
     Path := copy(Path, 1, pos(' ', Path) - 1);
+  End;
+  // Abschneiden aller ggf mit übergebenen Parameter
+  If pos('?', path) <> 0 Then Begin
+    path := copy(path, 1, pos('?', path) - 1);
   End;
   // 2. Suchen ob der Pfad registriert ist
   For i := 0 To high(fGetPaths) Do Begin
     If fGetPaths[i].path = Path Then Begin
-      j := fGetPaths[i].Handler(self, Path);
+      j := fGetPaths[i].Handler(self, Path, Header);
       js := j.ToString();
       SendResponceString(
         // HTTP Header
@@ -503,7 +558,7 @@ Begin
     End;
   End;
   // Fehler code unknown Path ..
-  js := '{"error":"Path ' + Path + ' not found"}';
+  js := '{"error":' + StringToJsonString('Path ' + Path + ' not found') + '}';
   SendResponceString(
     // HTTP Header
     'HTTP/1.1 404 Not Found' + CRT +
@@ -563,7 +618,7 @@ Begin
       If Not assigned(j) Then Raise exception.create('Blub'); // Wir wollen einfach in den Fehlerhandler ;)
     Except
       // Fehler Anfrage nicht Parsbar
-      s := '{"error":"Post ' + Path + ' without data"}';
+      s := '{"error":' + StringToJsonString('Post ' + Path + ' without data') + '}';
       SendResponceString(
         'HTTP/1.1 400 Bad Request' + CRT +
         'Content-Type: application/json' + CRT +
@@ -597,7 +652,7 @@ Begin
   End;
   j.free;
   // Fehler kein Handler definiert
-  s := '{"error":"No handler for path ' + Path + '"}';
+  s := '{"error":' + StringToJsonString('No handler for path ' + Path) + '}';
   SendResponceString(
     'HTTP/1.1 501 Not Implemented' + CRT +
     'Content-Type: application/json' + CRT +
@@ -645,11 +700,16 @@ End;
 
 Function TRestServer.Listen(aPort: integer): Boolean;
 Begin
+  result := false;
+  If (fPostPaths = Nil) And (fGetPaths = Nil) Then Begin
+    Raise Exception.Create('Error, no path handler set.');
+  End;
   result := fTCPConnection.Listen(aPort);
 End;
 
 Procedure TRestServer.DisConnect(Const Forced: Boolean);
 Begin
+  If Not fTCPConnection.Connected Then exit;
   fTCPConnection.IterReset;
   While fTCPConnection.IterNext Do Begin
     If assigned(fTCPConnection.Iterator) Then Begin
@@ -665,17 +725,204 @@ Constructor TRestClient.Create(Const aTCPConnection: TLTcp);
 Begin
   Inherited create;
   fTCPConnection := aTCPConnection;
+
+  FOnConnect_Captured := fTCPConnection.OnConnect;
+  FOnDisconnect_Captured := fTCPConnection.OnDisconnect;
+  FOnError_Captured := fTCPConnection.OnError;
+
+  // Einhängen unserer Komponente
+  fTCPConnection.OnConnect := @OnConnect;
+  fTCPConnection.OnDisconnect := @OnDisconnect;
+  fTCPConnection.OnReceive := @OnReceive;
+  //fTCPConnection.OnCanSend := @OnCanSend;
+  fTCPConnection.OnError := @OnError;
+
+  fStatus := sIdle;
+  fhttpReceiver := THTTPReceiver.Create;
+  fhttpReceiver.OnReceiveHTTPDocument := @OnReceiveHTTPDocument;
 End;
 
 Destructor TRestClient.Destroy;
 Begin
   DisConnect(true);
+
+  fTCPConnection.OnConnect := FOnConnect_Captured;
+  fTCPConnection.OnDisconnect := FOnDisconnect_Captured;
+  fTCPConnection.OnError := FOnError_Captured;
+
+  fhttpReceiver.free;
+  fhttpReceiver := Nil;
   fTCPConnection := Nil;
+End;
+
+Procedure TRestClient.CallAction;
+Begin
+  fTCPConnection.CallAction;
+End;
+
+Procedure TRestClient.OnReceiveHTTPDocument(Sender: TObject;
+  Const Header: TStrings; Body: TStrings);
+Begin
+  Case fStatus Of
+    sGet: HandleGetCommand(header, body);
+    sPost: HandlePostCommand(header, body);
+  End;
+  fStatus := sIdle;
+End;
+
+Procedure TRestClient.HandleMessage(Const msg: String);
+Var
+  jn: TJSONNode;
+Begin
+  jn := TJSONNode.Create;
+  jn.AddObj(TJSONValue.Create('msg', msg, true));
+  If assigned(fGetCallback) Then Begin
+    fGetCallback(self, fGetPath, jn);
+  End;
+  fGetCallback := Nil;
+  If assigned(fPostCallback) Then Begin
+    fPostCallback(self, fPostPath, jn);
+  End;
+  fPostCallback := Nil;
+  jn.free;
+  fStatus := sIdle;
+End;
+
+Procedure TRestClient.OnConnect(aSocket: TLSocket);
+Begin
+  fStatus := sIdle;
+  If assigned(FOnConnect_Captured) Then FOnConnect_Captured(aSocket);
+End;
+
+Procedure TRestClient.OnDisconnect(aSocket: TLSocket);
+Begin
+  HandleMessage('lost connection');
+  If assigned(FOnDisconnect_Captured) Then FOnDisconnect_Captured(aSocket);
+End;
+
+Procedure TRestClient.OnError(Const msg: String; aSocket: TLSocket);
+Begin
+  HandleMessage(msg);
+  If assigned(FOnError_Captured) Then FOnError_Captured(msg, aSocket);
+End;
+
+Procedure TRestClient.OnReceive(aSocket: TLSocket);
+Var
+  buffer: Array[0..1023] Of byte;
+  cnt, i: Integer;
+Begin
+  // Weiter Reichen der Empfangenen Daten an den HTTP Empfänger ..
+  cnt := aSocket.Get(buffer[0], length(buffer));
+  While cnt <> 0 Do Begin
+    For i := 0 To cnt - 1 Do Begin
+      fHTTPReceiver.ReceiveByte(buffer[i]);
+    End;
+    cnt := aSocket.Get(buffer[0], length(buffer));
+  End;
+End;
+
+Procedure TRestClient.HandleGetCommand(Const Header, Body: TStrings);
+Var
+  j: TJSONObj;
+  jp: TJSONParser;
+Begin
+  jp := TJSONParser.Create;
+  Try
+    j := jp.Parse(Body.Text);
+  Except
+    j := Nil;
+  End;
+  jp.free;
+  If Not assigned(j) Then Begin
+    HandleMessage('Error, got invalid data.');
+    exit;
+  End;
+  fGetCallback(self, fGetPath, j);
+  fGetCallback := Nil;
+  j.free;
+End;
+
+Procedure TRestClient.HandlePostCommand(Const Header, Body: TStrings);
+Var
+  j: TJSONObj;
+  jp: TJSONParser;
+  sa: TStringArray;
+Begin
+  // Read HTTP Status , wenn <> 204 -> Body lesen
+  sa := Header[0].Split(' ');
+  If sa[1] = '204' Then Begin
+    HandleMessage('Accepted');
+    exit;
+  End
+  Else Begin
+    jp := TJSONParser.Create;
+    Try
+      j := jp.Parse(Body.Text);
+    Except
+      j := Nil;
+    End;
+    jp.free;
+  End;
+  If Not assigned(j) Then Begin
+    HandleMessage('Error, got invalid data.');
+    exit;
+  End;
+  fPostCallback(self, fPostPath, j);
+  fPostCallback := Nil;
+  j.free;
+End;
+
+Function TRestClient.Get(Const Path: String;
+  Const Callback: TOnGetResultCallback): Boolean;
+Begin
+  result := false;
+  If (Not fTCPConnection.Connected) Or
+    (fStatus <> sIdle) Or
+    (Not Assigned(Callback)) Then exit;
+  fStatus := sGet;
+  fGetCallback := Callback;
+  fGetPath := Path;
+  fhttpReceiver.Reset;
+  fTCPConnection.SendMessage(
+    'GET ' + Path + ' HTTP/1.1' + CRT +
+    'Content-Type: application/json' + CRT +
+    CRT
+    );
+  result := true;
+End;
+
+Function TRestClient.Post(Const Path: String; Const Data: TJSONObj;
+  Const Callback: TOnPostResultCallback): Boolean;
+Var
+  s: String;
+Begin
+  result := false;
+  If (Not fTCPConnection.Connected) Or
+    (fStatus <> sIdle) Or
+    (Not assigned(Data)) Or
+    (Not Assigned(Callback)) Then exit;
+  fStatus := sPost;
+  fPostCallback := Callback;
+  fPostPath := Path;
+  fhttpReceiver.Reset;
+  s := Data.ToString();
+  fTCPConnection.SendMessage(
+    'POST ' + Path + ' HTTP/1.1' + CRT +
+    'Content-Type: application/json' + CRT +
+    'Content-Length: ' + inttostr(length(s)) + CRT +
+    CRT +
+    // HTTP Body
+    s);
+  result := true;
 End;
 
 Function TRestClient.Connect(IP: String; Port: integer): Boolean;
 Begin
   result := fTCPConnection.Connect(IP, Port);
+  fhttpReceiver.Reset;
+  fStatus := sIdle;
+  fGetCallback := Nil;
+  fPostCallback := Nil;
 End;
 
 Procedure TRestClient.DisConnect(Const Forced: Boolean);

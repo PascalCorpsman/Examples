@@ -1,20 +1,21 @@
 object Form1: TForm1
-  Left = 336
+  Left = 338
   Height = 524
-  Top = 115
+  Top = 116
   Width = 678
   Caption = 'Form1'
   ClientHeight = 524
   ClientWidth = 678
   Position = poScreenCenter
-  LCLVersion = '3.99.0.0'
+  LCLVersion = '4.99.0.0'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   object Label2: TLabel
     Left = 8
-    Height = 15
-    Top = 208
-    Width = 20
+    Height = 16
+    Top = 207
+    Width = 23
+    Anchors = [akLeft, akBottom]
     Caption = 'Log'
   end
   object Memo1: TMemo
@@ -22,7 +23,7 @@ object Form1: TForm1
     Height = 256
     Top = 224
     Width = 664
-    Anchors = [akTop, akLeft, akBottom]
+    Anchors = [akLeft, akRight, akBottom]
     Lines.Strings = (
       'Memo1'
     )
@@ -36,7 +37,7 @@ object Form1: TForm1
     Height = 25
     Top = 488
     Width = 75
-    Anchors = [akTop, akLeft, akBottom]
+    Anchors = [akLeft, akBottom]
     Caption = 'Clear'
     TabOrder = 1
     OnClick = Button2Click
@@ -52,19 +53,19 @@ object Form1: TForm1
     TabOrder = 2
     object TabSheet1: TTabSheet
       Caption = 'Server'
-      ClientHeight = 164
-      ClientWidth = 656
+      ClientHeight = 158
+      ClientWidth = 658
       object Label1: TLabel
         Left = 8
-        Height = 15
-        Top = 42
-        Width = 22
+        Height = 16
+        Top = 18
+        Width = 26
         Caption = 'Port'
       end
       object Button1: TButton
         Left = 168
         Height = 25
-        Top = 32
+        Top = 8
         Width = 75
         Caption = 'Start server'
         TabOrder = 0
@@ -72,45 +73,57 @@ object Form1: TForm1
       end
       object Edit1: TEdit
         Left = 48
-        Height = 23
-        Top = 34
+        Height = 26
+        Top = 10
         Width = 80
         TabOrder = 1
         Text = 'Edit1'
-        OnChange = Edit1Change
       end
       object Label3: TLabel
-        Left = 8
-        Height = 15
-        Top = 8
-        Width = 31
+        Left = 272
+        Height = 16
+        Top = 16
+        Width = 37
         Caption = 'label3'
+      end
+      object Label6: TLabel
+        Left = 8
+        Height = 16
+        Top = 49
+        Width = 115
+        Caption = 'Active connections:'
+      end
+      object Label7: TLabel
+        Left = 128
+        Height = 16
+        Top = 49
+        Width = 40
+        Caption = 'Label7'
       end
     end
     object TabSheet2: TTabSheet
       Caption = 'Client'
-      ClientHeight = 164
-      ClientWidth = 656
+      ClientHeight = 158
+      ClientWidth = 658
       object Label4: TLabel
         Left = 8
-        Height = 15
+        Height = 16
         Top = 16
-        Width = 10
+        Width = 11
         Caption = 'IP'
       end
       object Edit2: TEdit
         Left = 48
-        Height = 23
+        Height = 26
         Top = 8
         Width = 80
         TabOrder = 0
         Text = 'Edit2'
-        OnChange = Edit1Change
       end
       object Button3: TButton
         Left = 272
         Height = 25
-        Top = 8
+        Top = 9
         Width = 112
         Caption = 'Connect to server'
         TabOrder = 1
@@ -118,25 +131,95 @@ object Form1: TForm1
       end
       object Label5: TLabel
         Left = 144
-        Height = 15
+        Height = 16
         Top = 16
-        Width = 22
+        Width = 26
         Caption = 'Port'
       end
       object Edit3: TEdit
         Left = 184
-        Height = 23
+        Height = 26
         Top = 8
         Width = 80
         TabOrder = 2
         Text = 'Edit3'
-        OnChange = Edit1Change
+      end
+      object ComboBox1: TComboBox
+        Left = 96
+        Height = 26
+        Top = 40
+        Width = 100
+        ItemHeight = 0
+        ItemIndex = 0
+        Items.Strings = (
+          'GET'
+          'POST'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+        Text = 'GET'
+        OnChange = ComboBox1Change
+      end
+      object Label8: TLabel
+        Left = 6
+        Height = 16
+        Top = 47
+        Width = 32
+        Caption = 'CMD:'
+      end
+      object Memo2: TMemo
+        Left = 96
+        Height = 82
+        Top = 72
+        Width = 442
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Lines.Strings = (
+          'Memo2'
+        )
+        ScrollBars = ssAutoBoth
+        TabOrder = 4
+        WordWrap = False
+      end
+      object Label9: TLabel
+        Left = 8
+        Height = 16
+        Top = 72
+        Width = 89
+        Caption = 'JSON Content:'
+      end
+      object Label10: TLabel
+        Left = 208
+        Height = 16
+        Top = 47
+        Width = 28
+        Caption = 'Path'
+      end
+      object Edit4: TEdit
+        Left = 248
+        Height = 26
+        Top = 40
+        Width = 402
+        Anchors = [akTop, akLeft, akRight]
+        TabOrder = 5
+        Text = 'Edit4'
+      end
+      object Button4: TButton
+        Left = 546
+        Height = 82
+        Top = 72
+        Width = 104
+        Anchors = [akTop, akRight, akBottom]
+        Caption = 'Send'
+        TabOrder = 6
+        OnClick = Button4Click
       end
     end
   end
   object LTCPComponent1: TLTCPComponent
     Port = 0
     OnError = LTCPComponent1Error
+    OnDisconnect = LTCPComponent1Disconnect
+    OnConnect = LTCPComponent1Connect
     OnAccept = LTCPComponent1Accept
     Timeout = 0
     ReuseAddress = False
