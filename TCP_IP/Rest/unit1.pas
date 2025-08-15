@@ -77,7 +77,7 @@ Type
     // Dummy Path Handler for demonstration ;)
     Function GetStatus(Sender: TObject; Const aPath: String; Const HTTPHeader: TStrings): TJSONobj;
     // Dummy Path post handler
-    Function PostCMD(Sender: TObject; Const aPath: String; Const aContent: TJSONObj): Boolean;
+    Function PostCMD(Sender: TObject; Const aPath: String; Const aContent: TJSONObj): TPostResult;
   public
     RestServer: TRestServer;
     RestClient: TRestClient;
@@ -197,13 +197,15 @@ Begin
 End;
 
 Function TForm1.PostCMD(Sender: TObject; Const aPath: String;
-  Const aContent: TJSONObj): Boolean;
+  Const aContent: TJSONObj): TPostResult;
 Begin
   Memo1.Append(
     'PostCMD: ' + aPath + LineEnding +
     aContent.ToString('')
     );
-  result := true; // Accepted ;)
+  // Always accept with no responce ;)
+  result.HTTPCode := 204;
+  result.Content := Nil;
 End;
 
 Procedure TForm1.Button1Click(Sender: TObject);

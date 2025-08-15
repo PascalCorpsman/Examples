@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uRest.pas                                                       11.08.2025 *)
 (*                                                                            *)
-(* Version     : 0.03                                                         *)
+(* Version     : 0.04                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -25,6 +25,7 @@
 (* History     : 0.01 - Initial version (server)                              *)
 (*               0.02 - Initial version (client)                              *)
 (*               0.03 - ADD HTTPHeader to getHandler                          *)
+(*               0.04 - support more detailed post results                    *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -39,6 +40,11 @@ Uses
 
 Type
 
+  TPostResult = Record
+    HTTPCode: Integer; // Supported are all in "CodetoHTTPString", if you need more you need to adjust that function !
+    Content: TJSONObj; // If Nil HTTP-Code needs to be 204 or 304 !
+  End;
+
   TOnReceiveHTTPDocument = Procedure(Sender: TObject; Const Header: TStrings; Body: TStrings) Of Object;
 
   (*
@@ -46,7 +52,7 @@ Type
    * -> Dann wäre das ganze nicht Stateless, aber die bisherige Anforderung hat dies nicht benötigt.
    *)
   TGetHandler = Function(Sender: TObject; Const aPath: String; Const HTTPHeader: tstrings): TJSONobj Of Object;
-  TPostHandler = Function(Sender: TObject; Const aPath: String; Const aContent: TJSONObj): Boolean Of Object;
+  TPostHandler = Function(Sender: TObject; Const aPath: String; Const aContent: TJSONObj): TPostResult Of Object;
 
   TOnGetResultCallback = Procedure(Sender: TObject; Const aPath: String; Const aContent: TJSONObj) Of Object;
   TOnPostResultCallback = Procedure(Sender: TObject; Const aPath: String; aResult: TJSONObj) Of Object;
@@ -79,7 +85,7 @@ Type
   End;
 
   (*
-   * Daten, welche an den Socket gebunden werden
+   * Daten, welche an den Socket gebunden werden (REST Server)
    *)
   TUserData = Record
     HTTPReceiver: THTTPReceiver; // Aktueller Empfangspuffer
@@ -100,8 +106,6 @@ Type
     Path: String;
     Handler: TPostHandler;
   End;
-
-  TStatus = (sIdle, sGet, sPost); // Für den Client, könnte auch Private sein ..
 
   { TRestServer }
 
@@ -133,7 +137,7 @@ Type
     Procedure HandleGetCommand(Const Header: TStrings; Const aSocket: TLSocket);
     Procedure HandlePostCommand(Const Header, Body: TStrings; Const aSocket: TLSocket);
 
-    Procedure SendResponceString(Const aData: String; Const aSocket: TLSocket);
+    Procedure SendResponce(HTTPCode: Integer; Const Body: String; Const aSocket: TLSocket);
   public
     (*
      * OnAccept, OnDisconnect, OnError, dürfen von "außen" genutzt werden (indem sie vorher initialisiert werden)
@@ -150,6 +154,8 @@ Type
     Function Listen(aPort: integer): Boolean;
     Procedure DisConnect(Const Forced: Boolean);
   End;
+
+  TStatus = (sIdle, sGet, sPost); // Für den Client, könnte auch Private sein ..
 
   { TRestClient }
 
@@ -278,6 +284,67 @@ Begin
     Else Begin
       result[i].Value := '';
     End;
+  End;
+End;
+
+Function CodetoHTTPString(code: Integer): String;
+Begin
+  result := '';
+  Case code Of
+    200: result := '200 OK';
+    201: result := '201 Created';
+    204: result := '204 No Content';
+
+    304: result := '304 Not Modified';
+
+    400: result := '400 Bad Request';
+    401: result := '401 Unauthorized';
+    403: result := '403 Forbidden';
+    404: result := '404 Not Found';
+    405: result := '405 Method Not Allowed';
+    409: result := '409 Conflict';
+    422: result := '422 Unprocessable Entity';
+
+    500: result := '500 Internal Server Error';
+    501: result := '501 Not Implemented';
+  Else Begin
+      Raise exception.create('CodetoHTTP: Error, unknown code: ' + inttostr(code));
+    End;
+  End;
+End;
+
+(*
+ * Prüft ab, ob der zugehörige HTTPCpde pasend zum "Content" ist, ..
+ *)
+
+Function CheckHTTPCodeAndResultContent(HTTPCode: Integer; Const Content: Boolean): Boolean;
+Begin
+  result := true;
+  (*
+   * Liste aller HTTP-Codes die keinen Content haben dürfen!
+   *)
+  If (
+    (HTTPCode = 204)
+    Or (HTTPCode = 304)
+    ) And (Content) Then Begin
+    result := false;
+  End;
+  (*
+   * Liste aller HTTP-Codes die einen Content haben müssen !
+   * Gemäß HTTP-Spec. sind die eigentlich alle Optional, aber
+   * der hier liegende Code wurde mit VS-Code Thunder Client
+   * gegen geprüft und zumindest Thunder Client, hat bei den
+   * folgenden einen Body "verlangt".
+   *)
+  If (
+    (HTTPCode = 200)
+    Or (HTTPCode = 400)
+    Or (HTTPCode = 404)
+    Or (HTTPCode = 405)
+    Or (HTTPCode = 422)
+    Or (HTTPCode = 501)
+    ) And (Not Content) Then Begin
+    result := false;
   End;
 End;
 
@@ -470,7 +537,7 @@ Procedure TRestServer.OnReceiveHTTPDocument(Sender: TObject;
   Const Header: TStrings; Body: TStrings);
 Var
   Pu: PUserData;
-  js, CMD: String;
+  CMD: String;
 Begin
   pu := THTTPReceiver(Sender).UserData;
   // Auslesen des "Commands" aus der 1. Header Zeile
@@ -480,18 +547,23 @@ Begin
     'POST': HandlePostCommand(Header, Body, pu^.Socket);
   Else Begin
       // Error, unknown CMD
-      js := '{"error":"Method ' + cmd + ' is not supported for this resource"}';
-      SendResponceString(
-        // HTTP Header
-        'HTTP/1.1 405 Method Not Allowed' + CRT +
-        'Content-Type: application/json' + CRT +
-        'Content-Length: ' + inttostr(length(js)) + CRT +
-        // TODO: hier müssen mit weiteren Kommas, die 'Cases' von oben mit angefügt werden ;)
-        'Allow: GET, POST' + CRT +
-        CRT +
-        // HTTP Body
-        js
-        , pu^.Socket);
+      // TODO: der Allow Tag ist nun verloren gegangen :/
+      SendResponce(
+        405,
+        '{"error": ' + StringToJsonString('Method ' + cmd + ' is not supported for this resource') + '}',
+        pu^.Socket
+        );
+      //SendResponceString(
+      //  // HTTP Header
+      //  'HTTP/1.1 ' + CodetoHTTP(405) + CRT +
+      //  'Content-Type: application/json' + CRT +
+      //  'Content-Length: ' + inttostr(length(js)) + CRT +
+      //  // TODO: hier müssen mit weiteren Kommas, die 'Cases' von oben mit angefügt werden ;)
+      //  'Allow: GET, POST' + CRT +
+      //  CRT +
+      //  // HTTP Body
+      //  js
+      //  , pu^.Socket);
     End;
   End;
 End;
@@ -525,7 +597,7 @@ End;
 Procedure TRestServer.HandleGetCommand(Const Header: TStrings;
   Const aSocket: TLSocket);
 Var
-  Path, js: String;
+  Path: String;
   i: Integer;
   j: TJSONobj;
 Begin
@@ -543,31 +615,17 @@ Begin
   For i := 0 To high(fGetPaths) Do Begin
     If fGetPaths[i].path = Path Then Begin
       j := fGetPaths[i].Handler(self, Path, Header);
-      js := j.ToString();
-      SendResponceString(
-        // HTTP Header
-        'HTTP/1.1 200 OK' + CRT +
-        'Content-Type: application/json' + CRT +
-        'Content-Length: ' + inttostr(length(js)) + CRT +
-        CRT +
-        // HTTP Body
-        js
-        , aSocket);
+      SendResponce(200, j.ToString(), aSocket);
       j.free;
       exit;
     End;
   End;
   // Fehler code unknown Path ..
-  js := '{"error":' + StringToJsonString('Path ' + Path + ' not found') + '}';
-  SendResponceString(
-    // HTTP Header
-    'HTTP/1.1 404 Not Found' + CRT +
-    'Content-Type: application/json' + CRT +
-    'Content-Length: ' + inttostr(length(js)) + CRT +
-    CRT +
-    // HTTP Body
-    js
-    , aSocket);
+  SendResponce(
+    404,
+    '{"error":' + StringToJsonString('Path ' + Path + ' not found') + '}',
+    aSocket
+    );
 End;
 
 Procedure TRestServer.HandlePostCommand(Const Header, Body: TStrings;
@@ -576,10 +634,11 @@ Var
   jp: TJSONParser;
   j: TJSONObj;
   jn: TJSONNode;
-  s, Path, URI: String;
+  Path, URI: String;
   i: Integer;
   IsURLEncoded: Boolean;
   params: TUriParameters;
+  PostRes: TPostResult;
 Begin
   // 1. Extrahieren der Path
   Path := Uppercase(header[0]);
@@ -607,7 +666,7 @@ Begin
     For i := 0 To high(params) Do Begin
       jn.AddObj(TJSONValue.Create(params[i].Name, params[i].Value, true));
     End;
-    j := jn
+    j := jn;
   End
   Else Begin
     jp := TJSONParser.Create;
@@ -618,15 +677,10 @@ Begin
       If Not assigned(j) Then Raise exception.create('Blub'); // Wir wollen einfach in den Fehlerhandler ;)
     Except
       // Fehler Anfrage nicht Parsbar
-      s := '{"error":' + StringToJsonString('Post ' + Path + ' without data') + '}';
-      SendResponceString(
-        'HTTP/1.1 400 Bad Request' + CRT +
-        'Content-Type: application/json' + CRT +
-        'Content-Length: ' + inttostr(length(s)) + CRT +
-        CRT +
-        // HTTP Body
-        s
-        , aSocket);
+      SendResponce(
+        400, '{"error":' + StringToJsonString('Post ' + Path + ' without valid data') + '}',
+        aSocket
+        );
     End;
     jp.Free;
     If Not assigned(j) Then exit;
@@ -634,17 +688,13 @@ Begin
   // Suchen eines Passenden Handlers für den Pfad
   For i := 0 To high(fPostPaths) Do Begin
     If fPostPaths[i].Path = path Then Begin
-      If fPostPaths[i].Handler(self, Path, j) Then Begin
-        // Aktzeptiert
-        SendResponceString(
-          'HTTP/1.1 204 No Content' + CRT
-          + CRT, aSocket);
+      PostRes := fPostPaths[i].Handler(self, Path, j);
+      If assigned(PostRes.Content) Then Begin
+        SendResponce(PostRes.HTTPCode, PostRes.Content.ToString(), aSocket);
+        PostRes.Content.Free;
       End
       Else Begin
-        // Anfrage nicht Akzeptiert
-        SendResponceString(
-          'HTTP/1.1 422 Path with value Not accepted' + CRT
-          + CRT, aSocket);
+        SendResponce(PostRes.HTTPCode, '', aSocket);
       End;
       j.free;
       exit;
@@ -652,25 +702,41 @@ Begin
   End;
   j.free;
   // Fehler kein Handler definiert
-  s := '{"error":' + StringToJsonString('No handler for path ' + Path) + '}';
-  SendResponceString(
-    'HTTP/1.1 501 Not Implemented' + CRT +
-    'Content-Type: application/json' + CRT +
-    'Content-Length: ' + inttostr(length(s)) + CRT +
-    CRT +
-    // HTTP Body
-    s
-    , aSocket);
+  SendResponce(
+    501,
+    '{"error":' + StringToJsonString('No handler for path ' + Path) + '}',
+    aSocket
+    );
 End;
 
-Procedure TRestServer.SendResponceString(Const aData: String;
+Procedure TRestServer.SendResponce(HTTPCode: Integer; Const Body: String;
   Const aSocket: TLSocket);
 Var
   Pu: PUserData;
+  Header, res: String;
 Begin
+  Header := 'HTTP/1.1 ' + CodetoHTTPString(HTTPCode) + CRT;
+  If Not CheckHTTPCodeAndResultContent(HTTPCode, Body <> '') Then Begin
+    Raise exception.create('Error, HTTPCode and body are not compatible, see "CheckHTTPCodeAndResultContent" for more details.');
+  End;
+  If Body <> '' Then Begin
+    Header := Header +
+      'Content-Type: application/json' + CRT +
+      'Content-Length: ' + inttostr(length(Body)) + CRT;
+    res :=
+      Header + CRT +
+      Body
+      ;
+  End
+  Else Begin
+    // Bodyless responce
+    res :=
+      Header + CRT
+      ;
+  End;
   pu := aSocket.UserData;
   pu^.OutBuffer.Clear;
-  pu^.OutBuffer.Write(aData[1], length(aData));
+  pu^.OutBuffer.Write(res[1], length(res));
   pu^.OutBuffPos := 0;
   OnCanSend(aSocket);
 End;
@@ -850,18 +916,24 @@ Var
 Begin
   // Read HTTP Status , wenn <> 204 -> Body lesen
   sa := Header[0].Split(' ');
-  If sa[1] = '204' Then Begin
-    HandleMessage('Accepted');
+  If (sa[1] = '204') Then Begin
+    HandleMessage('OK');
     exit;
   End
   Else Begin
-    jp := TJSONParser.Create;
-    Try
-      j := jp.Parse(Body.Text);
-    Except
-      j := Nil;
+    If (sa[1] = '304') Then Begin
+      HandleMessage('Not Modified');
+      exit;
+    End
+    Else Begin
+      jp := TJSONParser.Create;
+      Try
+        j := jp.Parse(Body.Text);
+      Except
+        j := Nil;
+      End;
+      jp.free;
     End;
-    jp.free;
   End;
   If Not assigned(j) Then Begin
     HandleMessage('Error, got invalid data.');
@@ -882,6 +954,10 @@ Begin
   fStatus := sGet;
   fGetCallback := Callback;
   fGetPath := Path;
+  // Sollte der User Parameter mit gegeben haben, schneiden wir diese mal ab !
+  If pos('?', fGetPath) <> 0 Then Begin
+    fGetPath := copy(fGetPath, 1, pos('?', fGetPath) - 1);
+  End;
   fhttpReceiver.Reset;
   fTCPConnection.SendMessage(
     'GET ' + Path + ' HTTP/1.1' + CRT +
@@ -904,6 +980,10 @@ Begin
   fStatus := sPost;
   fPostCallback := Callback;
   fPostPath := Path;
+  // Sollte der User Parameter mit gegeben haben, schneiden wir diese mal ab !
+  If pos('?', fPostPath) <> 0 Then Begin
+    fPostPath := copy(fPostPath, 1, pos('?', fPostPath) - 1);
+  End;
   fhttpReceiver.Reset;
   s := Data.ToString();
   fTCPConnection.SendMessage(
