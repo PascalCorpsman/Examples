@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uRest.pas                                                       11.08.2025 *)
 (*                                                                            *)
-(* Version     : 0.04                                                         *)
+(* Version     : 0.05                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -26,6 +26,7 @@
 (*               0.02 - Initial version (client)                              *)
 (*               0.03 - ADD HTTPHeader to getHandler                          *)
 (*               0.04 - support more detailed post results                    *)
+(*               0.05 - support post with no params                           *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -41,8 +42,8 @@ Uses
 Type
 
   TPostResult = Record
-    HTTPCode: Integer; // Supported are all in "CodetoHTTPString", if you need more you need to adjust that function !
-    Content: TJSONObj; // If Nil HTTP-Code needs to be 204 or 304 !
+    HTTPCode: Integer; // Supported are all in "CodetoHTTP", if you need more you need to adjust that function !
+    Content: TJSONObj; // If Nil HTTP-Code needs to be 204 !
   End;
 
   TOnReceiveHTTPDocument = Procedure(Sender: TObject; Const Header: TStrings; Body: TStrings) Of Object;
@@ -674,16 +675,15 @@ Begin
     j := Nil;
     Try
       j := jp.Parse(Body.Text);
-      If Not assigned(j) Then Raise exception.create('Blub'); // Wir wollen einfach in den Fehlerhandler ;)
     Except
       // Fehler Anfrage nicht Parsbar
       SendResponce(
         400, '{"error":' + StringToJsonString('Post ' + Path + ' without valid data') + '}',
         aSocket
         );
+      exit;
     End;
     jp.Free;
-    If Not assigned(j) Then exit;
   End;
   // Suchen eines Passenden Handlers für den Pfad
   For i := 0 To high(fPostPaths) Do Begin
@@ -696,11 +696,11 @@ Begin
       Else Begin
         SendResponce(PostRes.HTTPCode, '', aSocket);
       End;
-      j.free;
+      If assigned(j) Then j.free;
       exit;
     End;
   End;
-  j.free;
+  If assigned(j) Then j.free;
   // Fehler kein Handler definiert
   SendResponce(
     501,
