@@ -42,8 +42,8 @@ Uses
 Type
 
   TPostResult = Record
-    HTTPCode: Integer; // Supported are all in "CodetoHTTP", if you need more you need to adjust that function !
-    Content: TJSONObj; // If Nil HTTP-Code needs to be 204 !
+    HTTPCode: Integer; // Supported are all in "CodetoHTTPString", if you need more you need to adjust that function !
+    Content: TJSONObj; // If Nil HTTP-Code needs to be 204 or 304 !
   End;
 
   TOnReceiveHTTPDocument = Procedure(Sender: TObject; Const Header: TStrings; Body: TStrings) Of Object;
