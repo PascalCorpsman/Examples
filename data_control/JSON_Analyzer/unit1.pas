@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* JSON-Analyser                                                   ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.06                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,14 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Demo für Findpath integriert                          *)
+(*               0.03 - Fix AV-wenn Code nicht Parsebar                       *)
+(*                      Schriftart Courier New                                *)
+(*               0.04 - Support für JSON5 Kommentare                          *)
+(*               0.05 - Update Uncommenter für besseren Support der JSON5     *)
+(*                      Kommentare                                            *)
+(*               0.06 - Memo -> Synedit + highlighter von                     *)
+(*                       https://github.com/varianus/ovotext                  *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -33,7 +41,8 @@ Unit Unit1;
 Interface
 
 Uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, uJSON;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
+  SynEdit, uJSON, synhighlighterjson;
 
 Type
 
@@ -47,7 +56,7 @@ Type
     ComboBox1: TComboBox;
     Label1: TLabel;
     Label2: TLabel;
-    Memo1: TMemo;
+    SynEdit1: TSynEdit;
     TreeView1: TTreeView;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
@@ -77,7 +86,7 @@ Begin
   p := TJSONParser.Create;
   p.SupportJSON5Comments := CheckBox1.Checked;
   Try
-    jo := p.Parse(memo1.Text);
+    jo := p.Parse(SynEdit1.Text);
   Except
     On av: Exception Do Begin
       showmessage(av.Message);
@@ -91,7 +100,7 @@ Begin
     exit;
   End;
   If assigned(jo) Then Begin
-    memo1.Text := trim(jo.ToString('')); // Pretty printed
+    SynEdit1.Text := trim(jo.ToString('')); // Pretty printed
     // Generieren des TTreeview
     CreateTree(jo, Nil);
     jo.free;
@@ -116,7 +125,7 @@ Begin
   p := TJSONParser.Create;
   p.SupportJSON5Comments := CheckBox1.Checked;
   Try
-    jo := p.Parse(memo1.Text);
+    jo := p.Parse(SynEdit1.Text);
   Except
     On av: Exception Do Begin
       showmessage(av.Message);
@@ -148,16 +157,10 @@ Begin
 End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
+Var
+  highlighter: TSynJSONSyn;
 Begin
-  (*
-   * History: 0.01 = initial version
-   *          0.02 = Demo für Findpath integriert
-   *          0.03 = Fix AV-wenn Code nicht Parsebar
-   *                 Schriftart Courier New
-   *          0.04 = Support für JSON5 Kommentare
-   *          0.05 = Update Uncommenter für besseren Support der JSON5 Kommentare
-   *)
-  caption := 'JSON-Class Analyzer ver. 0.05';
+  caption := 'JSON-Class Analyzer ver. 0.06';
   Application.Title := caption;
 
   ComboBox1.items.add('User:info.Username');
@@ -167,7 +170,10 @@ Begin
   ComboBox1.items.add('app:options.localregion');
   ComboBox1.itemindex := 0;
 
-  // memo1.Text := '{"box":[[1.2,3.4],[5.6,7.8]]}';
+  // synedit1.Text := '{"box":[[1.2,3.4],[5.6,7.8]]}';
+  highlighter := TSynJSONSyn.Create(self);
+  highlighter.Name := 'JSON_Highlighter';
+  SynEdit1.Highlighter := highlighter;
 End;
 
 Procedure TForm1.CreateTree(N: TJSONObj; Root: TTreeNode);

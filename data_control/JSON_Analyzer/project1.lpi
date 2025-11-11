@@ -26,12 +26,18 @@
     <RunParams>
       <FormatVersion Value="2"/>
     </RunParams>
-    <RequiredPackages Count="1">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEditDsgn"/>
       </Item1>
+      <Item2>
+        <PackageName Value="SynEdit"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="7">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -52,6 +58,20 @@
         <Filename Value="..\..\uncommenter.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="synhighlighterjson.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SynHighlighterJSON"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="SynDefines.inc"/>
+        <IsPartOfProject Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="syneditstrconstextra.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SynEditStrConstExtra"/>
+      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

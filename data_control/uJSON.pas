@@ -52,7 +52,6 @@ Unit uJSON;
 {$MODE objfpc}{$H+}
 
 {$INTERFACES CORBA}
-
 Interface
 
 (*
@@ -553,6 +552,7 @@ Begin
   setlength(result.fobjs, length(Self.fobjs));
   For i := 0 To high(fobjs) Do Begin
     result.fobjs[i] := Self.fobjs[i].Clone;
+    result.fobjs[i].fParent := result;
   End;
 End;
 
@@ -562,6 +562,7 @@ Begin
     (JSONObj Is TJSONNode) Then Begin
     setlength(fobjs, High(fobjs) + 2);
     fobjs[High(fobjs)] := JSONObj;
+    JSONObj.fParent := self;
   End
   Else Begin
     Raise exception.create('Error: ' + JSONObj.ClassName + ' not allowed as element for ' + ClassName);
@@ -637,6 +638,7 @@ Begin
   setlength(result.fobjs, length(Self.fobjs));
   For i := 0 To high(fobjs) Do Begin
     result.fobjs[i] := Self.fobjs[i].Clone;
+    result.fobjs[i].fParent := result;
   End;
 End;
 

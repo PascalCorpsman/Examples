@@ -21,7 +21,7 @@ Uses
   cthreads,
 {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, Unit1
+  Forms, Unit1, SynEditStrConstExtra, SynHighlighterJSON
   { you can add units after this };
 
 {$R *.res}
