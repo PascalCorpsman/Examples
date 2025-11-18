@@ -52,6 +52,7 @@ Unit uJSON;
 {$MODE objfpc}{$H+}
 
 {$INTERFACES CORBA}
+
 Interface
 
 (*
