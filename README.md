@@ -124,6 +124,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | [AVI Creator](graphics/AVI_Creator) | Demo for ugwavi.pas |
 | [CirclePackChart](graphics/CirclePackChart) | Demo application for ucirclepackchart.pas |
 | [ColorDialog](graphics/ColorDialog) | Demo application for ucolordialog.pas |
+| [ColorGrid](graphics/ColorGrid) | Demo application for ucolorgrid.pas |
 | [Graphics](graphics/Graphics) | unit tests for ugraphics.pas |
 | [LineEdit](graphics/LineEdit) | Demo application for ulineedit.pas |
 | [Playingcards](graphics/Playingcards) | Demo application for uplayingcard.pas |
@@ -133,6 +134,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | ubmp_graphikengine.pas | Class to organise multiple graphiks within a application  |
 | ucirclepackchart.pas | LCL-Component to display packed circles |
 | ucolordialog.pas | A alternate TColordialog variant (oriented on KDE Colour Picker) |
+| ucolorgrid.pas | A reimplementation of the tColorGrid component from Delphi5 |
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ugwavi.pas | Class to create .avi files out of images and waves |
 | ulineedit.pas | Class to edit a segmented transfer function |

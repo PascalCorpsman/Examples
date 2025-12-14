@@ -1,0 +1,49 @@
+object Form1: TForm1
+  Left = 339
+  Height = 207
+  Top = 118
+  Width = 293
+  Caption = 'Form1'
+  ClientHeight = 207
+  ClientWidth = 293
+  Position = poScreenCenter
+  LCLVersion = '4.99.0.0'
+  OnCreate = FormCreate
+  object Label1: TLabel
+    Left = 224
+    Height = 16
+    Top = 64
+    Width = 40
+    Caption = 'Label1'
+  end
+  object Label2: TLabel
+    Left = 224
+    Height = 16
+    Top = 96
+    Width = 40
+    Caption = 'Label2'
+  end
+  object Label3: TLabel
+    Left = 168
+    Height = 16
+    Top = 64
+    Width = 19
+    Caption = 'FG:'
+  end
+  object Label4: TLabel
+    Left = 168
+    Height = 16
+    Top = 96
+    Width = 20
+    Caption = 'BG:'
+  end
+  object Button1: TButton
+    Left = 8
+    Height = 25
+    Top = 168
+    Width = 275
+    Caption = 'Close'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+end
