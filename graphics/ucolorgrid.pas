@@ -192,17 +192,17 @@ Var
 Begin
   index := ColorToIndex(AValue);
   If (index = -1) And (index <> fBackgroundIndex) Then Exit;
-  fBackgroundIndex := index;
-  UpdateColorCaptions;
-  If assigned(OnBackGroundColorChange) Then
-    OnBackGroundColorChange(self);
-  Invalidate;
+  SetBackgroundIndex(index);
 End;
 
 Procedure TColorGrid.SetBackgroundIndex(AValue: Integer);
 Begin
   If fBackgroundIndex = AValue Then Exit;
   fBackgroundIndex := AValue;
+  UpdateColorCaptions;
+  If assigned(OnBackGroundColorChange) Then
+    OnBackGroundColorChange(self);
+  Invalidate;
 End;
 
 Procedure TColorGrid.SetForeGroundColor(AValue: TColor);
@@ -211,17 +211,17 @@ Var
 Begin
   index := ColorToIndex(AValue);
   If (index = -1) And (index <> fForegroundIndex) Then Exit;
-  fForegroundIndex := Index;
-  UpdateColorCaptions;
-  If assigned(OnForeGroundColorChange) Then
-    OnForeGroundColorChange(self);
-  Invalidate;
+  SetForegroundIndex(Index);
 End;
 
 Procedure TColorGrid.SetForegroundIndex(AValue: Integer);
 Begin
   If fForegroundIndex = AValue Then Exit;
   fForegroundIndex := AValue;
+  UpdateColorCaptions;
+  If assigned(OnBackGroundColorChange) Then
+    OnBackGroundColorChange(self);
+  Invalidate;
 End;
 
 Function TColorGrid.ColorToIndex(Const aColor: TColor): Integer;
