@@ -47,6 +47,8 @@ Type
     Procedure BevelPaint(Sender: TObject);
     Procedure BevelMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    Procedure BevelMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
 
     Procedure SetBackGroundColor(AValue: TColor);
     Procedure SetForeGroundColor(AValue: TColor);
@@ -59,6 +61,8 @@ Type
   public
     OnForeGroundColorChange: TNotifyEvent;
     OnBackGroundColorChange: TNotifyEvent;
+
+    Property OnMouseUp;
 
     Property ForeGroundColor: TColor read fForeGroundColor write SetForeGroundColor;
     Property BackGroundColor: TColor read fBackGroundColor write SetBackGroundColor;
@@ -101,6 +105,7 @@ Begin
     Grids[i].Parent := self;
     Grids[i].OnPaint := @BevelPaint;
     Grids[i].OnMouseDown := @BevelMouseDown;
+    Grids[i].OnMouseUp := @BevelMouseUp;
     Grids[i].Caption := '';
     Grids[i].Color := BevelColors[i];
     Grids[i].Font.Color := BevelFontColors[i];
@@ -142,6 +147,14 @@ Begin
   End;
   If ssRight In shift Then Begin
     SetBackGroundColor(TBevel(Sender).Color);
+  End;
+End;
+
+Procedure TColorGrid.BevelMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+Begin
+  If assigned(OnMouseUp) Then Begin
+    OnMouseUp(self, Button, Shift, TBevel(sender).left + x, TBevel(sender).Top + y);
   End;
 End;
 
