@@ -40,8 +40,8 @@ Type
 
   TColorGrid = Class(TWinControl)
   private
-    fBackGroundColor: TColor;
-    fForeGroundColor: TColor;
+    fBackgroundIndex: Integer;
+    fForegroundIndex: Integer;
     Grids: Array[0..15] Of TBevel;
 
     Procedure BevelPaint(Sender: TObject);
@@ -49,11 +49,14 @@ Type
       Shift: TShiftState; X, Y: Integer);
     Procedure BevelMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    Function GetBackGroundColor: TColor;
+    Function GetForeGroundColor: TColor;
 
     Procedure SetBackGroundColor(AValue: TColor);
+    Procedure SetBackgroundIndex(AValue: Integer);
     Procedure SetForeGroundColor(AValue: TColor);
+    Procedure SetForegroundIndex(AValue: Integer);
 
-    Function ColorToIndex(Const aColor: TColor): Integer;
     Procedure UpdateColorCaptions;
   protected
     Procedure DoOnResize; override;
@@ -64,10 +67,16 @@ Type
 
     Property OnMouseUp;
 
-    Property ForeGroundColor: TColor read fForeGroundColor write SetForeGroundColor;
-    Property BackGroundColor: TColor read fBackGroundColor write SetBackGroundColor;
+    Property ForeGroundColor: TColor read GetForeGroundColor write SetForeGroundColor;
+    Property BackGroundColor: TColor read GetBackGroundColor write SetBackGroundColor;
+
+    Property ForegroundIndex: Integer read fForegroundIndex write SetForegroundIndex;
+    Property BackgroundIndex: Integer read fBackgroundIndex write SetBackgroundIndex;
 
     Constructor Create(TheOwner: TComponent); override;
+
+    Function ColorToIndex(Const aColor: TColor): Integer;
+
   End;
 
   // TODO: Add a LCL Register Function ;)
@@ -110,10 +119,9 @@ Begin
     Grids[i].Color := BevelColors[i];
     Grids[i].Font.Color := BevelFontColors[i];
   End;
-  fForeGroundColor := clwhite;
-  fBackGroundColor := clwhite;
-  SetBackGroundColor(BevelColors[0]);
-  SetForeGroundColor(BevelColors[0]);
+  fForegroundIndex := 0;
+  fBackgroundIndex := 0;
+  UpdateColorCaptions();
 End;
 
 Procedure TColorGrid.BevelPaint(Sender: TObject);
@@ -158,17 +166,43 @@ Begin
   End;
 End;
 
+Function TColorGrid.GetBackGroundColor: TColor;
+Begin
+  If (fBackgroundIndex >= 0) And (fBackgroundIndex <= high(BevelColors)) Then Begin
+    result := BevelColors[fBackgroundIndex];
+  End
+  Else Begin
+    result := clNone;
+  End;
+End;
+
+Function TColorGrid.GetForeGroundColor: TColor;
+Begin
+  If (fForegroundIndex >= 0) And (fForegroundIndex <= high(BevelColors)) Then Begin
+    result := BevelColors[fForegroundIndex];
+  End
+  Else Begin
+    result := clNone;
+  End;
+End;
+
 Procedure TColorGrid.SetBackGroundColor(AValue: TColor);
 Var
   index: Integer;
 Begin
   index := ColorToIndex(AValue);
-  If (index = -1) Or (fBackGroundColor = AValue) Then Exit;
-  fBackGroundColor := AValue;
+  If (index = -1) And (index <> fBackgroundIndex) Then Exit;
+  fBackgroundIndex := index;
   UpdateColorCaptions;
   If assigned(OnBackGroundColorChange) Then
     OnBackGroundColorChange(self);
   Invalidate;
+End;
+
+Procedure TColorGrid.SetBackgroundIndex(AValue: Integer);
+Begin
+  If fBackgroundIndex = AValue Then Exit;
+  fBackgroundIndex := AValue;
 End;
 
 Procedure TColorGrid.SetForeGroundColor(AValue: TColor);
@@ -176,12 +210,18 @@ Var
   index: Integer;
 Begin
   index := ColorToIndex(AValue);
-  If (index = -1) Or (fForeGroundColor = AValue) Then Exit;
-  fForeGroundColor := AValue;
+  If (index = -1) And (index <> fForegroundIndex) Then Exit;
+  fForegroundIndex := Index;
   UpdateColorCaptions;
   If assigned(OnForeGroundColorChange) Then
     OnForeGroundColorChange(self);
   Invalidate;
+End;
+
+Procedure TColorGrid.SetForegroundIndex(AValue: Integer);
+Begin
+  If fForegroundIndex = AValue Then Exit;
+  fForegroundIndex := AValue;
 End;
 
 Function TColorGrid.ColorToIndex(Const aColor: TColor): Integer;
@@ -202,11 +242,11 @@ Var
   i: Integer;
 Begin
   For i := 0 To high(Grids) Do Begin
-    If Grids[i].Color = fForeGroundColor Then Begin
+    If i = fForegroundIndex Then Begin
       grids[i].Caption := 'FG';
     End
     Else Begin
-      If Grids[i].Color = fBackGroundColor Then Begin
+      If i = fBackgroundIndex Then Begin
         grids[i].Caption := 'BG';
       End
       Else Begin
