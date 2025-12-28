@@ -48,7 +48,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 | [Modbus_Client](TCP_IP/Modbus_Client) | Application to emulate a MODBUS-Slave device |
 | [Modbus_Diagnostic](TCP_IP/Modbus_Diagnostic) | Shows a implementation for the MODBUS RTU, MODBUS-TCP and MODBUS-TCP RTU version, use to detect address offset and encoding of the MODBUS SLAVE |
 | [Send_get_file](TCP_IP/Send_get_file) | Demo to transmit a file between server and client with a TCP-IP connection using L-Net |
-| [Socket](TCP_IP/Socket) | Demo application that shows how to establish a TCP-IP connection with L-Net |
+| [Socket_lNet](TCP_IP/Socket_lNet) | Demo application that shows how to establish a TCP-IP connection with L-Net |
 | uMQTTbroker.pas | a simpliest MQTT broker, only capable of receiving publishing clients (need L-Net) |
 | uchunkmanager.pas | Server / Client component to send packages of data through a TCP-IP connection (need L-Net) |
 | uhtml.pas | HTML-DOM parser |
