@@ -1,4 +1,4 @@
-# Socket
+# Socket - lNet
 
 This demo shows how to use the L-Net TLTCPComponent component.
 

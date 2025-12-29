@@ -1,0 +1,255 @@
+object Form1: TForm1
+  Left = 345
+  Height = 455
+  Top = 130
+  Width = 747
+  Caption = 'Form1'
+  ClientHeight = 455
+  ClientWidth = 747
+  Position = poScreenCenter
+  LCLVersion = '4.99.0.0'
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  object Button1: TButton
+    Left = 88
+    Height = 25
+    Top = 72
+    Width = 75
+    Caption = 'Connect'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+  object Edit1: TEdit
+    Left = 88
+    Height = 26
+    Top = 8
+    Width = 163
+    TabOrder = 1
+    Text = 'Edit1'
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 16
+    Top = 16
+    Width = 69
+    Caption = 'IP Address :'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 8
+    Height = 16
+    Top = 48
+    Width = 32
+    Caption = 'Port :'
+    ParentColor = False
+  end
+  object Edit2: TEdit
+    Left = 88
+    Height = 26
+    Top = 40
+    Width = 163
+    TabOrder = 2
+    Text = 'Edit2'
+  end
+  object Button2: TButton
+    Left = 176
+    Height = 25
+    Top = 72
+    Width = 75
+    Caption = 'Disconnect'
+    TabOrder = 3
+    OnClick = Button2Click
+  end
+  object Memo1: TMemo
+    Left = 88
+    Height = 192
+    Top = 104
+    Width = 630
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Lines.Strings = (
+      'Memo1'
+    )
+    TabOrder = 4
+  end
+  object Button3: TButton
+    Left = 643
+    Height = 25
+    Top = 304
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = 'Clear'
+    TabOrder = 5
+    OnClick = Button3Click
+  end
+  object Button4: TButton
+    Left = 643
+    Height = 25
+    Top = 384
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = 'Send'
+    TabOrder = 6
+    OnClick = Button4Click
+  end
+  object CheckBox1: TCheckBox
+    Left = 622
+    Height = 22
+    Top = 80
+    Width = 110
+    Anchors = [akTop, akRight]
+    Caption = 'Receive as Hex'
+    TabOrder = 7
+  end
+  object Button5: TButton
+    Left = 88
+    Height = 25
+    Top = 416
+    Width = 630
+    Anchors = [akLeft, akRight, akBottom]
+    Caption = 'Close'
+    TabOrder = 8
+    OnClick = Button5Click
+  end
+  object CheckBox3: TCheckBox
+    Left = 502
+    Height = 22
+    Top = 352
+    Width = 120
+    Anchors = [akRight, akBottom]
+    Caption = 'del text on send'
+    Checked = True
+    State = cbChecked
+    TabOrder = 9
+  end
+  object CheckBox4: TCheckBox
+    Left = 622
+    Height = 22
+    Top = 8
+    Width = 118
+    Anchors = [akTop, akRight]
+    Caption = 'Show eventslog'
+    Checked = True
+    State = cbChecked
+    TabOrder = 10
+  end
+  object Button6: TButton
+    Left = 264
+    Height = 25
+    Top = 72
+    Width = 75
+    Caption = 'Listen'
+    TabOrder = 11
+    OnClick = Button6Click
+  end
+  object CheckBox5: TCheckBox
+    Left = 500
+    Height = 22
+    Top = 328
+    Width = 141
+    Anchors = [akRight, akBottom]
+    Caption = 'Add crt + lf on send'
+    TabOrder = 12
+  end
+  object ComboBox1: TComboBox
+    Left = 88
+    Height = 28
+    Top = 383
+    Width = 518
+    Anchors = [akLeft, akRight, akBottom]
+    ItemHeight = 0
+    TabOrder = 13
+    Text = 'ComboBox1'
+    OnKeyPress = ComboBox1KeyPress
+  end
+  object Label3: TLabel
+    Left = 8
+    Height = 51
+    Top = 324
+    Width = 352
+    Anchors = [akLeft, akBottom]
+    Caption = '"#<value> " = send "number" (0..255)'#13#10'"##" = send "#"'#13#10'"#h<value> " = send "value" as hex (0 .. FF)'
+    Font.Name = 'Courier New'
+    ParentColor = False
+    ParentFont = False
+  end
+  object ComboBox2: TComboBox
+    Left = 643
+    Height = 26
+    Top = 349
+    Width = 75
+    Anchors = [akRight, akBottom]
+    ItemHeight = 0
+    ItemIndex = 0
+    Items.Strings = (
+      'All'
+    )
+    Style = csDropDownList
+    TabOrder = 14
+    Text = 'All'
+    Visible = False
+  end
+  object Label4: TLabel
+    Left = 448
+    Height = 16
+    Top = 18
+    Width = 66
+    Caption = 'SSLCert file'
+  end
+  object Edit3: TEdit
+    Left = 520
+    Height = 26
+    Top = 8
+    Width = 88
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 15
+    Text = 'Edit3'
+  end
+  object Label5: TLabel
+    Left = 448
+    Height = 16
+    Top = 48
+    Width = 63
+    Caption = 'SSLKey file'
+  end
+  object Edit4: TEdit
+    Left = 520
+    Height = 26
+    Top = 38
+    Width = 88
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 16
+    Text = 'Edit4'
+  end
+  object Label6: TLabel
+    Left = 448
+    Height = 16
+    Top = 81
+    Width = 58
+    Caption = 'SSLCA file'
+  end
+  object Edit5: TEdit
+    Left = 520
+    Height = 26
+    Top = 71
+    Width = 88
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 17
+    Text = 'Edit5'
+  end
+  object CheckBox2: TCheckBox
+    Left = 352
+    Height = 22
+    Top = 8
+    Width = 64
+    Caption = 'Use ssl'
+    TabOrder = 18
+  end
+  object CheckBox6: TCheckBox
+    Left = 352
+    Height = 22
+    Top = 71
+    Width = 80
+    Caption = 'SSL verify'
+    TabOrder = 19
+  end
+end

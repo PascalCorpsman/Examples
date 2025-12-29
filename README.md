@@ -55,6 +55,7 @@ Collection of classes and examples that are mainly related to Serial and Network
 | uip.pas | Some helper routines to work and get IP's |
 | umultipartformdatastream.pas | Class to create HTML Multipartforms as a stream |
 | urest.pas | implementation of a rest server / client |
+| usynapsecomponents.pas | Class that tries to mimik lNet interface but uses Synapse |
 | usynapsedownloader.pas | Class to use httpSend (see Synapse) to download files with progress update events |
 | utcp.pas | abstract wrapper for TLTcp (need L-net) |
 | uupdate.pas | class to easy automate update the application when developed |
