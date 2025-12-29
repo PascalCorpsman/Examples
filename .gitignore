@@ -1,1 +1,3 @@
 TCP_IP/Socket_Synapse/Create_server_certificates.sh
+*.crt
+*.key
