@@ -15,5 +15,11 @@ Features:
 - Send as ASCII / Hex-Values
 - Server supports as many clients as wanted
 
-Known Bufs:
+server .key / .crt file can be created by using this command:
+> openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout server.key \
+  -out server.crt \
+  -days 365
+
+Known Bugs:
 - When SSL is activated, the server needs to send 1 byte directly after accept, otherwise the client LCL thread stalls until the server send something.
