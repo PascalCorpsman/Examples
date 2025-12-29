@@ -123,7 +123,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  caption := 'Socket ver 0.03';
+  caption := 'lNet Socket ver 0.03';
   edit1.text := '127.0.0.1';
   edit2.text := '1234';
   ComboBox1.text := '';
