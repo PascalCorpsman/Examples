@@ -634,18 +634,15 @@ End;
 
 Function TSynapseConnection.SetState(Const aState: TSocketState;
   Const TurnOn: Boolean): Boolean;
+Var
+  NoDelay: Boolean;
 Begin
   result := false;
   If Not assigned(FSocket) Then exit;
   Case aState Of
     ssNoDelay: Begin
-        If TurnOn Then Begin
-          // TODO: sollte das "umstellen" nicht über den ClientThread laufen ?
-          FSocket.SetSendTimeout(0);
-        End
-        Else Begin
-          Raise exception.create('Error: TSynapseConnection.SetState turnon = false not implemented.');
-        End;
+        NoDelay := TurnOn;
+        setsockopt(FSocket.Socket, IPPROTO_TCP, TCP_NODELAY, @NoDelay, SizeOf(NoDelay));
       End;
   End;
 End;

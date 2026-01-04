@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uRest.pas                                                       11.08.2025 *)
 (*                                                                            *)
-(* Version     : 0.05                                                         *)
+(* Version     : 0.06                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -27,6 +27,7 @@
 (*               0.03 - ADD HTTPHeader to getHandler                          *)
 (*               0.04 - support more detailed post results                    *)
 (*               0.05 - support post with no params                           *)
+(*               0.06 - connected property for TRestClient                    *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -162,6 +163,7 @@ Type
 
   TRestClient = Class
   private
+    fConnected: Boolean;
     fhttpReceiver: THTTPReceiver;
     fStatus: TStatus;
     fTCPConnection: TLTcp;
@@ -194,6 +196,7 @@ Type
     fPostPath: String;
     Procedure HandlePostCommand(Const Header, Body: TStrings);
   public
+    Property Connected: Boolean read fConnected;
     (*
      * OnConnect, OnDisconnect, OnError, dürfen von "außen" genutzt werden (indem sie vorher initialisiert werden)
      * aTCPConnection wird nicht freigegeben !
@@ -790,6 +793,7 @@ End;
 Constructor TRestClient.Create(Const aTCPConnection: TLTcp);
 Begin
   Inherited create;
+  fConnected := false;
   fTCPConnection := aTCPConnection;
 
   FOnConnect_Captured := fTCPConnection.OnConnect;
@@ -857,17 +861,20 @@ End;
 Procedure TRestClient.OnConnect(aSocket: TLSocket);
 Begin
   fStatus := sIdle;
+  fConnected := true;
   If assigned(FOnConnect_Captured) Then FOnConnect_Captured(aSocket);
 End;
 
 Procedure TRestClient.OnDisconnect(aSocket: TLSocket);
 Begin
+  fConnected := false;
   HandleMessage('lost connection');
   If assigned(FOnDisconnect_Captured) Then FOnDisconnect_Captured(aSocket);
 End;
 
 Procedure TRestClient.OnError(Const msg: String; aSocket: TLSocket);
 Begin
+  fConnected := false;
   HandleMessage(msg);
   If assigned(FOnError_Captured) Then FOnError_Captured(msg, aSocket);
 End;
