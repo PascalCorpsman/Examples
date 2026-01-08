@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* SDL2 Joystick Demo                                              20.11.2024 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Add gamecontroller support                            *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -141,7 +142,7 @@ Begin
     halt;
   End;
 {$ENDIF}
-  caption := 'SDL-Joystick Demo ver. 0.01';
+  caption := 'SDL-Joystick Demo ver. 0.02';
   If SDL_Init(SDL_INIT_GAMECONTROLLER) <> 0 Then Begin
     showmessage('Error could not init SDL');
     halt;
