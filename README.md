@@ -34,7 +34,7 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 Collection of classes and examples corresponding to the usement of SDL2
 | Example | Description |
 | --- | --- |
-| [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas |
+| [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas and usdl_gamecontroller.pas |
 | usdl_joystick.pas | class to easy access to joysticks |
 | usdl_gamecontroller.pas | class to easy access to gamecontrollers |
 
