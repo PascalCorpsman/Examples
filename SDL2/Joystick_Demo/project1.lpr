@@ -21,7 +21,7 @@ Uses
   cthreads,
 {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, Unit1, usdl_joystick, sdl2;
+  Forms, Unit1;
 
 {$R *.res}
 

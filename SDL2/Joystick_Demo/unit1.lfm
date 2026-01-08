@@ -1,19 +1,19 @@
 object Form1: TForm1
-  Left = 323
+  Left = 619
   Height = 465
-  Top = 107
+  Top = 125
   Width = 612
   Caption = 'Form1'
   ClientHeight = 465
   ClientWidth = 612
-  LCLVersion = '3.99.0.0'
+  LCLVersion = '4.99.0.0'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   object Label1: TLabel
     Left = 8
     Height = 16
     Top = 8
-    Width = 39
+    Width = 38
     Caption = 'Select:'
     ParentColor = False
   end
@@ -35,11 +35,37 @@ object Form1: TForm1
     TabOrder = 1
     OnClick = Button1Click
   end
+  object Label2: TLabel
+    Left = 8
+    Height = 16
+    Top = 48
+    Width = 38
+    Caption = 'Select:'
+    ParentColor = False
+  end
+  object ComboBox2: TComboBox
+    Left = 48
+    Height = 30
+    Top = 48
+    Width = 312
+    ItemHeight = 0
+    Style = csDropDownList
+    TabOrder = 2
+  end
+  object Button2: TButton
+    Left = 368
+    Height = 30
+    Top = 48
+    Width = 131
+    Caption = 'Use GameController'
+    TabOrder = 3
+    OnClick = Button2Click
+  end
   object Timer1: TTimer
     Enabled = False
     Interval = 1
     OnTimer = Timer1Timer
-    Left = 144
-    Top = 64
+    Left = 128
+    Top = 176
   end
 end
