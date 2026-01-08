@@ -36,6 +36,7 @@ Collection of classes and examples corresponding to the usement of SDL2
 | --- | --- |
 | [Joystick_Demo](SDL2/Joystick_Demo) | Demo for usdl_joystick.pas |
 | usdl_joystick.pas | class to easy access to joysticks |
+| usdl_gamecontroller.pas | class to easy access to gamecontrollers |
 
 ## TCP_IP
 Collection of classes and examples that are mainly related to Serial and Network communications
