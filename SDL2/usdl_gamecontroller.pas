@@ -65,31 +65,32 @@ Type
     Destructor Destroy; override;
   End;
 
-  //Function ResolveGameControllerNameToIndex(Const aName: String; aIndex: integer = 0): integer; // -1 wenn nicht gefunden
+Function ResolveGameControllerNameToIndex(Const aName: String; aIndex: integer = 0): integer; // -1 wenn nicht gefunden
 
 Implementation
 
-//Function ResolveGameControllerNameToIndex(Const aName: String; aIndex: integer): integer;
-//Var
-//  index, i: Integer;
-//  s: String;
-//Begin
-//  result := -1;
-//  index := 0;
-//  If aname = '' Then exit;
-//  For i := 0 To SDL_NumJoysticks() - 1 Do Begin
-//    s := SDL_JoystickNameForIndex(i);
-//    If (aName = s) Then Begin
-//      result := i;
-//      If aIndex = index Then Begin
-//        exit;
-//      End
-//      Else Begin
-//        inc(index);
-//      End;
-//    End;
-//  End;
-//End;
+Function ResolveGameControllerNameToIndex(Const aName: String; aIndex: integer): integer;
+Var
+  index, i: Integer;
+  s: String;
+Begin
+  result := -1;
+  index := 0;
+  If aname = '' Then exit;
+  For i := 0 To SDL_NumJoysticks() - 1 Do Begin
+    If Not SDL_IsGameController(i) Then Continue;
+    s := SDL_gameControllerNameForIndex(i);
+    If (aName = s) Then Begin
+      result := i;
+      If aIndex = index Then Begin
+        exit;
+      End
+      Else Begin
+        inc(index);
+      End;
+    End;
+  End;
+End;
 
 { TSDL_GameController }
 
