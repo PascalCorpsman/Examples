@@ -39,34 +39,29 @@ Interface
 
 Uses
   Classes, SysUtils
-  , sdl2
+  , sdl2, usdl_joystick
   ;
 
 Type
 
   { TSDL_GameController }
 
-  TSDL_GameController = Class
+  TSDL_GameController = Class(TSDL_Joystick)
   private
     fAxisAvailable: Array[0..SDL_CONTROLLER_AXIS_MAX - 1] Of Boolean;
     fButtonAvailable: Array[0..SDL_CONTROLLER_BUTTON_MAX - 1] Of Boolean;
-    fInstance: Pointer;
-    Function GetAxisValue(index: integer): integer;
-    Function GetAxisAvailable(index: integer): boolean;
-    Function getAxisCount: integer;
-    Function GetButtonAvailable(index: integer): boolean;
-    Function getButtonCount: integer;
-    Function GetButtonValue(index: integer): boolean;
+  protected
+    Function GetAxisCount: integer; override;
+    Function GetAxisValue(index: integer): integer; override;
+    Function GetAxisAvailable(index: integer): boolean; virtual;
+    Function GetButtonCount: integer; override;
+    Function GetButtonValue(index: integer): boolean; override;
+    Function GetButtonAvailable(index: integer): boolean; virtual;
   public
-    Property ButtonCount: integer read getButtonCount;
-    Property Button[index: integer]: boolean read GetButtonValue;
     Property ButtonAvailable[index: integer]: boolean read GetButtonAvailable;
-    //
-    Property AxisCount: integer read getAxisCount;
-    Property Axis[index: integer]: integer read GetAxisValue; // ranging from -32768 to 32767
     Property AxisAvailable[index: integer]: boolean read GetAxisAvailable;
 
-    Constructor Create(Index: integer);
+    Constructor Create(Index: integer); override;
     Destructor Destroy; override;
   End;
 
@@ -141,7 +136,6 @@ Constructor TSDL_GameController.Create(Index: integer);
 Var
   i: Integer;
 Begin
-  Inherited create;
   If (SDL_WasInit(SDL_INIT_GAMECONTROLLER) And SDL_INIT_GAMECONTROLLER) = 0 Then Begin
     Raise Exception.create('Error SDL subsystem for gamecontroller is not initialized.');
   End;

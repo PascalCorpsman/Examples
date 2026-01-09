@@ -53,6 +53,8 @@ Type
   TForm1 = Class(TForm)
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
+    Button4: TButton;
     ComboBox1: TComboBox;
     ComboBox2: TComboBox;
     Label1: TLabel;
@@ -60,17 +62,17 @@ Type
     Timer1: TTimer;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
+    Procedure Button3Click(Sender: TObject);
+    Procedure Button4Click(Sender: TObject);
     Procedure FormCloseQuery(Sender: TObject; Var CanClose: boolean);
     Procedure FormCreate(Sender: TObject);
     Procedure Timer1Timer(Sender: TObject);
   private
     Combobox2IndexMapping: Array Of Integer;
     fsdlJoyStick: TSDL_Joystick;
-    fsdlGameController: TSDL_GameController;
     pb: Array Of TProgressBar;
     sp: Array Of TShape;
     Procedure CreateJoyStickLCL();
-    Procedure CreateGameControllerLCL();
   public
 
   End;
@@ -87,9 +89,7 @@ Implementation
 Procedure TForm1.FormCloseQuery(Sender: TObject; Var CanClose: boolean);
 Begin
   If assigned(fsdlJoyStick) Then fsdlJoyStick.free;
-  If assigned(fsdlGameController) Then fsdlGameController.free;
   fsdlJoyStick := Nil;
-  fsdlGameController := Nil;
   SDL_Quit();
 End;
 
@@ -106,6 +106,8 @@ Begin
     End;
     button1.Enabled := false;
     button2.Enabled := false;
+    button3.Enabled := true;
+    button4.Enabled := false;
     ComboBox1.Enabled := false;
     ComboBox2.Enabled := false;
     CreateJoyStickLCL();
@@ -116,44 +118,52 @@ Procedure TForm1.Button2Click(Sender: TObject);
 Begin
   If ComboBox2.ItemIndex <> -1 Then Begin
     Try
-      fsdlGameController := TSDL_GameController.Create(ComboBox2.ItemIndex);
+      fsdlJoyStick := TSDL_GameController.Create(Combobox2IndexMapping[ComboBox2.ItemIndex]);
     Except
-      fsdlGameController.free;
-      fsdlGameController := Nil;
+      fsdlJoyStick.free;
+      fsdlJoyStick := Nil;
       showmessage('Error could not init gamecontroller.');
       exit;
     End;
     button1.Enabled := false;
     button2.Enabled := false;
+    button3.Enabled := true;
+    button4.Enabled := false;
     ComboBox1.Enabled := false;
     ComboBox2.Enabled := false;
-    CreateGameControllerLCL();
+    CreateJoyStickLCL();
   End;
 End;
 
-Procedure TForm1.FormCreate(Sender: TObject);
+Procedure TForm1.Button3Click(Sender: TObject);
 Var
-  ver: TSDL_Version;
   i: Integer;
 Begin
-{$IFDEF SDL_RUNTIME_LOADING}
-  If Not SDL_LoadLib('') Then Begin
-    ShowMessage('Error, unable to load sdl lib');
-    halt;
-  End;
-{$ENDIF}
-  caption := 'SDL-Joystick Demo ver. 0.02';
-  If SDL_Init(SDL_INIT_GAMECONTROLLER) <> 0 Then Begin
-    showmessage('Error could not init SDL');
-    halt;
-  End;
-  SDL_GetVersion(@ver);
-  If SDL_VERSIONNUM(ver.major, ver.minor, ver.patch) < SDL_COMPILEDVERSION Then Begin
-    showmessage(format('The version of sdl.dll (%d.%d.%d) is to low you have to have at least %d.%d.%d', [ver.major, ver.minor, ver.patch, SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL]));
-    halt;
-  End;
+  // Unload
+  fsdlJoyStick.free;
   fsdlJoyStick := Nil;
-  fsdlGameController := Nil;
+  button1.enabled := true;
+  button2.enabled := true;
+  button3.enabled := false;
+  button4.Enabled := true;
+  ComboBox1.Enabled := true;
+  ComboBox2.Enabled := true;
+  For i := 0 To high(pb) Do
+    pb[i].free;
+  setlength(pb, 0);
+  For i := 0 To high(sp) Do
+    sp[i].free;
+  setlength(sp, 0);
+End;
+
+Procedure TForm1.Button4Click(Sender: TObject);
+Var
+  i: Integer;
+Begin
+  // Refresh
+  SDL_Quit();
+  SDL_Init(SDL_INIT_GAMECONTROLLER);
+
   ComboBox1.Clear;
   ComboBox2.Clear;
   Combobox2IndexMapping := Nil;
@@ -172,7 +182,30 @@ Begin
   If ComboBox2.Items.Count <> 0 Then Begin
     ComboBox2.ItemIndex := 0;
   End;
+End;
+
+Procedure TForm1.FormCreate(Sender: TObject);
+Var
+  ver: TSDL_Version;
+Begin
+{$IFDEF SDL_RUNTIME_LOADING}
+  If Not SDL_LoadLib('') Then Begin
+    ShowMessage('Error, unable to load sdl lib');
+    halt;
+  End;
+{$ENDIF}
+  caption := 'SDL-Joystick Demo ver. 0.02';
+  If SDL_Init(SDL_INIT_GAMECONTROLLER) <> 0 Then Begin
+    showmessage('Error could not init SDL');
+    halt;
+  End;
+  SDL_GetVersion(@ver);
+  If SDL_VERSIONNUM(ver.major, ver.minor, ver.patch) < SDL_COMPILEDVERSION Then Begin
+    showmessage(format('The version of sdl.dll (%d.%d.%d) is to low you have to have at least %d.%d.%d', [ver.major, ver.minor, ver.patch, SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL]));
+    halt;
+  End;
   fsdlJoyStick := Nil;
+  Button4.Click;
 End;
 
 Procedure TForm1.Timer1Timer(Sender: TObject);
@@ -182,37 +215,21 @@ Begin
   While SDL_PollEvent(@event) <> 0 Do Begin
     Case event.type_ Of
       SDL_JOYAXISMOTION: Begin // Eine Joystick Achse wurde geändert, diese überbehmen wir
-          If assigned(fsdlJoyStick) Then Begin
-            pb[event.jaxis.axis].Position := fsdlJoyStick.Axis[event.jaxis.axis];
-          End;
-          If assigned(fsdlGameController) Then Begin
-            pb[event.jaxis.axis].Position := fsdlGameController.Axis[event.jaxis.axis];
-          End;
+          pb[event.jaxis.axis].Position := fsdlJoyStick.Axis[event.jaxis.axis];
         End;
       SDL_JOYBUTTONUP,
         SDL_JOYBUTTONDOWN: Begin
-          If assigned(fsdlJoyStick) Then Begin
-            If fsdlJoyStick.Button[event.jbutton.button]
-              Then Begin
-              sp[event.jbutton.button].Brush.Color := clRed;
-            End
-            Else Begin
-              sp[event.jbutton.button].Brush.Color := clWhite;
-            End;
-          End;
-          If assigned(fsdlGameController) Then Begin
-            If fsdlGameController.Button[event.jbutton.button]
-              Then Begin
-              sp[event.jbutton.button].Brush.Color := clRed;
-            End
-            Else Begin
-              sp[event.jbutton.button].Brush.Color := clWhite;
-            End;
+          If fsdlJoyStick.Button[event.jbutton.button]
+            Then Begin
+            sp[event.jbutton.button].Brush.Color := clRed;
+          End
+          Else Begin
+            sp[event.jbutton.button].Brush.Color := clWhite;
           End;
         End;
       SDL_CONTROLLERBUTTONDOWN,
         SDL_CONTROLLERBUTTONUP: Begin
-          If fsdlGameController.Button[event.cbutton.button]
+          If fsdlJoyStick.Button[event.cbutton.button]
             Then Begin
             sp[event.cbutton.button].Brush.Color := clRed;
           End
@@ -258,53 +275,10 @@ Begin
     Else Begin
       sp[i].Brush.Color := clWhite;
     End;
-  End;
-  timer1.Enabled := true;
-End;
-
-Procedure TForm1.CreateGameControllerLCL();
-Var
-  i: Integer;
-Begin
-  setlength(pb, fsdlGameController.AxisCount);
-  For i := 0 To fsdlGameController.AxisCount - 1 Do Begin
-    pb[i] := TProgressBar.Create(Form1);
-    pb[i].Name := 'Progressbar' + inttostr(i + 1);
-    pb[i].Parent := Form1;
-    pb[i].Min := -32768;
-    pb[i].Max := 32767;
-    pb[i].Orientation := pbVertical;
-    pb[i].Top := 48 + 40;
-    pb[i].Left := 16 + i * (44 - 16);
-    pb[i].Width := 20;
-    pb[i].Height := 180;
-    If fsdlGameController.AxisAvailable[i] Then Begin
-      pb[i].Enabled := false;
-    End
-    Else Begin
-      pb[i].Position := fsdlGameController.Axis[i];
-    End;
-  End;
-  setlength(sp, fsdlGameController.ButtonCount);
-  For i := 0 To fsdlGameController.ButtonCount - 1 Do Begin
-    sp[i] := TShape.Create(form1);
-    sp[i].name := 'Shape' + IntToStr(i + 1);
-    sp[i].Parent := Form1;
-    sp[i].Shape := stCircle;
-    sp[i].Width := 20;
-    sp[i].Height := 20;
-    sp[i].Top := 48 + 180 + 10 + 40;
-    sp[i].Left := 16 + i * (20 + 5);
-    If fsdlGameController.ButtonAvailable[i] Then Begin
-      If fsdlGameController.Button[i] Then Begin
-        sp[i].Brush.Color := clRed;
-      End
-      Else Begin
-        sp[i].Brush.Color := clWhite;
+    If fsdlJoyStick Is TSDL_GameController Then Begin
+      If Not TSDL_GameController(fsdlJoyStick).ButtonAvailable[i] Then Begin
+        sp[i].Brush.Color := clGray;
       End;
-    End
-    Else Begin
-      sp[i].Brush.Color := clGray;
     End;
   End;
   timer1.Enabled := true;
