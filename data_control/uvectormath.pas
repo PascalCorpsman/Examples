@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uvectormat.pas                                                  12.11.2014 *)
 (*                                                                            *)
-(* Version     : 0.20                                                         *)
+(* Version     : 0.22                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -64,6 +64,8 @@
 (*                    speedup RectIntersectRect code                          *)
 (*               0.20 PointsToConvexHull for Tvertex3Array                    *)
 (*                    IsLinearDependent                                       *)
+(*               0.21 Add Generic Quicksort algorithm                         *)
+(*               0.22 Made uvectormath.inc not used by default                *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uvectormath;
@@ -71,6 +73,7 @@ Unit uvectormath;
 {$MODE objfpc}{$H+}
 {$MODESWITCH advancedrecords}
 {$MODESWITCH TypeHelpers}
+{$MODESWITCH nestedprocvars}
 
 Interface
 
@@ -80,29 +83,35 @@ Uses
   , classes // TPoint
   ;
 
+(*
+ * By default uvectormath.pas uses single as TBasetype (to be byte compatible to OpenGL) and Operand overloading
+ * if your project needs "more" or other settings
+ * define the "use_inc_file_to_not_use_default_settings" in your project configuration
+ *  Project -> Project Options -> Compiler Options -> Custom Options -> Defines
+ * and then use a "uvectormath.inc" file to define your own configurations
+ *)
+
+{$IFNDEF use_inc_file_to_not_use_default_settings}
+
 Const
   Epsilon = 0.00390625; // = 1 / 256, Unterscheiden sich 2 Float Werte um weniger als Epsilon, dann werden sie als Gleich angesehen
 
 Type
 
-  (*
-   * If you get a compiler error with missing file
-   * just create a file namend "uvectormath.inc" in your project folder and
-   * insert the following content:
-   *
-   * ---------- Content of file ----------
-     // Mit diesem Schalter kann das Überladen der Standard Operatoren Aktiviert
-     // werden ( Achtung das kann nicht jeder FPC Compiler )
+  TBaseType = Single; // Alle Komponenten bestehen aus BaseType, zur Nutzung von OpenGL ist Single zwingend !!
 
-     {$DEFINE UseOperandOverloading}
+{$DEFINE UseOperandOverloading}
 
-     TBaseType = Single; // Alle Komponenten bestehen aus BaseType, zur Nutzung von OpenGL ist Single zwingend !!
+{$ELSE}
 
-     ---------- End content of file ----------
-   *)
-
+(*
+ * for needed content of uvectormath.inc, see above section.
+ *)
 {$I uvectormath.inc}
 
+{$ENDIF}
+
+Type
   TVector2 = Record
     Case boolean Of
       false: (x, y: TBaseType);
@@ -609,7 +618,146 @@ Function CalculatePolynom(x: TBaseType; Const a: TVectorN): TBaseType;
 // zurück transformiert, das ist bei Großen Vektoren tatsächlich schneller (siehe hier: https://www.youtube.com/watch?v=KuXjwB4LzSA )
 Function Convolve(Const a, b: tvectorN): TVectorN;
 
+Type
+  TCompareFunction = Function(a, b: Pointer): Integer;
+  TNestedCompareFunction = Function(a, b: Pointer): Integer Is nested;
+
+  (*
+   * Generischer Quicksort Algoritmus auf einem Array
+   *)
+
+Procedure GenQuickSort(FirstElement: Pointer; ElementCount: integer; ElementSize: QWord; CompareFunction: TCompareFunction); overload;
+Procedure GenQuickSort(FirstElement: Pointer; ElementCount: integer; ElementSize: QWord; CompareFunction: TNestedCompareFunction); overload;
+
 Implementation
+
+Procedure GenQuickSort(FirstElement: Pointer; ElementCount: integer; ElementSize: QWord; CompareFunction: TCompareFunction);
+Var
+  PivotElement, Buffer: Array Of Byte;
+
+  Procedure Quick(li, re: Pointer);
+  Var
+    lp, rp, pp: Pointer;
+    LeftSize, RightSize: PtrInt;
+  Begin
+    While li < re Do Begin
+      // Create a Copy of the Pivo element for comparing during sorting..
+      pp := pointer(
+        PtrUInt(li) +
+        (((PtrUInt(re) - PtrUInt(li)) Div ElementSize) Shr 1) * ElementSize
+        );
+      move(pp^, PivotElement[0], ElementSize);
+      lp := li;
+      rp := re;
+      Repeat
+        While CompareFunction(lp, @PivotElement[0]) < 0 Do Begin
+          inc(lp, ElementSize);
+        End;
+        While CompareFunction(rp, @PivotElement[0]) > 0 Do Begin
+          dec(rp, ElementSize);
+        End;
+        If Lp <= Rp Then Begin
+          // Swap L and R elements using Buffer
+          move(lp^, Buffer[0], ElementSize);
+          move(rp^, lp^, ElementSize);
+          move(Buffer[0], rp^, ElementSize);
+          inc(lp, ElementSize);
+          dec(rp, ElementSize);
+        End;
+      Until lp > rp;
+      // Recursive call for the "smaller" part of the unsorted array
+      LeftSize := PtrInt(rp) - PtrInt(li);
+      RightSize := PtrInt(re) - PtrInt(lp);
+      If LeftSize < RightSize Then Begin
+        Quick(li, rp);
+        li := lp;
+      End
+      Else Begin
+        Quick(lp, re);
+        re := rp;
+      End;
+    End;
+  End;
+Begin
+  If ElementCount <= 1 Then exit;
+  If (ElementSize <= 0) Or (Not assigned(CompareFunction)) Then Begin
+    Raise exception.Create('GenQuickSort: Error, invalid configuration.');
+  End;
+  // Preallocate Buffers
+  buffer := Nil;
+  PivotElement := Nil;
+  setlength(buffer, ElementSize);
+  setlength(PivotElement, ElementSize);
+  // The Real Sorting
+  Quick(FirstElement, FirstElement + ElementSize * (ElementCount - 1));
+  // Teardown
+  setlength(buffer, 0);
+  setlength(PivotElement, 0);
+End;
+
+Procedure GenQuickSort(FirstElement: Pointer; ElementCount: integer; ElementSize: QWord; CompareFunction: TNestedCompareFunction);
+Var
+  PivotElement, Buffer: Array Of Byte;
+
+  Procedure Quick(li, re: Pointer);
+  Var
+    lp, rp, pp: Pointer;
+    LeftSize, RightSize: PtrInt;
+  Begin
+    While li < re Do Begin
+      // Create a Copy of the Pivo element for comparing during sorting..
+      pp := pointer(
+        PtrUInt(li) +
+        (((PtrUInt(re) - PtrUInt(li)) Div ElementSize) Shr 1) * ElementSize
+        );
+      move(pp^, PivotElement[0], ElementSize);
+      lp := li;
+      rp := re;
+      Repeat
+        While CompareFunction(lp, @PivotElement[0]) < 0 Do Begin
+          inc(lp, ElementSize);
+        End;
+        While CompareFunction(rp, @PivotElement[0]) > 0 Do Begin
+          dec(rp, ElementSize);
+        End;
+        If Lp <= Rp Then Begin
+          // Swap L and R elements using Buffer
+          move(lp^, Buffer[0], ElementSize);
+          move(rp^, lp^, ElementSize);
+          move(Buffer[0], rp^, ElementSize);
+          inc(lp, ElementSize);
+          dec(rp, ElementSize);
+        End;
+      Until lp > rp;
+      // Recursive call for the "smaller" part of the unsorted array
+      LeftSize := PtrInt(rp) - PtrInt(li);
+      RightSize := PtrInt(re) - PtrInt(lp);
+      If LeftSize < RightSize Then Begin
+        Quick(li, rp);
+        li := lp;
+      End
+      Else Begin
+        Quick(lp, re);
+        re := rp;
+      End;
+    End;
+  End;
+Begin
+  If ElementCount <= 1 Then exit;
+  If (ElementSize <= 0) Or (Not assigned(CompareFunction)) Then Begin
+    Raise exception.Create('GenQuickSort: Error, invalid configuration.');
+  End;
+  // Preallocate Buffers
+  buffer := Nil;
+  PivotElement := Nil;
+  setlength(buffer, ElementSize);
+  setlength(PivotElement, ElementSize);
+  // The Real Sorting
+  Quick(FirstElement, FirstElement + ElementSize * (ElementCount - 1));
+  // Teardown
+  setlength(buffer, 0);
+  setlength(PivotElement, 0);
+End;
 
 {$IFDEF UseOperandOverloading}
 
