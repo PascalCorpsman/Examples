@@ -85,23 +85,24 @@ Uses
   ;
 
 (*
- * By default uvectormath.pas uses single as TBasetype (to be byte compatible to OpenGL) and Operand overloading
- * if your project needs "more" or other settings
- * define the "use_inc_file_to_not_use_default_settings" in your project configuration
+ * By default uvectormath.pas uses single as TBasetype (to be byte compatible to OpenGL).
+ *
+ * If your project needs "more" or other settings:
+ * define the "use_inc_file_to_not_use_default_settings" in your project configuration:
+ *
  *  Project -> Project Options -> Compiler Options -> Custom Options -> Defines
- * and then use a "uvectormath.inc" file to define your own configurations
+ *
+ * and then use a "uvectormath.inc" file to define your own configurations.
  *)
 
 {$IFNDEF use_inc_file_to_not_use_default_settings}
 
 Const
-  Epsilon = 0.00390625; // = 1 / 256, Unterscheiden sich 2 Float Werte um weniger als Epsilon, dann werden sie als Gleich angesehen
+  Epsilon = 0.00390625; // = 1 / 256 = 2^(-8), Unterscheiden sich 2 Float Werte um weniger als Epsilon, dann werden sie als Gleich angesehen
 
 Type
 
   TBaseType = Single; // Alle Komponenten bestehen aus BaseType, zur Nutzung von OpenGL ist Single zwingend !!
-
-{$DEFINE UseOperandOverloading}
 
 {$ELSE}
 
@@ -204,6 +205,8 @@ Type
     Function Cross(Other: TVector2): TVector2;
     Function Hadamard(Other: TVector2): TVector2;
     Function Dot(Other: TVector2): TBaseType;
+    Procedure Lerp(Const Other: TVector2; Amplitude: TBaseType);
+    Function ToString: String;
   End;
 
   { TVector3helper }
@@ -229,6 +232,14 @@ Type
     Function Equal(Other: TVectorN): Boolean;
     Function Hadamard(Other: TVectorN): TVectorN;
     Function Transpose(): TMatrixNxM;
+    Procedure Fill(value: TBaseType);
+  End;
+
+  { TVector2Arrayhelper }
+
+  TVector2Arrayhelper = Type Helper For TVector2Array
+
+    Procedure Push(Const Vector: TVector2);
   End;
 
   { TMatrix2x2helper }
@@ -265,8 +276,6 @@ Type
     Function Transpose(): TMatrixNxM;
     Function MapMatrix(MapFunction: TMapFunction): TMatrixNxM;
   End;
-
-{$IFDEF UseOperandOverloading}
 
   (*
     -- Aus Sicherheitsgründen werden alle = Operatoren deaktiviert, da der
@@ -337,8 +346,6 @@ Operator / (s: TBaseType; v: TVector3): TVector3;
 Operator / (v: TVector3; s: TBaseType): TVector3;
 Operator / (s: TBaseType; v: TVector4): TVector4;
 Operator / (v: TVector4; s: TBaseType): TVector4;
-
-{$ENDIF}
 
 // Konstruktoren
 Function ZeroV2(): TVector2;
@@ -651,11 +658,14 @@ Var
     LeftSize, RightSize: PtrInt;
   Begin
     While li < re Do Begin
+{$PUSH}
+{$HINTS OFF}
       // Create a Copy of the Pivo element for comparing during sorting..
       pp := pointer(
         PtrUInt(li) +
         (((PtrUInt(re) - PtrUInt(li)) Div ElementSize) Shr 1) * ElementSize
         );
+{$POP}
       move(pp^, PivotElement[0], ElementSize);
       lp := li;
       rp := re;
@@ -676,8 +686,12 @@ Var
         End;
       Until lp > rp;
       // Recursive call for the "smaller" part of the unsorted array
+{$PUSH}
+{$WARNINGS OFF}
+{$HINTS OFF}
       LeftSize := PtrInt(rp) - PtrInt(li);
       RightSize := PtrInt(re) - PtrInt(lp);
+{$POP}
       If LeftSize < RightSize Then Begin
         Quick(li, rp);
         li := lp;
@@ -716,10 +730,13 @@ Var
   Begin
     While li < re Do Begin
       // Create a Copy of the Pivo element for comparing during sorting..
+{$PUSH}
+{$HINTS OFF}
       pp := pointer(
         PtrUInt(li) +
         (((PtrUInt(re) - PtrUInt(li)) Div ElementSize) Shr 1) * ElementSize
         );
+{$POP}
       move(pp^, PivotElement[0], ElementSize);
       lp := li;
       rp := re;
@@ -740,8 +757,12 @@ Var
         End;
       Until lp > rp;
       // Recursive call for the "smaller" part of the unsorted array
+{$PUSH}
+{$WARNINGS OFF}
+{$HINTS OFF}
       LeftSize := PtrInt(rp) - PtrInt(li);
       RightSize := PtrInt(re) - PtrInt(lp);
+{$POP}
       If LeftSize < RightSize Then Begin
         Quick(li, rp);
         li := lp;
@@ -768,8 +789,6 @@ Begin
   setlength(buffer, 0);
   setlength(PivotElement, 0);
 End;
-
-{$IFDEF UseOperandOverloading}
 
 Operator := (p: TPoint): TVector2;
 Begin
@@ -977,8 +996,6 @@ Operator / (v: TVector4; s: TBaseType): TVector4;
 Begin
   result := ScaleV4(1 / s, v);
 End;
-
-{$ENDIF}
 
 Function Sign(Value: TBaseType): Integer; // Gibt das Vorzeichen oder 0 zurück
 Begin
@@ -4246,6 +4263,19 @@ Begin
   result := DotV2(self, Other);
 End;
 
+Procedure TVector2helper.Lerp(Const Other: TVector2; Amplitude: TBaseType);
+Var
+  d: TVector2;
+Begin
+  d := Other - Self;
+  self := self + d * Amplitude;
+End;
+
+Function TVector2helper.ToString: String;
+Begin
+  result := Print(self);
+End;
+
 { TVector3helper }
 
 Function TVector3helper.Equal(Other: TVector3): Boolean;
@@ -4307,9 +4337,26 @@ Begin
   result := HadamardVN(self, Other);
 End;
 
-Function TVectorNhelper.Transpose(): TMatrixNxM;
+Function TVectorNhelper.Transpose: TMatrixNxM;
 Begin
   result := TransposeVector(self);
+End;
+
+Procedure TVectorNhelper.Fill(value: TBaseType);
+var
+  i: Integer;
+Begin
+  For i := 0 To high(self) Do Begin
+    self[i] := value;
+  End;
+End;
+
+{ TVector2Arrayhelper }
+
+Procedure TVector2Arrayhelper.Push(Const Vector: TVector2);
+Begin
+  setlength(self, high(Self) + 2);
+  self[high(self)] := Vector;
 End;
 
 { TMatrix2x2helper }

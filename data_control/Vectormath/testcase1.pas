@@ -9,6 +9,33 @@ Uses
 
 Type
 
+  { TGeneralTests }
+
+  TGeneralTests = Class(TTestCase)
+  protected
+    //Procedure SetUp; override;
+    //Procedure TearDown; override;
+  published
+    Procedure RectIsInRect;
+    Procedure RectIsNotInRect;
+  End;
+
+  { TVector2Tests }
+
+  TVector2Tests = Class(TTestCase)
+  protected
+  published
+    Procedure Lerp;
+  End;
+
+  { TVector3Tests }
+
+  TVector3Tests = Class(TTestCase)
+  protected
+  published
+    Procedure LinearDependent;
+  End;
+
   { TMatrix2x2Tests }
 
   TMatrix2x2Tests = Class(TTestCase)
@@ -21,14 +48,6 @@ Type
     Procedure OperatorEqual;
     Procedure InvertMatrix;
     Procedure InvertMatrix2;
-  End;
-
-  { TVector3Tests }
-
-  TVector3Tests = Class(TTestCase)
-  protected
-  published
-    Procedure LinearDependent;
   End;
 
   { TMatrix3x3Tests }
@@ -74,95 +93,195 @@ Type
     Procedure LoadFromSaveToStream;
   End;
 
-  { TGeneralTests }
-
-  TGeneralTests = Class(TTestCase)
-  protected
-    //Procedure SetUp; override;
-    //Procedure TearDown; override;
-  published
-    Procedure RectIsInRect;
-    Procedure RectIsNotInRect;
-  End;
-
 Implementation
 
-{ TMatrix4x4Tests }
+{ TGeneralTests }
 
-Procedure TMatrix4x4Tests.MarixMultiplication;
+Procedure TGeneralTests.RectIsInRect;
 Var
-  a, b, c, er: TMatrix4x4;
+  TL1, BR1, TL2, BR2: TVector2;
 Begin
-  a := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  b := M4x4(18, 22, 26, 30, 19, 23, 27, 31, 20, 24, 28, 32, 21, 25, 29, 34);
-  c := MulMatrix(a, b);
-  er := M4x4(260, 644, 1028, 1442, 270, 670, 1070, 1501, 280, 696, 1112, 1560, 294, 730, 1166, 1636);
-  AssertTrue(Print(er) + ' = ' + Print(c), er.Equal(c));
-  c := MulMatrix(b, a);
-  er := M4x4(566, 678, 790, 915, 644, 772, 900, 1042, 722, 866, 1010, 1169, 821, 985, 1149, 1330);
-  AssertTrue(Print(er) + ' = ' + Print(c), er.Equal(c));
+  (*
+   * Overlapping Edges
+   *)
+  TL1 := v2(-1, 1);
+  BR1 := v2(1, -1);
+  TL2 := v2(0.5, 2);
+  BR2 := v2(2, 0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(0.5, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-2, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  (*
+   * Overlapping Sides
+   *)
+  TL2 := v2(0.5, 0.5);
+  BR2 := v2(2, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-0.5, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2, 0.5);
+  BR2 := v2(-0.5, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(0.5, 2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  (*
+   * complete in each other
+   *)
+  TL2 := v2(-2, 2);
+  BR2 := v2(2, -2);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 0.5);
+  BR2 := v2(0.5, -0.5);
+  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
 End;
 
-Procedure TMatrix4x4Tests.OperatorEqual;
+Procedure TGeneralTests.RectIsNotInRect;
 Var
-  a, b, c: TMatrix4x4;
+  TL1, BR1, TL2, BR2: TVector2;
 Begin
-  a := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  b := M4x4(18, 22, 26, 30, 19, 23, 27, 31, 20, 24, 28, 32, 21, 25, 29, 34);
-  c := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  AssertFalse(a.Equal(b));
-  Asserttrue(a.Equal(a));
-  Asserttrue(a.Equal(c));
+  // Above
+  TL1 := v2(-1, 1);
+  BR1 := v2(1, -1);
+  TL2 := v2(-2.5, 3.5);
+  BR2 := v2(-1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, 3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(0.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(1.5, 3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(2.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  // Side by side
+  TL2 := v2(-2.5, 3.5); // left
+  BR2 := v2(-1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2.5, 0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-1.5, -0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(-1.5, -2.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, 3.5); // right
+  BR2 := v2(1.5, 1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, 0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(1.5, -0.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(1.5, -2.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  // Below
+  TL2 := v2(-2.5, -3.5);
+  BR2 := v2(-1.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(-0.5, -3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(0.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  TL2 := v2(1.5, -3.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
+  BR2 := v2(2.5, -1.5);
+  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
 End;
 
-Procedure TMatrix4x4Tests.InvertMatrix;
+{ TVector2Tests }
+
+Procedure TVector2Tests.Lerp;
 Var
-  zero, id, r, m, mi: TMatrix4x4;
+  v_1, v_2: TVector2;
 Begin
-  // Erfolgreicher Versuch
-  id := IdentityMatrix4x4;
-  zero := Zero4x4();
-  m := M4x4(1, 5, 9, 13, 2, -6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  mi := uvectormath.InvertMatrix(m);
-  AssertTrue(Print(zero) + ' <> ' + Print(mi), Not zero.Equal(mi));
-  r := MulMatrix(m, mi); // m * mi
-  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
-  r := MulMatrix(m, mi); // mi * m
-  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
-  // Nicht erfolgreicher Versuch
-  AssertException(Exception, @InvertMatrixThatRaisesAnException, '');
+  v_1 := v2(0, 0);
+  v_2 := v2(10, 0);
+  // x-Component
+  v_1.Lerp(v_2, 0); // Amp = 0 -> stay the same
+  AssertTrue('got: ' + v_1.ToString + ' expected (0 0)', Equal(v_1, v2(0, 0)));
+  v_1.Lerp(v_2, 1); // Amp = 100 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (10 0)', Equal(v_1, v2(10, 0)));
+  v_1 := v2(0, 0);
+  v_1.Lerp(v_2, 0.5); // Amp = 50 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (5 0)', Equal(v_1, v2(5, 0)));
+  v_1 := v2(0, 0);
+  v_1.Lerp(v_2, 0.1); // Amp = 50 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (1 0)', Equal(v_1, v2(1, 0)));
+  // y-Component
+  v_2 := v2(0, 10);
+  v_1 := v2(0, 0);
+  v_1.Lerp(v_2, 0); // Amp = 0 -> stay the same
+  AssertTrue('got: ' + v_1.ToString + ' expected (0 0)', Equal(v_1, v2(0, 0)));
+  v_1.Lerp(v_2, 1); // Amp = 100 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (0 10)', Equal(v_1, v2(0, 10)));
+  v_1 := v2(0, 0);
+  v_1.Lerp(v_2, 0.5); // Amp = 50 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (0 5)', Equal(v_1, v2(0, 5)));
+  v_1 := v2(0, 0);
+  v_1.Lerp(v_2, 0.1); // Amp = 50 % = the other vector
+  AssertTrue('got: ' + v_1.ToString + ' expected (0 1)', Equal(v_1, v2(0, 1)));
 End;
 
-Procedure TMatrix4x4Tests.InvertMatrix2;
-Var
-  zero, id, r, m, mi: TMatrix4x4;
-Begin
-  // Erfolgreicher Versuch
-  id := IdentityMatrix4x4;
-  zero := Zero4x4();
-  m := M4x4(1, 5, 9, 13, 2, -6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  mi := uvectormath.InvertMatrix2(m);
-  AssertTrue(Print(zero) + ' <> ' + Print(mi), Not zero.Equal(mi));
-  r := MulMatrix(m, mi); // m * mi
-  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
-  r := MulMatrix(m, mi); // mi * m
-  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
+{ TVector3Tests }
 
-  // Nicht invertierbare Matrix -> NullMatrix
-  m := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  mi := uvectormath.InvertMatrix2(m); //
-  AssertTrue(Print(zero) + ' = ' + Print(mi), zero.Equal(mi));
+Procedure TVector3Tests.LinearDependent;
+Var
+  x1, x2, x3, sx1, sx2, sx3, a, b: TVector3;
+Begin
+  x1 := v3(1, 0, 0);
+  x2 := v3(0, 1, 0);
+  x3 := v3(0, 0, 1);
+  sx1 := v3(2, 0, 0);
+  sx2 := v3(0, 3, 0);
+  sx3 := v3(0, 0, 4);
+  // Trivial Cases
+  // Not Dependent
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
+  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
+  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
+  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
+  // Dependent
+  AssertTrue(IsLinearDependent(x1, -x1));
+  AssertTrue(IsLinearDependent(x2, -x2));
+  AssertTrue(IsLinearDependent(x3, -x3));
+  AssertTrue(IsLinearDependent(-x1, x1));
+  AssertTrue(IsLinearDependent(-x2, x2));
+  AssertTrue(IsLinearDependent(-x3, x3));
+  AssertTrue(IsLinearDependent(x1, sx1));
+  AssertTrue(IsLinearDependent(x2, sx2));
+  AssertTrue(IsLinearDependent(x3, sx3));
+  AssertTrue(IsLinearDependent(sx1, x1));
+  AssertTrue(IsLinearDependent(sx2, x2));
+  AssertTrue(IsLinearDependent(sx3, x3));
+  a := v3(1, 2, 3);
+  AssertTrue(IsLinearDependent(a, a * 2));
+  AssertTrue(IsLinearDependent(2 * a, a));
+  b := v3(1, 2, 4);
+  AssertFalse(IsLinearDependent(a, b));
+  AssertFalse(IsLinearDependent(b, a));
+  AssertFalse(IsLinearDependent(2 * a, b));
+  AssertFalse(IsLinearDependent(a, 2 * b));
+  b := v3(2, 2, 3);
+  AssertFalse(IsLinearDependent(a, b));
+  AssertFalse(IsLinearDependent(b, a));
+  AssertFalse(IsLinearDependent(2 * a, b));
+  AssertFalse(IsLinearDependent(a, 2 * b));
 End;
 
-Procedure TMatrix4x4Tests.InvertMatrixThatRaisesAnException;
-Var
-  m, mi: TMatrix4x4;
-Begin
-  m := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
-  mi := uvectormath.InvertMatrix(m);
-  // Die Nachfolgende Zeile sorgt nur dafür das Mi und die Erzeugung nicht wegoptimiert werden.
-  assertfalse('Das darf nicht passieren.', mi.Equal(mi));
-End;
 
 { TMatrix2x2Tests }
 
@@ -241,59 +360,6 @@ Begin
   AssertTrue(Print(zero) + ' = ' + Print(mi), zero.Equal(mi));
 End;
 
-{ TVector3Tests }
-
-Procedure TVector3Tests.LinearDependent;
-Var
-  x1, x2, x3, sx1, sx2, sx3, a, b: TVector3;
-Begin
-  x1 := v3(1, 0, 0);
-  x2 := v3(0, 1, 0);
-  x3 := v3(0, 0, 1);
-  sx1 := v3(2, 0, 0);
-  sx2 := v3(0, 3, 0);
-  sx3 := v3(0, 0, 4);
-  // Trivial Cases
-  // Not Dependent
-  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
-  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
-  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
-  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
-  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
-  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
-  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x1) + ')', IsLinearDependent(x2, x1));
-  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x1) + ')', IsLinearDependent(x3, x1));
-  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x2) + ')', IsLinearDependent(x1, x2));
-  AssertFalse('Expected false, got true for (' + print(x3) + '/' + print(x2) + ')', IsLinearDependent(x3, x2));
-  AssertFalse('Expected false, got true for (' + print(x1) + '/' + print(x3) + ')', IsLinearDependent(x1, x3));
-  AssertFalse('Expected false, got true for (' + print(x2) + '/' + print(x3) + ')', IsLinearDependent(x2, x3));
-  // Dependent
-  AssertTrue(IsLinearDependent(x1, -x1));
-  AssertTrue(IsLinearDependent(x2, -x2));
-  AssertTrue(IsLinearDependent(x3, -x3));
-  AssertTrue(IsLinearDependent(-x1, x1));
-  AssertTrue(IsLinearDependent(-x2, x2));
-  AssertTrue(IsLinearDependent(-x3, x3));
-  AssertTrue(IsLinearDependent(x1, sx1));
-  AssertTrue(IsLinearDependent(x2, sx2));
-  AssertTrue(IsLinearDependent(x3, sx3));
-  AssertTrue(IsLinearDependent(sx1, x1));
-  AssertTrue(IsLinearDependent(sx2, x2));
-  AssertTrue(IsLinearDependent(sx3, x3));
-  a := v3(1, 2, 3);
-  AssertTrue(IsLinearDependent(a, a * 2));
-  AssertTrue(IsLinearDependent(2 * a, a));
-  b := v3(1, 2, 4);
-  AssertFalse(IsLinearDependent(a, b));
-  AssertFalse(IsLinearDependent(b, a));
-  AssertFalse(IsLinearDependent(2 * a, b));
-  AssertFalse(IsLinearDependent(a, 2 * b));
-  b := v3(2, 2, 3);
-  AssertFalse(IsLinearDependent(a, b));
-  AssertFalse(IsLinearDependent(b, a));
-  AssertFalse(IsLinearDependent(2 * a, b));
-  AssertFalse(IsLinearDependent(a, 2 * b));
-End;
 
 { TMatrix3x3 }
 
@@ -371,6 +437,84 @@ Begin
   mi := uvectormath.InvertMatrix2(m); //
   AssertTrue(Print(zero) + ' = ' + Print(mi), zero.Equal(mi));
 End;
+
+{ TMatrix4x4Tests }
+
+Procedure TMatrix4x4Tests.MarixMultiplication;
+Var
+  a, b, c, er: TMatrix4x4;
+Begin
+  a := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  b := M4x4(18, 22, 26, 30, 19, 23, 27, 31, 20, 24, 28, 32, 21, 25, 29, 34);
+  c := MulMatrix(a, b);
+  er := M4x4(260, 644, 1028, 1442, 270, 670, 1070, 1501, 280, 696, 1112, 1560, 294, 730, 1166, 1636);
+  AssertTrue(Print(er) + ' = ' + Print(c), er.Equal(c));
+  c := MulMatrix(b, a);
+  er := M4x4(566, 678, 790, 915, 644, 772, 900, 1042, 722, 866, 1010, 1169, 821, 985, 1149, 1330);
+  AssertTrue(Print(er) + ' = ' + Print(c), er.Equal(c));
+End;
+
+Procedure TMatrix4x4Tests.OperatorEqual;
+Var
+  a, b, c: TMatrix4x4;
+Begin
+  a := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  b := M4x4(18, 22, 26, 30, 19, 23, 27, 31, 20, 24, 28, 32, 21, 25, 29, 34);
+  c := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  AssertFalse(a.Equal(b));
+  Asserttrue(a.Equal(a));
+  Asserttrue(a.Equal(c));
+End;
+
+Procedure TMatrix4x4Tests.InvertMatrix;
+Var
+  zero, id, r, m, mi: TMatrix4x4;
+Begin
+  // Erfolgreicher Versuch
+  id := IdentityMatrix4x4;
+  zero := Zero4x4();
+  m := M4x4(1, 5, 9, 13, 2, -6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  mi := uvectormath.InvertMatrix(m);
+  AssertTrue(Print(zero) + ' <> ' + Print(mi), Not zero.Equal(mi));
+  r := MulMatrix(m, mi); // m * mi
+  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
+  r := MulMatrix(m, mi); // mi * m
+  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
+  // Nicht erfolgreicher Versuch
+  AssertException(Exception, @InvertMatrixThatRaisesAnException, '');
+End;
+
+Procedure TMatrix4x4Tests.InvertMatrix2;
+Var
+  zero, id, r, m, mi: TMatrix4x4;
+Begin
+  // Erfolgreicher Versuch
+  id := IdentityMatrix4x4;
+  zero := Zero4x4();
+  m := M4x4(1, 5, 9, 13, 2, -6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  mi := uvectormath.InvertMatrix2(m);
+  AssertTrue(Print(zero) + ' <> ' + Print(mi), Not zero.Equal(mi));
+  r := MulMatrix(m, mi); // m * mi
+  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
+  r := MulMatrix(m, mi); // mi * m
+  AssertTrue(Print(id) + ' = ' + Print(r), id.Equal(r));
+
+  // Nicht invertierbare Matrix -> NullMatrix
+  m := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  mi := uvectormath.InvertMatrix2(m); //
+  AssertTrue(Print(zero) + ' = ' + Print(mi), zero.Equal(mi));
+End;
+
+Procedure TMatrix4x4Tests.InvertMatrixThatRaisesAnException;
+Var
+  m, mi: TMatrix4x4;
+Begin
+  m := M4x4(1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15, 4, 8, 12, 17);
+  mi := uvectormath.InvertMatrix(m);
+  // Die Nachfolgende Zeile sorgt nur dafür das Mi und die Erzeugung nicht wegoptimiert werden.
+  assertfalse('Das darf nicht passieren.', mi.Equal(mi));
+End;
+
 
 Procedure TMatrixNxMTests.InitEmpty;
 Var
@@ -494,114 +638,17 @@ Begin
   m.free;
 End;
 
-{ TGeneralTests }
-
-Procedure TGeneralTests.RectIsInRect;
-Var
-  TL1, BR1, TL2, BR2: TVector2;
-Begin
-  (*
-   * Overlapping Edges
-   *)
-  TL1 := v2(-1, 1);
-  BR1 := v2(1, -1);
-  TL2 := v2(0.5, 2);
-  BR2 := v2(2, 0.5);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(0.5, -2);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(-2, -0.5);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-0.5, 2);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  (*
-   * Overlapping Sides
-   *)
-  TL2 := v2(0.5, 0.5);
-  BR2 := v2(2, -0.5);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(-0.5, -2);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-2, 0.5);
-  BR2 := v2(-0.5, -0.5);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(0.5, 2);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  (*
-   * complete in each other
-   *)
-  TL2 := v2(-2, 2);
-  BR2 := v2(2, -2);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-0.5, 0.5);
-  BR2 := v2(0.5, -0.5);
-  AssertTrue(RectIntersectRect(TL1, BR1, TL2, BR2));
-End;
-
-Procedure TGeneralTests.RectIsNotInRect;
-Var
-  TL1, BR1, TL2, BR2: TVector2;
-Begin
-  // Above
-  TL1 := v2(-1, 1);
-  BR1 := v2(1, -1);
-  TL2 := v2(-2.5, 3.5);
-  BR2 := v2(-1.5, 1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-0.5, 3.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(0.5, 1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(1.5, 3.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(2.5, 1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  // Side by side
-  TL2 := v2(-2.5, 3.5); // left
-  BR2 := v2(-1.5, 1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-2.5, 0.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(-1.5, -0.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-2.5, -1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(-1.5, -2.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(2.5, 3.5); // right
-  BR2 := v2(1.5, 1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(2.5, 0.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(1.5, -0.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(2.5, -1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(1.5, -2.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  // Below
-  TL2 := v2(-2.5, -3.5);
-  BR2 := v2(-1.5, -1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(-0.5, -3.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(0.5, -1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  TL2 := v2(1.5, -3.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-  BR2 := v2(2.5, -1.5);
-  AssertFalse(RectIntersectRect(TL1, BR1, TL2, BR2));
-End;
-
 Initialization
   Randomize;
+
   DefaultFormatSettings.DecimalSeparator := '.';
 
-  RegisterTest(TMatrix2x2Tests);
+  RegisterTest(TGeneralTests);
+  RegisterTest(TVector2Tests);
   RegisterTest(TVector3Tests);
+  RegisterTest(TMatrix2x2Tests);
   RegisterTest(TMatrix3x3Tests);
   RegisterTest(TMatrix4x4Tests);
   RegisterTest(TMatrixNxMTests);
-  RegisterTest(TGeneralTests);
 End.
 
