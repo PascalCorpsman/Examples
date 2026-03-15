@@ -91,6 +91,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
 | [Quadtree](data_control/QuadTree) | unit tests for uquadtree.pas |
 | [Quaternion](data_control/Quaternion) | unit tests for uquaternion.pas |
+| [StableIndexVector](data_control/StableIndexVector) | unit tests for ustableindexvector.pas |
 | [Vectormath](data_control/Vectormath) | unit tests for uvectormath.pas |
 | uJSON.pas | JSON-Loader / writer class |
 | uLZW.pas | Implementation of Lempel-Ziv-Welch algorithm with two different dictionaries |
@@ -112,7 +113,8 @@ Collection of classes and examples corresponding to data processing, math and co
 | uneuralnetwork.pas | generic neural network implementation (not performant but simple) |
 | uquadtree.pas | generic quadtree class |
 | uquaternion.pas | library to do math with quaternions |
-| usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package)|
+| usqlite_helper.pas | helper routines to access to SQLLite3 databases (needs SQLDBLaz package) |
+| ustableindexvector.pas | class to allocate / deallocate and find elements in a array with O(1) complexity |
 | utokenizer.pas | generic lexer class to lex strings into tokens |
 | uuart.pas | thread based wrapper for synaser.pas (see Synapse) |
 | uuart_deprecated.pas | wrapper for synaser.pas (see Synapse) |
