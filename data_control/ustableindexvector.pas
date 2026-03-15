@@ -186,18 +186,18 @@ Begin
   result := false;
   // Get Aktual Element Indes
   Data_Index := fID_To_Data[Id];
-  // Wir versuchen ein bereits freigegebenes Element noch mal frei zu geben!
+  // We are trying to delete a already deleted ID -> exit with no success
   If Data_Index >= fDataCount Then exit;
-
-  LastDataIndex := fDataCount - 1;
   // Move Element to last Position
+  LastDataIndex := fDataCount - 1;
   tmpT := fData[LastDataIndex];
   fData[LastDataIndex] := fData[Data_Index];
   fData[Data_Index] := tmpT;
+  // Also update fData_To_ID
   tmpI := fData_To_ID[LastDataIndex];
   fData_To_ID[LastDataIndex] := fData_To_ID[Data_Index];
   fData_To_ID[Data_Index] := tmpI;
-  // Update DataIndex
+  // and fID_To_Data
   fID_To_Data[fData_To_ID[LastDataIndex]] := LastDataIndex;
   fID_To_Data[fData_To_ID[Data_Index]] := Data_Index;
   // Remove Last Element
