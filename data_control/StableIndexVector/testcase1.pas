@@ -114,11 +114,25 @@ End;
 Procedure TTestCase1.IterateAllElements;
 Var
   i: Integer;
+  elem: pChar;
+  data: Array['A'..'G'] Of boolean;
 Begin
+  // Fill and store not visited
   For i := 0 To 6 Do Begin
     fDut.Add(chr(ord('A') + i));
+    data[chr(ord('A') + i)] := false;
   End;
-  //  assertTrue(fDut.IterReset()
+  // Visit all elements and store visited
+  assertTrue(fDut.IterReset(elem));
+  data[elem^] := true;
+  While fdut.IterNext(elem) Do Begin
+    asserttrue(elem^ In ['A'..'G']);
+    data[elem^] := true;
+  End;
+  // Check all visited
+  For i := 0 To 6 Do Begin
+    asserttrue(data[chr(ord('A') + i)]);
+  End;
 End;
 
 Procedure TTestCase1.SetUp;

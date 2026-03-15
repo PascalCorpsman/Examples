@@ -7,7 +7,6 @@
       <Title Value="fpcunitproject1"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
-      <Icon Value="0"/>
     </General>
     <BuildModes>
       <Item Name="Default" Default="True"/>
