@@ -40,6 +40,7 @@ Type
     Procedure DelAlreadyDeletedElement;
     Procedure ExchangeValueOfID;
     Procedure IterateAllElements;
+    Procedure DelIteratedElement;
   End;
 
 Implementation
@@ -132,6 +133,44 @@ Begin
   // Check all visited
   For i := 0 To 6 Do Begin
     asserttrue(data[chr(ord('A') + i)]);
+  End;
+End;
+
+Procedure TTestCase1.DelIteratedElement;
+Var
+  id: TID;
+  i: Integer;
+  elem: pChar;
+  data: Array['A'..'G'] Of boolean;
+Begin
+  // Fill and store not visited
+  For i := 0 To 6 Do Begin
+    fDut.Add(chr(ord('A') + i));
+    data[chr(ord('A') + i)] := false;
+  End;
+  // Visit all elements and delete a element in the middle
+  assertTrue(fDut.IterReset(elem));
+  data[elem^] := true;
+  While fdut.IterNext(elem) Do Begin
+    asserttrue(elem^ In ['A'..'G']);
+    If elem^ = 'C' Then Begin
+      i := fDut.PTToIndex(elem);
+      assertfalse(i = -1);
+      asserttrue(fDut.IndexToID(i, id));
+      asserttrue(fDut.Del(id));
+    End;
+  End;
+  // Check all visited
+  For i := 0 To fdut.Count - 1 Do Begin
+    data[fdut.DataElement[i]] := true;
+  End;
+  For i := 0 To 6 Do Begin
+    If i = 2 Then Begin
+      assertfalse(data[chr(ord('A') + i)]);
+    End
+    Else Begin
+      asserttrue(data[chr(ord('A') + i)]);
+    End;
   End;
 End;
 

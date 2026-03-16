@@ -78,6 +78,7 @@ Type
     Function isValid(ID: TID): Boolean; // True if element with ID exists in data
 
     Function IndexToID(aIndex: Integer; Out ID: TID): Boolean; // Converts a Index to a ID
+    Function PTToIndex(Const aElementPointer: PT): integer; // Pointer of Element to Index -1 if not in buffer
 
     Procedure Clear;
 
@@ -221,6 +222,18 @@ Begin
     (aIndex >= fDataCount) Then exit;
   ID := fData_To_ID[aIndex];
   result := true;
+End;
+
+Function TStableIndexVector.PTToIndex(Const aElementPointer: PT): integer;
+Var
+  addrv: PtrInt;
+Begin
+  result := -1;
+  If (aElementPointer < @fData[0]) Or
+    (aElementPointer > @fData[high(fData)] + sizeof(T)) Then exit;
+  addrv := aElementPointer - @fData[0];
+  If addrv Mod sizeof(t) <> 0 Then exit;
+  result := addrv Div sizeof(t);
 End;
 
 Procedure TStableIndexVector.Clear;
