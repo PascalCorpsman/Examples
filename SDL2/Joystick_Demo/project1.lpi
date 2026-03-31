@@ -76,6 +76,12 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dSDL_RUNTIME_LOADING"/>
+      <OtherDefines Count="1">
+        <Define0 Value="SDL_RUNTIME_LOADING"/>
+      </OtherDefines>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

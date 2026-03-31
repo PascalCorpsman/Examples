@@ -34,8 +34,6 @@ Unit Unit1;
 
 {$MODE objfpc}{$H+}
 
-{$I sdl2_cfg.inc}
-
 Interface
 
 Uses
