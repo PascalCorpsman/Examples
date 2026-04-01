@@ -222,9 +222,16 @@ Begin
     }
 
 {$IFNDEF LEGACYMODE}
-    If Not Assigned(glCreateShader) Then
-      Raise Exception.Create('glCreateShader not available, use legacy mode..');
-
+    If Not Assigned(glCreateShader) Then Begin
+      // On Windows it seems that you need to "reload" the core functions for proper function
+      ReadExtensions;
+      ReadImplementationProperties;
+      // if still not available, then halt
+      If Not Assigned(glCreateShader) Then Begin
+        showmessage('glCreateShader not available, use legacy mode..');
+        halt;
+      End;
+    End;
     ShaderProgram := CreateShaderProgram;
     glGenVertexArrays(1, @VAO);
     glGenBuffers(1, @VBO);
@@ -306,7 +313,10 @@ Begin
   Ist Interval auf 16 hängt das gesamte system, bei 17 nicht.
   Generell sollte die Interval Zahl also dynamisch zum Rechenaufwand, mindestens aber immer 17 sein.
   *)
-{$IFNDEF LEGACYMODE}
+{$IFDEF LEGACYMODE}
+  caption := 'Legacy mode';
+{$ELSE}
+  caption := 'Shader mode';
   OpenGLControl1.AutoResizeViewport := True; // This is crucial for GTK3, don't know why, but without it the demo does not work
   VAO := 0;
   VBO := 0;
