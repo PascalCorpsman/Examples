@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uOpenGLGraphikEngine.pas                                        ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.12                                                         *)
+(* Version     : 0.13                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -42,6 +42,7 @@
 (*                          transparency                                      *)
 (*               0.12 - Start removing glpushmatrix / glpopmatrix calls       *)
 (*                      Start speedup image loading / decoding                *)
+(*               0.13 - Start with support for OpenGL Shader                  *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uopengl_graphikengine;
@@ -54,7 +55,7 @@ Interface
 
 // Je nach dem wie mans Braucht mus hier angepasst werden!!
 
-{.$DEFINE USE_GL}
+{.$DEFINE USE_GL}// Deprecated, better do not use anymore
 
 (*
 Ist dieser Schalter an, werden diverse Informationen in die Konsole geschrieben
@@ -63,6 +64,18 @@ Ist dieser Schalter an, werden diverse Informationen in die Konsole geschrieben
 
 *)
 {.$DEFINE DEBUGGOUTPUT}
+
+(*
+Aktiviert die Nutzung von OpenGL im Legacy Mode, default ist Shader mode, der
+auch mit OpenGL 3.3 funktioniert, aber nicht alle Funktionen von OpenGL 3.3 nutzt.
+*)
+{.$DEFINE LEGACYMODE}
+
+{$IFDEF LEGACYMODE}
+{$IFDEF LCLGTK3}
+{$WARNING OpenGL Legacymode will not work when compiled for GTK3}
+{$ENDIF}
+{$ENDIF}
 
 Uses
   // Die OpenGL Schnittstelle
@@ -169,13 +182,21 @@ Const
 Var
   OpenGL_GraphikEngine: TOpenGL_GraphikEngine;
 
+{$IFNDEF LEGACYMODE}
   (*
-  Rendert in 2D ein Quad
+   * Shader system initialization and management
+   *)
+Procedure OpenGL_GraphikEngine_InitializeShaderSystem;
+{$ENDIF}
 
-  ACHTUNG Bei Bildern mit der KantenLänge 1 Kommt blödsinn = kein Bild raus !!
+(*
+Rendert in 2D ein Quad
 
-  ACHTUNG Diese Routinen funktionieren nicht immer mit eingeschalteten CullFacing !!
-  *)
+ACHTUNG Bei Bildern mit der KantenLänge 1 Kommt blödsinn = kein Bild raus !!
+
+ACHTUNG Diese Routinen funktionieren nicht immer mit eingeschalteten CullFacing !!
+*)
+{$IFDEF LEGACYMODE}
 Procedure RenderAlphaQuad(Top, Left: Single; Image: TGraphikItem); overload; // Fertig Getestet // WTF: warum ist hier top und left vertauscht ?
 Procedure RenderAlphaQuad(Middle: TVector2; Width, Height, Angle: Integer; Texture: integer = 0); overload; // Fertig Getestet
 Procedure RenderAlphaRQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
@@ -188,7 +209,20 @@ Procedure RenderQuad(Middle: TVector2; Width, Height, Angle: Single; Texture: in
 
 Procedure RenderQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
 Procedure RenderTiledQuad(Left, Top: Single; Index, TilesPerRow, TilesPerCol: integer; Const Image: TGraphikItem);
+{$ELSE}
+// Shader mode rendering helper
+Procedure RenderQuad(Left, Top, Depth: Single; Image: TGraphikItem);
+Procedure RenderAlphaQuad(Left, Top, Depth: Single; Image: TGraphikItem);
+{$ENDIF}
+(*
+ * 2D rendering mode setup
+ * Go2d sets up orthographic projection for 2D rendering
+ * Exit2d restores previous state
+ *)
+Procedure Go2d(Width, Height: Integer);
+Procedure Exit2d();
 
+{$IFDEF LEGACYMODE}
 (*
 Rendert einen Kreis, ohne Füllung
 *)
@@ -199,7 +233,7 @@ Rendert ein Billboard, ACHTUNG bei mehr als einem Bildboard Pro Renderschritt, s
 Mittels Dimension kann man die Ausbreitung in x und y Richtung angeben. Position ist stets der Mittelpunkt der textur
 *)
 Procedure RenderBillboard(Position: TVector3; Dimension: TVector2; Texture: integer = 0);
-
+{$ENDIF}
 (*
 Erstellt einen Screenshot aus dem Aktuellen Framebuffer,
 inclusive Ermittlung der Auflösung.
@@ -212,13 +246,105 @@ Function OpenGLScreenshot: TBitmap;
  *)
 Procedure glColor(Color: TColor; Alpha: byte = 0);
 
+{$IFNDEF LEGACYMODE}
+
+Var
+  ShaderVBO: GLuint = 0;
+  (*
+   * Switches to color shader for rendering colored geometry without textures
+   * Call this after Go2d and before rendering colored geometry
+   *)
+Procedure UseColorShader;
+
+(*
+ * Switches back to texture shader for rendering textured geometry
+ * Call this to return to normal texture rendering after UseColorShader
+ *)
+Procedure UseTextureShader;
+
+(*
+ * Sets the color for the color shader
+ * Must be called after UseColorShader and before rendering
+ *)
+Procedure SetShaderColor(r, g, b, a: Single);
+
+(*
+ * Compiles a single OpenGL shader from source.
+ * ShaderType: GL_VERTEX_SHADER or GL_FRAGMENT_SHADER.
+ * Raises an exception on compile error.
+ *)
+Function CompileShader(Src: PChar; ShaderType: GLenum): GLuint;
+{$ENDIF}
+
 Function FRect(Top, Left, Bottom, Right: Single): TFRect;
 
 Implementation
 
+{$IFNDEF LEGACYMODE}
+
+Const
+  // Shader sources for modern OpenGL rendering
+  VertexSrc: PChar =
+  '#version 330 core'#10 +
+    'layout(location = 0) in vec2 aPos;'#10 +
+    'layout(location = 1) in vec2 aTexCoord;'#10 +
+    'uniform vec2 uResolution;'#10 +
+    'uniform float uDepth;'#10 +
+    'out vec2 vTexCoord;'#10 +
+    'void main() {'#10 +
+    '  vec2 ndc = vec2((aPos.x / uResolution.x) * 2.0 - 1.0, 1.0 - (aPos.y / uResolution.y) * 2.0);'#10 +
+    '  gl_Position = vec4(ndc, -uDepth, 1.0);'#10 +
+    '  vTexCoord = aTexCoord;'#10 +
+    '}';
+
+  FragmentSrc: PChar =
+  '#version 330 core'#10 +
+    'in vec2 vTexCoord;'#10 +
+    'out vec4 FragColor;'#10 +
+    'uniform sampler2D uTexture;'#10 +
+    'uniform vec4 uColor;'#10 +
+    'void main() {'#10 +
+    '  vec4 texColor = texture(uTexture, vTexCoord);'#10 +
+    '  FragColor = texColor * uColor;'#10 +
+    '}';
+
+  // Shader sources for color rendering (no textures)
+  ColorVertexSrc: PChar =
+  '#version 330 core'#10 +
+    'layout(location = 0) in vec3 aPos;'#10 +
+    'uniform vec2 uResolution;'#10 +
+    'void main() {'#10 +
+    '  vec2 ndc = vec2((aPos.x / uResolution.x) * 2.0 - 1.0, 1.0 - (aPos.y / uResolution.y) * 2.0);'#10 +
+    '  gl_Position = vec4(ndc, -aPos.z, 1.0);'#10 +
+    '}';
+
+  ColorFragmentSrc: PChar =
+  '#version 330 core'#10 +
+    'out vec4 FragColor;'#10 +
+    'uniform vec4 uColor;'#10 +
+    'void main() {'#10 +
+    '  FragColor = uColor;'#10 +
+    '}';
+{$ENDIF}
+
 Var
   // LUT for sin / cos in 0.1° steps
   Sin_discrete, Cos_discrete: Array[0..3599] Of Single;
+
+{$IFDEF LEGACYMODE}
+  ShaderVBO: GLuint = 0;
+{$ENDIF}
+
+//{$IFNDEF LEGACYMODE}
+  // Shader system variables (only used when not in legacy OpenGL mode)
+  ShaderProgram: GLuint = 0;
+  ShaderVAO: GLuint = 0;
+  // Color shader for rendering without textures
+
+  // Color shader for rendering without textures
+  ColorShaderProgram: GLuint = 0;
+  ColorShaderVAO: GLuint = 0;
+//{$ENDIF}
 
 {$IFDEF DEBUGGOUTPUT}
 
@@ -352,8 +478,61 @@ Begin
   r := color And $FF;
   g := (color Shr 8) And $FF;
   b := (color Shr 16) And $FF;
+{$IFDEF LEGACYMODE}
   glColor4ub(r, g, b, Alpha);
+{$ELSE}
+  // In shader mode, set color via uniform
+  SetShaderColor(r / 255.0, g / 255.0, b / 255.0, Alpha / 255.0);
+{$ENDIF}
 End;
+
+{$IFNDEF LEGACYMODE}
+
+Procedure UseColorShader;
+Var
+  LocRes: GLint;
+  ViewportDim: Array[0..3] Of GLint;
+Begin
+  glUseProgram(ColorShaderProgram);
+  glBindVertexArray(ColorShaderVAO);
+
+  // Set resolution uniform
+  glGetIntegerv(GL_VIEWPORT, @ViewportDim[0]);
+  LocRes := glGetUniformLocation(ColorShaderProgram, 'uResolution');
+  If LocRes >= 0 Then
+    glUniform2f(LocRes, ViewportDim[2], ViewportDim[3]);
+End;
+
+Procedure UseTextureShader;
+Var
+  LocRes: GLint;
+  LocColor: GLint;
+  ViewportDim: Array[0..3] Of GLint;
+Begin
+  glUseProgram(ShaderProgram);
+  glBindVertexArray(ShaderVAO);
+
+  // Set resolution uniform
+  glGetIntegerv(GL_VIEWPORT, @ViewportDim[0]);
+  LocRes := glGetUniformLocation(ShaderProgram, 'uResolution');
+  If LocRes >= 0 Then
+    glUniform2f(LocRes, ViewportDim[2], ViewportDim[3]);
+  // Set default color to white for texture rendering
+  LocColor := glGetUniformLocation(ShaderProgram, 'uColor');
+  If LocColor >= 0 Then
+    glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
+End;
+
+Procedure SetShaderColor(r, g, b, a: Single);
+Var
+  LocColor: GLint;
+Begin
+  LocColor := glGetUniformLocation(ColorShaderProgram, 'uColor');
+  If LocColor >= 0 Then
+    glUniform4f(LocColor, r, g, b, a);
+End;
+
+{$ENDIF}
 
 Function FRect(Top, Left, Bottom, Right: Single): TFRect;
 Begin
@@ -382,20 +561,6 @@ Begin
   glTexCoord2f(Value.ImageRect.left, Value.ImageRect.Bottom);
   glvertex3f(0, Value.height, 0);
   glend;
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    gldisable(gl_blend);
-End;
-
-Procedure RenderAlphaTiledQuad(Left, Top: Single; Index, TilesPerRow,
-  TilesPerCol: integer; Const Image: TGraphikItem);
-Var
-  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
-Begin
-  B := glIsEnabled(gl_Blend);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    glenable(gl_Blend);
-  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-  RenderTiledQuad(Left, Top, Index, TilesPerRow, TilesPerCol, Image);
   If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
     gldisable(gl_blend);
 End;
@@ -435,142 +600,6 @@ Begin
   glend;
 End;
 
-Procedure RenderAlphaQuad(Top, Left: Single; Image: TGraphikItem);
-Var
-  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
-Begin
-  B := glIsEnabled(gl_Blend);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    glenable(gl_Blend);
-  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-  RenderQuad(Top, Left, Image);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    gldisable(gl_blend);
-End;
-
-Procedure RenderAlphaQuad(Middle: TVector2; Width, Height, Angle: Integer; Texture: integer = 0);
-Var
-  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
-Begin
-  B := glIsEnabled(gl_Blend);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    glenable(gl_Blend);
-  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-  RenderQuad(Middle, Width, height, angle, texture);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    gldisable(gl_blend);
-End;
-
-Procedure RenderAlphaRQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
-Var
-  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
-Begin
-  B := glIsEnabled(gl_Blend);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    glenable(gl_Blend);
-  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-  RenderQuad(Topleft, Bottomright, angle, RotatebyOrigin, texture);
-  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
-    gldisable(gl_blend);
-End;
-
-Procedure RenderQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
-Var
-  w2, h2: Single;
-Begin
-  If RotatebyOrigin Then Begin
-    If Texture <> 0 Then
-      glBindTexture(gl_texture_2d, Texture);
-    glpushmatrix;
-    w2 := (BottomRight.x - TopLeft.x) / 2;
-    h2 := (BottomRight.y - TopLeft.y) / 2;
-    If Angle <> 0 Then
-      glRotatef(angle, 0, 0, 1);
-    gltranslatef((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2, 0);
-    glbegin(gl_quads);
-    glTexCoord2f(0, 1);
-    glvertex3f(-w2, -h2, 0);
-    glTexCoord2f(1, 1);
-    glvertex3f(w2, -h2, 0);
-    glTexCoord2f(1, 0);
-    glvertex3f(w2, h2, 0);
-    glTexCoord2f(0, 0);
-    glvertex3f(-w2, h2, 0);
-    glend;
-    glpopmatrix;
-  End
-  Else
-    RenderQuad(v2((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2), abs(BottomRight.x - TopLeft.x), abs(TopLeft.y - BottomRight.y), angle, Texture);
-End;
-
-(*
- * Die Idee, ist dass wir die Textur betrachten als "Collection" von vielen Tiles
- * Diese collection wird zu einer Rechteckfläche von TilesPerRow und TilesPerCol
- * in die wir via Index zugreifen, und dann immer nur das passende "teilstück"
- * Rendern ;).
- *)
-
-Procedure RenderTiledQuad(Left, Top: Single; Index, TilesPerRow,
-  TilesPerCol: integer; Const Image: TGraphikItem);
-Var
-  w, h, tw, th: Single;
-  ix, iy: integer;
-Begin
-  ix := index Mod TilesPerRow;
-  iy := index Div TilesPerRow;
-  w := Image.OrigWidth / TilesPerRow;
-  h := Image.OrigHeight / TilesPerCol;
-  Case Image.Stretched Of
-    smClamp: Begin
-        tw := w / Image.StretchedWidth;
-        th := h / Image.StretchedHeight;
-      End;
-    smNone, smStretch, smStretchHard: Begin
-        tw := w;
-        th := h;
-      End;
-  End;
-  glBindTexture(gl_texture_2d, image.Image);
-  glbegin(gl_quads);
-  glTexCoord2f(tw * ix, th * (iy + 1));
-  glvertex3f(left, top + h, 0);
-  glTexCoord2f(tw * (ix + 1), th * (iy + 1));
-  glvertex3f(left + w, top + h, 0);
-  glTexCoord2f(tw * (ix + 1), th * iy);
-  glvertex3f(left + w, top, 0);
-  glTexCoord2f(tw * ix, th * iy);
-  glvertex3f(left, top, 0);
-  glend;
-End;
-
-Procedure RenderQuad(TopLeft, BottomRight: TPoint; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0);
-Var
-  w2, h2: integer;
-Begin
-  If RotatebyOrigin Then Begin
-    If Texture <> 0 Then
-      glBindTexture(gl_texture_2d, Texture);
-    glpushmatrix;
-    w2 := (BottomRight.x - TopLeft.x) Div 2;
-    h2 := (BottomRight.y - TopLeft.y) Div 2;
-    If Angle <> 0 Then
-      glRotatef(angle, 0, 0, 1);
-    gltranslatef((TopLeft.x + BottomRight.x) Div 2, (TopLeft.y + BottomRight.y) Div 2, 0);
-    glbegin(gl_quads);
-    glTexCoord2f(0, 1);
-    glvertex3f(-w2, -h2, 0);
-    glTexCoord2f(1, 1);
-    glvertex3f(w2, -h2, 0);
-    glTexCoord2f(1, 0);
-    glvertex3f(w2, h2, 0);
-    glTexCoord2f(0, 0);
-    glvertex3f(-w2, h2, 0);
-    glend;
-    glpopmatrix;
-  End
-  Else
-    RenderQuad(v2((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2), abs(BottomRight.x - TopLeft.x), abs(TopLeft.y - BottomRight.y), angle, Texture);
-End;
 
 Procedure RenderQuad(Middle: TVector2; Width, Height, Angle: Single; Texture: integer = 0); overload; // Fertig Getestet
 Var
@@ -613,6 +642,65 @@ Begin
   glTexCoord2f(0, 0);
   glVertex2fv(@BL);
   glEnd;
+End;
+(* -- Dead code ??
+Procedure RenderQuad(TopLeft, BottomRight: TPoint; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0);
+Var
+  w2, h2: integer;
+Begin
+  If RotatebyOrigin Then Begin
+    If Texture <> 0 Then
+      glBindTexture(gl_texture_2d, Texture);
+    glpushmatrix;
+    w2 := (BottomRight.x - TopLeft.x) Div 2;
+    h2 := (BottomRight.y - TopLeft.y) Div 2;
+    If Angle <> 0 Then
+      glRotatef(angle, 0, 0, 1);
+    gltranslatef((TopLeft.x + BottomRight.x) Div 2, (TopLeft.y + BottomRight.y) Div 2, 0);
+    glbegin(gl_quads);
+    glTexCoord2f(0, 1);
+    glvertex3f(-w2, -h2, 0);
+    glTexCoord2f(1, 1);
+    glvertex3f(w2, -h2, 0);
+    glTexCoord2f(1, 0);
+    glvertex3f(w2, h2, 0);
+    glTexCoord2f(0, 0);
+    glvertex3f(-w2, h2, 0);
+    glend;
+    glpopmatrix;
+  End
+  Else
+    RenderQuad(v2((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2), abs(BottomRight.x - TopLeft.x), abs(TopLeft.y - BottomRight.y), angle, Texture);
+End;
+*)
+
+Procedure RenderQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
+Var
+  w2, h2: Single;
+Begin
+  If RotatebyOrigin Then Begin
+    If Texture <> 0 Then
+      glBindTexture(gl_texture_2d, Texture);
+    glpushmatrix;
+    w2 := (BottomRight.x - TopLeft.x) / 2;
+    h2 := (BottomRight.y - TopLeft.y) / 2;
+    If Angle <> 0 Then
+      glRotatef(angle, 0, 0, 1);
+    gltranslatef((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2, 0);
+    glbegin(gl_quads);
+    glTexCoord2f(0, 1);
+    glvertex3f(-w2, -h2, 0);
+    glTexCoord2f(1, 1);
+    glvertex3f(w2, -h2, 0);
+    glTexCoord2f(1, 0);
+    glvertex3f(w2, h2, 0);
+    glTexCoord2f(0, 0);
+    glvertex3f(-w2, h2, 0);
+    glend;
+    glpopmatrix;
+  End
+  Else
+    RenderQuad(v2((TopLeft.x + BottomRight.x) / 2, (TopLeft.y + BottomRight.y) / 2), abs(BottomRight.x - TopLeft.x), abs(TopLeft.y - BottomRight.y), angle, Texture);
 End;
 
 Procedure RenderQuad(Top, Left: Single; Image: TGraphikItem);
@@ -696,6 +784,314 @@ Begin
   glTexCoord2f(0, 0);
   glVertex2fv(@BL);
   glEnd;
+End;
+
+Procedure RenderAlphaQuad(Top, Left: Single; Image: TGraphikItem);
+Var
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+Begin
+  B := glIsEnabled(gl_Blend);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    glenable(gl_Blend);
+  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  RenderQuad(Top, Left, Image);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    gldisable(gl_blend);
+End;
+
+Procedure RenderAlphaQuad(Middle: TVector2; Width, Height, Angle: Integer; Texture: integer = 0);
+Var
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+Begin
+  B := glIsEnabled(gl_Blend);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    glenable(gl_Blend);
+  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  RenderQuad(Middle, Width, height, angle, texture);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    gldisable(gl_blend);
+End;
+
+Procedure RenderAlphaRQuad(TopLeft, BottomRight: TVector2; Angle: Integer; RotatebyOrigin: Boolean = False; Texture: Integer = 0); overload; // Fertig Getestet
+Var
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+Begin
+  B := glIsEnabled(gl_Blend);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    glenable(gl_Blend);
+  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  RenderQuad(Topleft, Bottomright, angle, RotatebyOrigin, texture);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    gldisable(gl_blend);
+End;
+
+(*
+ * Die Idee, ist dass wir die Textur betrachten als "Collection" von vielen Tiles
+ * Diese collection wird zu einer Rechteckfläche von TilesPerRow und TilesPerCol
+ * in die wir via Index zugreifen, und dann immer nur das passende "teilstück"
+ * Rendern ;).
+ *)
+
+Procedure RenderTiledQuad(Left, Top: Single; Index, TilesPerRow,
+  TilesPerCol: integer; Const Image: TGraphikItem);
+Var
+  w, h, tw, th: Single;
+  ix, iy: integer;
+Begin
+  ix := index Mod TilesPerRow;
+  iy := index Div TilesPerRow;
+  w := Image.OrigWidth / TilesPerRow;
+  h := Image.OrigHeight / TilesPerCol;
+  Case Image.Stretched Of
+    smClamp: Begin
+        tw := w / Image.StretchedWidth;
+        th := h / Image.StretchedHeight;
+      End;
+    smNone, smStretch, smStretchHard: Begin
+        tw := w;
+        th := h;
+      End;
+  End;
+  glBindTexture(gl_texture_2d, image.Image);
+  glbegin(gl_quads);
+  glTexCoord2f(tw * ix, th * (iy + 1));
+  glvertex3f(left, top + h, 0);
+  glTexCoord2f(tw * (ix + 1), th * (iy + 1));
+  glvertex3f(left + w, top + h, 0);
+  glTexCoord2f(tw * (ix + 1), th * iy);
+  glvertex3f(left + w, top, 0);
+  glTexCoord2f(tw * ix, th * iy);
+  glvertex3f(left, top, 0);
+  glend;
+End;
+
+Procedure RenderAlphaTiledQuad(Left, Top: Single; Index, TilesPerRow,
+  TilesPerCol: integer; Const Image: TGraphikItem);
+Var
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+Begin
+  B := glIsEnabled(gl_Blend);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    glenable(gl_Blend);
+  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  RenderTiledQuad(Left, Top, Index, TilesPerRow, TilesPerCol, Image);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    gldisable(gl_blend);
+End;
+
+{$IFNDEF LEGACYMODE}
+
+Function CompileShader(Src: PChar; ShaderType: GLenum): GLuint;
+Var
+  S: GLuint;
+  status: GLint;
+  Log: Array[0..1023] Of char;
+Begin
+  result := 0;
+  S := glCreateShader(ShaderType);
+  glShaderSource(S, 1, @Src, Nil);
+  glCompileShader(S);
+
+  glGetShaderiv(S, GL_COMPILE_STATUS, @status);
+  If status = 0 Then Begin
+    glGetShaderInfoLog(S, 1024, Nil, @Log);
+    Raise Exception.Create('Shader Fehler: ' + Log);
+  End;
+
+  Result := S;
+End;
+
+Function CreateShaderProgram: GLuint;
+Var
+  vs, fs: GLuint;
+  prog: GLuint;
+  status: GLint;
+  Log: Array[0..1023] Of char;
+Begin
+  vs := CompileShader(VertexSrc, GL_VERTEX_SHADER);
+  fs := CompileShader(FragmentSrc, GL_FRAGMENT_SHADER);
+
+  prog := glCreateProgram();
+  glAttachShader(prog, vs);
+  glAttachShader(prog, fs);
+  glLinkProgram(prog);
+
+  glGetProgramiv(prog, GL_LINK_STATUS, @status);
+  If status = 0 Then Begin
+    glGetProgramInfoLog(prog, 1024, Nil, @Log);
+    Raise Exception.Create('Link Fehler: ' + Log);
+  End;
+
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+
+  Result := prog;
+End;
+
+Function CreateColorShaderProgram: GLuint;
+Var
+  vs, fs: GLuint;
+  prog: GLuint;
+  status: GLint;
+  Log: Array[0..1023] Of char;
+Begin
+  vs := CompileShader(ColorVertexSrc, GL_VERTEX_SHADER);
+  fs := CompileShader(ColorFragmentSrc, GL_FRAGMENT_SHADER);
+
+  prog := glCreateProgram();
+  glAttachShader(prog, vs);
+  glAttachShader(prog, fs);
+  glLinkProgram(prog);
+
+  glGetProgramiv(prog, GL_LINK_STATUS, @status);
+  If status = 0 Then Begin
+    glGetProgramInfoLog(prog, 1024, Nil, @Log);
+    Raise Exception.Create('Color Shader Link Fehler: ' + Log);
+  End;
+
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+
+  Result := prog;
+End;
+
+Procedure OpenGL_GraphikEngine_InitializeShaderSystem;
+Begin
+  // Create VBO on first use
+  If ShaderVBO = 0 Then
+    glGenBuffers(1, @ShaderVBO);
+
+  If ShaderProgram = 0 Then Begin
+    ShaderProgram := CreateShaderProgram;
+    glGenVertexArrays(1, @ShaderVAO);
+  End;
+
+  If ColorShaderProgram = 0 Then Begin
+    ColorShaderProgram := CreateColorShaderProgram;
+    glGenVertexArrays(1, @ColorShaderVAO);
+  End;
+End;
+{$ENDIF}
+
+Procedure Go2d(Width, Height: Integer);
+Var
+  LocRes: GLint;
+{$IFNDEF LEGACYMODE}
+  LocColor: GLint;
+{$ENDIF}
+Begin
+{$IFDEF LEGACYMODE}
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix(); // Store The Projection Matrix
+  glLoadIdentity(); // Reset The Projection Matrix
+  glOrtho(0, Width, Height, 0, -1, 1); // Set Up An Ortho Screen
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix(); // Store old Modelview Matrix
+  glLoadIdentity(); // Reset The Modelview Matrix
+{$ELSE}
+  glUseProgram(ShaderProgram);
+  LocRes := glGetUniformLocation(ShaderProgram, 'uResolution');
+  If LocRes >= 0 Then
+    glUniform2f(LocRes, Width, Height);
+  // Set default color to white for texture rendering
+  LocColor := glGetUniformLocation(ShaderProgram, 'uColor');
+  If LocColor >= 0 Then
+    glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
+  glBindVertexArray(ShaderVAO);
+{$ENDIF}
+End;
+
+Procedure Exit2d();
+Begin
+{$IFDEF LEGACYMODE}
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix(); // Restore old Projection Matrix
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix(); // Restore old Projection Matrix
+{$ELSE}
+  glBindVertexArray(0);
+  glUseProgram(0);
+{$ENDIF}
+End;
+
+Procedure RenderQuad(Left, Top, Depth: Single; Image: TGraphikItem);
+Var
+  tw, th: Single;
+  vertices: Array[0..15] Of GLfloat; // 4 vertices * (2 pos + 2 texcoord)
+  LocDepth: GLint;
+  CurrentProgram: GLint;
+Begin
+
+  Case Image.Stretched Of
+    smClamp: Begin
+        tw := Image.OrigWidth / Image.StretchedWidth;
+        th := Image.OrigHeight / Image.StretchedHeight;
+      End;
+    smNone, smStretch, smStretchHard: Begin
+        tw := 1;
+        th := 1;
+      End;
+  End;
+
+  // Vertex 0: bottom-left
+  vertices[0] := left;
+  vertices[1] := top + image.OrigHeight;
+  vertices[2] := 0;
+  vertices[3] := th;
+
+  // Vertex 1: bottom-right
+  vertices[4] := left + image.OrigWidth;
+  vertices[5] := top + image.OrigHeight;
+  vertices[6] := tw;
+  vertices[7] := th;
+
+  // Vertex 2: top-right
+  vertices[8] := left + image.OrigWidth;
+  vertices[9] := top;
+  vertices[10] := tw;
+  vertices[11] := 0;
+
+  // Vertex 3: top-left
+  vertices[12] := left;
+  vertices[13] := top;
+  vertices[14] := 0;
+  vertices[15] := 0;
+
+  glBindTexture(GL_TEXTURE_2D, image.Image);
+  glBindBuffer(GL_ARRAY_BUFFER, ShaderVBO);
+  glBufferData(GL_ARRAY_BUFFER, SizeOf(vertices), @vertices[0], GL_DYNAMIC_DRAW);
+
+  // Set depth uniform
+  glGetIntegerv(GL_CURRENT_PROGRAM, @CurrentProgram);
+  LocDepth := glGetUniformLocation(CurrentProgram, 'uDepth');
+  If LocDepth >= 0 Then
+    glUniform1f(LocDepth, Depth);
+
+  // Position attribute (location = 0)
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * SizeOf(GLfloat), Nil);
+
+  // TexCoord attribute (location = 1)
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * SizeOf(GLfloat), Pointer(2 * SizeOf(GLfloat)));
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+End;
+
+Procedure RenderAlphaQuad(Left, Top, Depth: Single; Image: TGraphikItem);
+Var
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+Begin
+  B := glIsEnabled(gl_Blend);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    glenable(gl_Blend);
+  glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  RenderQuad(Left, Top, Depth, Image);
+  If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+    gldisable(gl_blend);
 End;
 
 { TGraphikEngine }
@@ -1351,7 +1747,7 @@ End;
 Function TOpenGL_GraphikEngine.LoadAlphaColorGraphik(Filename: String; Color: TRGB; Stretch: TStretchmode): Integer; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
 Var
   Data: String;
-  b: TBitmap;
+  temp, b: TBitmap;
   jp: TJPEGImage;
   png: TPortableNetworkGraphic;
   i: Integer;
@@ -1388,6 +1784,15 @@ Begin
   End
   Else Begin
     b.LoadFromFile(Filename);
+    // FIX: convert to 32-Bit!
+    If b.PixelFormat <> pf32bit Then Begin
+      temp := TBitmap.Create;
+      temp.PixelFormat := pf32bit;
+      temp.SetSize(b.Width, b.Height);
+      temp.Canvas.Draw(0, 0, b);
+      b.Assign(temp);
+      temp.Free;
+    End;
   End;
   result := LoadAlphaColorGraphik(b, Filename, Color, Stretch);
   b.free;
@@ -2134,6 +2539,15 @@ Initialization
   End;
 
 Finalization
+
+  If ShaderVBO <> 0 Then
+    glDeleteBuffers(1, @ShaderVBO);
+
+  If ShaderVAO <> 0 Then
+    glDeleteVertexArrays(1, @ShaderVAO);
+
+  If ShaderProgram <> 0 Then
+    glDeleteProgram(ShaderProgram);
 
   If assigned(OpenGL_GraphikEngine) Then Begin
     OpenGL_GraphikEngine.free;

@@ -72,8 +72,8 @@ Type
     { private declarations }
   public
     { public declarations }
-    Procedure Go2d();
-    Procedure Exit2d();
+    Procedure Go2d(); // If you are useing uopengl_graphikengine do not use this function !
+    Procedure Exit2d(); // If you are useing uopengl_graphikengine do not use this function !
   End;
 
 Var
