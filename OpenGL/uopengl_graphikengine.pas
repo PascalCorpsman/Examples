@@ -221,6 +221,9 @@ Procedure RenderAlphaQuad(Left, Top, Depth: Single; Image: TGraphikItem);
  *)
 Procedure Go2d(Width, Height: Integer);
 Procedure Exit2d();
+{$IFNDEF LEGACYMODE}
+Function Get2DResolution(): TPoint;
+{$ENDIF}
 
 {$IFDEF LEGACYMODE}
 (*
@@ -248,12 +251,10 @@ Procedure glColor(Color: TColor; Alpha: byte = 0);
 
 {$IFNDEF LEGACYMODE}
 
-Var
-  ShaderVBO: GLuint = 0;
-  (*
-   * Switches to color shader for rendering colored geometry without textures
-   * Call this after Go2d and before rendering colored geometry
-   *)
+(*
+ * Switches to color shader for rendering colored geometry without textures
+ * Call this after Go2d and before rendering colored geometry
+ *)
 Procedure UseColorShader;
 
 (*
@@ -274,6 +275,19 @@ Procedure SetShaderColor(r, g, b, a: Single);
  * Raises an exception on compile error.
  *)
 Function CompileShader(Src: PChar; ShaderType: GLenum): GLuint;
+
+(*
+ * Setzt die uTransform-Uniform in beiden Shadern auf die angegebene Matrix.
+ * Entspricht dem kombinierten Effekt von glTranslatef + glScalef im Legacy-Mode.
+ * Die Matrix wird als row-major übergeben (TMatrix4x4 aus uvectormath).
+ *)
+Procedure SetShaderTransform(Const m: TMatrix4x4);
+
+(*
+ * Setzt uTransform in beiden Shadern zurück auf die Einheitsmatrix.
+ * Muss aufgerufen werden, nachdem der transformierte Bereich fertig gerendert wurde.
+ *)
+Procedure ResetShaderTransform;
 {$ENDIF}
 
 Function FRect(Top, Left, Bottom, Right: Single): TFRect;
@@ -290,9 +304,11 @@ Const
     'layout(location = 1) in vec2 aTexCoord;'#10 +
     'uniform vec2 uResolution;'#10 +
     'uniform float uDepth;'#10 +
+    'uniform mat4 uTransform;'#10 +
     'out vec2 vTexCoord;'#10 +
     'void main() {'#10 +
-    '  vec2 ndc = vec2((aPos.x / uResolution.x) * 2.0 - 1.0, 1.0 - (aPos.y / uResolution.y) * 2.0);'#10 +
+    '  vec4 transformed = uTransform * vec4(aPos, 0.0, 1.0);'#10 +
+    '  vec2 ndc = vec2((transformed.x / uResolution.x) * 2.0 - 1.0, 1.0 - (transformed.y / uResolution.y) * 2.0);'#10 +
     '  gl_Position = vec4(ndc, -uDepth, 1.0);'#10 +
     '  vTexCoord = aTexCoord;'#10 +
     '}';
@@ -313,8 +329,10 @@ Const
   '#version 330 core'#10 +
     'layout(location = 0) in vec3 aPos;'#10 +
     'uniform vec2 uResolution;'#10 +
+    'uniform mat4 uTransform;'#10 +
     'void main() {'#10 +
-    '  vec2 ndc = vec2((aPos.x / uResolution.x) * 2.0 - 1.0, 1.0 - (aPos.y / uResolution.y) * 2.0);'#10 +
+    '  vec4 transformed = uTransform * vec4(aPos.xy, 0.0, 1.0);'#10 +
+    '  vec2 ndc = vec2((transformed.x / uResolution.x) * 2.0 - 1.0, 1.0 - (transformed.y / uResolution.y) * 2.0);'#10 +
     '  gl_Position = vec4(ndc, -aPos.z, 1.0);'#10 +
     '}';
 
@@ -331,15 +349,16 @@ Var
   // LUT for sin / cos in 0.1° steps
   Sin_discrete, Cos_discrete: Array[0..3599] Of Single;
 
-{$IFDEF LEGACYMODE}
   ShaderVBO: GLuint = 0;
-{$ENDIF}
 
 //{$IFNDEF LEGACYMODE}
   // Shader system variables (only used when not in legacy OpenGL mode)
   ShaderProgram: GLuint = 0;
   ShaderVAO: GLuint = 0;
-  // Color shader for rendering without textures
+
+  // Virtual coordinate space set by Go2d, do not write these values manually !
+  VirtualResolutionWidth: Integer = 0;
+  VirtualResolutionHeight: Integer = 0;
 
   // Color shader for rendering without textures
   ColorShaderProgram: GLuint = 0;
@@ -489,35 +508,17 @@ End;
 {$IFNDEF LEGACYMODE}
 
 Procedure UseColorShader;
-Var
-  LocRes: GLint;
-  ViewportDim: Array[0..3] Of GLint;
 Begin
   glUseProgram(ColorShaderProgram);
   glBindVertexArray(ColorShaderVAO);
-
-  // Set resolution uniform
-  glGetIntegerv(GL_VIEWPORT, @ViewportDim[0]);
-  LocRes := glGetUniformLocation(ColorShaderProgram, 'uResolution');
-  If LocRes >= 0 Then
-    glUniform2f(LocRes, ViewportDim[2], ViewportDim[3]);
 End;
 
 Procedure UseTextureShader;
 Var
-  LocRes: GLint;
   LocColor: GLint;
-  ViewportDim: Array[0..3] Of GLint;
 Begin
   glUseProgram(ShaderProgram);
   glBindVertexArray(ShaderVAO);
-
-  // Set resolution uniform
-  glGetIntegerv(GL_VIEWPORT, @ViewportDim[0]);
-  LocRes := glGetUniformLocation(ShaderProgram, 'uResolution');
-  If LocRes >= 0 Then
-    glUniform2f(LocRes, ViewportDim[2], ViewportDim[3]);
-  // Set default color to white for texture rendering
   LocColor := glGetUniformLocation(ShaderProgram, 'uColor');
   If LocColor >= 0 Then
     glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
@@ -530,6 +531,34 @@ Begin
   LocColor := glGetUniformLocation(ColorShaderProgram, 'uColor');
   If LocColor >= 0 Then
     glUniform4f(LocColor, r, g, b, a);
+End;
+
+Procedure SetShaderTransform(Const m: TMatrix4x4);
+Var
+  loc: GLint;
+  prevProgram: GLint;
+Begin
+  glGetIntegerv(GL_CURRENT_PROGRAM, @prevProgram);
+
+  glUseProgram(ColorShaderProgram);
+  loc := glGetUniformLocation(ColorShaderProgram, 'uTransform');
+  If loc >= 0 Then
+    glUniformMatrix4fv(loc, 1, GL_TRUE, @m[0, 0]);
+
+  glUseProgram(ShaderProgram);
+  loc := glGetUniformLocation(ShaderProgram, 'uTransform');
+  If loc >= 0 Then
+    glUniformMatrix4fv(loc, 1, GL_TRUE, @m[0, 0]);
+
+  glUseProgram(prevProgram);
+End;
+
+Procedure ResetShaderTransform;
+Var
+  id: TMatrix4x4;
+Begin
+  id := IdentityMatrix4x4;
+  SetShaderTransform(id);
 End;
 
 {$ENDIF}
@@ -970,15 +999,16 @@ Begin
     ColorShaderProgram := CreateColorShaderProgram;
     glGenVertexArrays(1, @ColorShaderVAO);
   End;
+
+  // uTransform muss explizit auf Einheitsmatrix gesetzt werden,
+  // da GLSL uniforms standardmäßig 0 sind (keine Einheitsmatrix).
+  ResetShaderTransform;
 End;
 {$ENDIF}
 
 Procedure Go2d(Width, Height: Integer);
 Var
   LocRes: GLint;
-{$IFNDEF LEGACYMODE}
-  LocColor: GLint;
-{$ENDIF}
 Begin
 {$IFDEF LEGACYMODE}
   glMatrixMode(GL_PROJECTION);
@@ -989,15 +1019,20 @@ Begin
   glPushMatrix(); // Store old Modelview Matrix
   glLoadIdentity(); // Reset The Modelview Matrix
 {$ELSE}
+  // Set uResolution on both shader programs to the virtual coordinate space.
+  // glViewport handles the actual stretching to the window; shaders must NOT
+  // override this with real viewport dimensions.
+  VirtualResolutionWidth := Width;
+  VirtualResolutionHeight := Height;
   glUseProgram(ShaderProgram);
   LocRes := glGetUniformLocation(ShaderProgram, 'uResolution');
   If LocRes >= 0 Then
     glUniform2f(LocRes, Width, Height);
-  // Set default color to white for texture rendering
-  LocColor := glGetUniformLocation(ShaderProgram, 'uColor');
-  If LocColor >= 0 Then
-    glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
-  glBindVertexArray(ShaderVAO);
+  glUseProgram(ColorShaderProgram);
+  LocRes := glGetUniformLocation(ColorShaderProgram, 'uResolution');
+  If LocRes >= 0 Then
+    glUniform2f(LocRes, Width, Height);
+  UseTextureShader;
 {$ENDIF}
 End;
 
@@ -1013,6 +1048,14 @@ Begin
   glUseProgram(0);
 {$ENDIF}
 End;
+
+{$IFNDEF LEGACYMODE}
+
+Function Get2DResolution(): TPoint;
+Begin
+  result := point(VirtualResolutionWidth, VirtualResolutionHeight);
+End;
+{$ENDIF}
 
 Procedure RenderQuad(Left, Top, Depth: Single; Image: TGraphikItem);
 Var
