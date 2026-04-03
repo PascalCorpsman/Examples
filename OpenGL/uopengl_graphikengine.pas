@@ -187,6 +187,10 @@ Var
    * Shader system initialization and management
    *)
 Procedure OpenGL_GraphikEngine_InitializeShaderSystem;
+(*
+ * Shutdown Shader system, needs to be called in OnDestroy Handler
+ *)
+Procedure OpenGL_GraphikEngine_FinalizeShaderSystem;
 {$ENDIF}
 
 (*
@@ -1004,6 +1008,22 @@ Begin
   // da GLSL uniforms standardmäßig 0 sind (keine Einheitsmatrix).
   ResetShaderTransform;
 End;
+
+Procedure OpenGL_GraphikEngine_FinalizeShaderSystem;
+Begin
+  If ShaderVBO <> 0 Then
+    glDeleteBuffers(1, @ShaderVBO);
+  ShaderVBO := 0;
+
+  If ShaderVAO <> 0 Then
+    glDeleteVertexArrays(1, @ShaderVAO);
+  ShaderVAO := 0;
+
+  If ShaderProgram <> 0 Then
+    glDeleteProgram(ShaderProgram);
+  ShaderProgram := 0;
+End;
+
 {$ENDIF}
 
 Procedure Go2d(Width, Height: Integer);
@@ -2582,15 +2602,6 @@ Initialization
   End;
 
 Finalization
-
-  If ShaderVBO <> 0 Then
-    glDeleteBuffers(1, @ShaderVBO);
-
-  If ShaderVAO <> 0 Then
-    glDeleteVertexArrays(1, @ShaderVAO);
-
-  If ShaderProgram <> 0 Then
-    glDeleteProgram(ShaderProgram);
 
   If assigned(OpenGL_GraphikEngine) Then Begin
     OpenGL_GraphikEngine.free;
