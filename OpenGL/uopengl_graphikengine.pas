@@ -271,7 +271,8 @@ Procedure UseTextureShader;
  * Sets the color for the color shader
  * Must be called after UseColorShader and before rendering
  *)
-Procedure SetShaderColor(r, g, b, a: Single);
+Procedure SetShaderColor(r, g, b: Single; a: Single = 1);
+Procedure SetShaderColorub(r, g, b: Byte; a: Byte = 255);
 
 (*
  * Compiles a single OpenGL shader from source.
@@ -528,13 +529,18 @@ Begin
     glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
 End;
 
-Procedure SetShaderColor(r, g, b, a: Single);
+Procedure SetShaderColor(r, g, b: Single; a: Single);
 Var
   LocColor: GLint;
 Begin
   LocColor := glGetUniformLocation(ColorShaderProgram, 'uColor');
   If LocColor >= 0 Then
     glUniform4f(LocColor, r, g, b, a);
+End;
+
+Procedure SetShaderColorub(r, g, b: Byte; a: Byte);
+Begin
+  SetShaderColor(r / 255, g / 255, b / 255, a / 255);
 End;
 
 Procedure SetShaderTransform(Const m: TMatrix4x4);
@@ -1056,7 +1062,7 @@ Begin
 {$ENDIF}
 End;
 
-Procedure Exit2d();
+Procedure Exit2d;
 Begin
 {$IFDEF LEGACYMODE}
   glMatrixMode(GL_PROJECTION);
@@ -1071,7 +1077,7 @@ End;
 
 {$IFNDEF LEGACYMODE}
 
-Function Get2DResolution(): TPoint;
+Function Get2DResolution: TPoint;
 Begin
   result := point(VirtualResolutionWidth, VirtualResolutionHeight);
 End;
