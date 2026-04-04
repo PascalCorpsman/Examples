@@ -24,8 +24,10 @@ Collection of classes and examples that are mainly related to OpenGL implementat
 | uopengl_camera.pas | Helper class to correct set OpenGL modelview matrix in a scene |
 | uopengl_font_common.pas | Anchestorclass for TOpenGL_TrueType_Font and TOpenGL_ASCII_Font |
 | uopengl_graphikengine.pas | Class to load and render graphics into the OpenGL window |
+| uopengl_legacychecker.pas | unit that helps finding "invalid" legacy calls when using modern OpenGL v3.3 |
 | uopengl_partikelengine.pas | Class to render thousands of particle graphics into the OpenGL window |
 | uopengl_primitives.pas | Collection of higher level primitive objects (sphere, cone, cube..) |
+| uopengl_shaderprimitives.pas | unit that helps porting old legacy code to OpenGL v3.3 |
 | uopengl_spriteengine.pas | Class to render multiple imageparts within defined delta times |
 | uopengl_truetype_font.pas | Class to render truetype fonts to OpenGL windows |
 | uopengl_widgetset.pas | TButton, TScrollbar, TListbox.. for a OpenGL Renderingcontext |
