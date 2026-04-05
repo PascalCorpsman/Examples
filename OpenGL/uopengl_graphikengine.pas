@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uOpenGLGraphikEngine.pas                                        ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.13                                                         *)
+(* Version     : 0.14                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -43,6 +43,8 @@
 (*               0.12 - Start removing glpushmatrix / glpopmatrix calls       *)
 (*                      Start speedup image loading / decoding                *)
 (*               0.13 - Start with support for OpenGL Shader                  *)
+(*               0.14 - Fix GL_INVALID_OPERATION in RenderQuad by binding     *)
+(*                      ShaderVAO before glVertexAttribPointer calls          *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uopengl_graphikengine;
@@ -1127,6 +1129,7 @@ Begin
   vertices[15] := 0;
 
   glBindTexture(GL_TEXTURE_2D, image.Image);
+  glBindVertexArray(ShaderVAO);
   glBindBuffer(GL_ARRAY_BUFFER, ShaderVBO);
   glBufferData(GL_ARRAY_BUFFER, SizeOf(vertices), @vertices[0], GL_DYNAMIC_DRAW);
 
@@ -1148,6 +1151,7 @@ Begin
 
   glDisableVertexAttribArray(0);
   glDisableVertexAttribArray(1);
+  glBindVertexArray(0);
 End;
 
 Procedure RenderAlphaQuad(Left, Top, Depth: Single; Image: TGraphikItem);
@@ -1206,8 +1210,14 @@ Var
   jp: TJPEGImage;
   png: TPortableNetworkGraphic;
   c, j, i: Integer;
+{$IFDEF LEGACYMODE}
   bool: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+{$ENDIF}
   ow, oh, nw, nh: INteger;
+{$IFDEF LCLGTK3}
+  IntfImg: TLazIntfImage;
+  IntfImg2: TLazIntfImage;
+{$ENDIF}
 Begin
   If FileExists(Filename) Then Begin
     Data := LowerCase(Filename);
@@ -1276,6 +1286,22 @@ Begin
           nw := GetNextPowerOfTwo(b.width);
           nh := GetNextPowerOfTwo(b.height);
           If (nw <> b.width) Or (nh <> b.height) Then Begin
+{$IFDEF LCLGTK3}
+            // Das SetSize machts in GTK3 Kaputt
+            IntfImg := TLazIntfImage.Create(0, 0);
+            IntfImg.LoadFromBitmap(b.Handle, b.MaskHandle);
+            IntfImg2 := TLazIntfImage.Create(0, 0);
+            IntfImg2.LoadFromBitmap(b.Handle, b.MaskHandle);
+            IntfImg2.SetSize(nw, nh);
+            For i := 0 To b.Width - 1 Do Begin
+              For j := 0 To b.Height - 1 Do Begin
+                IntfImg2.Colors[i, j] := IntfImg.Colors[i, j];
+              End;
+            End;
+            b.LoadFromIntfImage(IntfImg2);
+            IntfImg.Free;
+            IntfImg2.Free;
+{$ELSE}
             b2 := TBitmap.create;
             b2.PixelFormat := pf24bit;
             b2.width := nw;
@@ -1283,6 +1309,7 @@ Begin
             b2.canvas.Draw(0, 0, b);
             b.free;
             b := b2;
+{$ENDIF}
           End;
         End;
     End;
@@ -1308,16 +1335,20 @@ Begin
         End;
       End;
       // Übergeben an OpenGL
+{$IFDEF LEGACYMODE}
       bool := glIsEnabled(GL_TEXTURE_2D);
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         glEnable(GL_TEXTURE_2D);
+{$ENDIF}
       glGenTextures(1, @Result);
       glBindTexture(GL_TEXTURE_2D, result.Image);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexImage2D(GL_TEXTURE_2D, 0, gl_RGB, b.width, b.height, 0, GL_RGB, GL_UNSIGNED_BYTE, @OpenGLData[0]);
+{$IFDEF LEGACYMODE}
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         gldisable(GL_TEXTURE_2D);
+{$ENDIF}
       IntfImg1.free;
       b.free;
       // Übernehmen in die Engine
@@ -1439,15 +1470,19 @@ Begin
     End;
     // Übergeben an OpenGL
     glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
+{$ENDIF}
     glBindTexture(GL_TEXTURE_2D, result);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGB, b.width, b.height, 0, GL_RGB, GL_UNSIGNED_BYTE, @OpenGLData[0]);
+{$IFDEF LEGACYMODE}
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       gldisable(GL_TEXTURE_2D);
+{$ENDIF}
     IntfImg1.free;
     // Übernehmen in die Engine
     setlength(Fimages, high(Fimages) + 2);
@@ -1618,15 +1653,19 @@ Begin
       End;
       // Übergeben an OpenGL
       glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
       bool := glIsEnabled(GL_TEXTURE_2D);
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         glEnable(GL_TEXTURE_2D);
+{$ENDIF}
       glBindTexture(GL_TEXTURE_2D, result);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, b.width, b.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @OpenGLData[0]);
+{$IFDEF LEGACYMODE}
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         gldisable(GL_TEXTURE_2D);
+{$ENDIF}
       IntfImg1.free;
       b.free;
       // Übernehmen in die Engine
@@ -1657,7 +1696,13 @@ Var
   pSrc: PRGBA;
   pDst, pStart: PByte;
   Line: Pointer;
+{$IFDEF LEGACYMODE}
   bool: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+{$ENDIF}
+{$IFDEF LCLGTK3}
+  IntfImg: TLazIntfImage;
+  IntfImg2: TLazIntfImage;
+{$ENDIF}
 Begin
   Data := LowerCase(name);
   // Graphik bereits geladen
@@ -1708,12 +1753,29 @@ Begin
         nw := GetNextPowerOfTwo(ow);
         nh := GetNextPowerOfTwo(oh);
         If (nw <> ow) Or (nh <> oh) Then Begin
+{$IFDEF LCLGTK3}
+          // Das SetSize machts in GTK3 Kaputt
+          IntfImg := TLazIntfImage.Create(0, 0);
+          IntfImg.LoadFromBitmap(b.Handle, b.MaskHandle);
+          IntfImg2 := TLazIntfImage.Create(0, 0);
+          IntfImg2.LoadFromBitmap(b.Handle, b.MaskHandle);
+          IntfImg2.SetSize(nw, nh);
+          For i := 0 To b.Width - 1 Do Begin
+            For j := 0 To b.Height - 1 Do Begin
+              IntfImg2.Colors[i, j] := IntfImg.Colors[i, j];
+            End;
+          End;
+          b.LoadFromIntfImage(IntfImg2);
+          IntfImg.Free;
+          IntfImg2.Free;
+{$ELSE}
           b2 := TBitmap.create;
           b2.PixelFormat := pf32bit;
           b2.SetSize(nw, nh);
           b2.canvas.Draw(0, 0, b);
           b.free;
           b := b2;
+{$ENDIF}
         End;
       End;
   End;
@@ -1749,15 +1811,19 @@ Begin
     End;
     // Übergeben an OpenGL
     glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
+{$ENDIF}
     glBindTexture(GL_TEXTURE_2D, result);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, b.width, b.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pStart);
+{$IFDEF LEGACYMODE}
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       gldisable(GL_TEXTURE_2D);
+{$ENDIF}
     FreeMem(pStart);
     // Übernehmen in die Engine
     setlength(Fimages, high(Fimages) + 2);
@@ -1820,6 +1886,9 @@ Var
   jp: TJPEGImage;
   png: TPortableNetworkGraphic;
   i: Integer;
+{$IFDEF LCLGTK3}
+  IntfImg: TLazIntfImage;
+{$ENDIF}
 Begin
   result := 0;
   If Not FileExists(Filename) Then exit;
@@ -1858,7 +1927,14 @@ Begin
       temp := TBitmap.Create;
       temp.PixelFormat := pf32bit;
       temp.SetSize(b.Width, b.Height);
+{$IFDEF LCLGTK3}
+      IntfImg := TLazIntfImage.Create(0, 0);
+      IntfImg.LoadFromBitmap(b.Handle, b.MaskHandle);
+      temp.LoadFromIntfImage(IntfImg);
+      IntfImg.Free;
+{$ELSE}
       temp.Canvas.Draw(0, 0, b);
+{$ENDIF}
       b.Assign(temp);
       temp.Free;
     End;
@@ -2111,15 +2187,19 @@ Begin
       End;
       // Übergeben an OpenGL
       glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
       bool := glIsEnabled(GL_TEXTURE_2D);
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         glEnable(GL_TEXTURE_2D);
+{$ENDIF}
       glBindTexture(GL_TEXTURE_2D, result.Image);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, b.width, b.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @OpenGLData[0]);
+{$IFDEF LEGACYMODE}
       If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
         gldisable(GL_TEXTURE_2D);
+{$ENDIF}
       IntfImg1.free;
       b.free;
       // Übernehmen in die Engine
@@ -2280,18 +2360,22 @@ Begin
     End;
     // Übergeben an OpenGL
     glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
+{$ENDIF}
     glBindTexture(GL_TEXTURE_2D, result);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, g.width, g.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @OpenGLData[0]);
+{$IFDEF LEGACYMODE}
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       gldisable(GL_TEXTURE_2D);
     // entladen des texturspeichers
     If BOOL{$IFDEF USE_GL} = 1{$ENDIF} Then
       GLBindtexture(GL_texture_2d, 0);
+{$ENDIF}
     // Übernehmen in die Engine
     Graphik_intf.free;
     Alpha_intf.free;
@@ -2476,15 +2560,19 @@ Begin
     End;
     // Übergeben an OpenGL
     glGenTextures(1, @Result);
+{$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
+{$ENDIF}
     glBindTexture(GL_TEXTURE_2D, result.Image);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, b.width, b.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @OpenGLData[0, 0]);
+{$IFDEF LEGACYMODE}
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       gldisable(GL_TEXTURE_2D);
+{$ENDIF}
     // Übernehmen in die Engine
     setlength(Fimages, high(Fimages) + 2);
     Fimages[high(Fimages)].Image := Result.Image;
