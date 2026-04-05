@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uopengl_shaderprimitives.pas                                    03.04.2026 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -28,6 +28,8 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Fix GL_INVALID_OPERATION (1282) in Core Profile by    *)
+(*                      adding VAO (required since OpenGL 3.2 Core)           *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -91,6 +93,7 @@ Const
   VertexBufferBlockSize = 1024;
 
 Var
+  ShaderVAO: GLuint;
   ShaderVBO: GLint;
   aShaderMode: GLenum;
   RenderVertexBuffer: Array Of TVector3;
@@ -98,6 +101,8 @@ Var
 
 Procedure OpenGL_ShaderPrimitives_InitializeShaderSystem;
 Begin
+  If ShaderVAO = 0 Then
+    glGenVertexArrays(1, @ShaderVAO);
   If ShaderVBO = 0 Then
     glGenBuffers(1, @ShaderVBO);
 End;
@@ -107,11 +112,24 @@ Begin
   If ShaderVBO <> 0 Then
     glDeleteBuffers(1, @ShaderVBO);
   ShaderVBO := 0;
+  If ShaderVAO <> 0 Then
+    glDeleteVertexArrays(1, @ShaderVAO);
+  ShaderVAO := 0;
 End;
 
 Procedure glShaderBegin(aMode: GLenum);
 Begin
+  If aMode = GL_QUADS Then Begin
+    Raise exception.create('Error, GL_QUADS was removed in OpenGl Core 3.2');
+  End;
+  If aMode = GL_QUAD_STRIP Then Begin
+    Raise exception.create('Error, GL_QUAD_STRIP was removed in OpenGl Core 3.2');
+  End;
+  If aMode = GL_POLYGON Then Begin
+    Raise exception.create('Error, GL_POLYGON was removed in OpenGl Core 3.2');
+  End;
   aShaderMode := aMode;
+  glBindVertexArray(ShaderVAO);
   glBindBuffer(GL_ARRAY_BUFFER, ShaderVBO);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, Nil);
@@ -147,9 +165,11 @@ Begin
     RenderVertexBufferCnt := 0;
   End;
   glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
 End;
 
 Initialization
+  ShaderVAO := 0;
   RenderVertexBuffer := Nil;
   setlength(RenderVertexBuffer, VertexBufferBlockSize);
   RenderVertexBufferCnt := 0;
