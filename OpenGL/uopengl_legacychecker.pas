@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uopengl_legacychecker.pas                                       03.04.2026 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - ADD CHECK_FORWARD_COMPATIBLE                          *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uopengl_legacychecker;
@@ -31,6 +32,12 @@ Unit uopengl_legacychecker;
 {$MODE ObjFPC}{$H+}
 
 Interface
+
+(*
+ * If enabled, than also checks that are deprecated but usable on some
+ * drivers are checked.
+ *)
+{$DEFINE CHECK_FORWARD_COMPATIBLE}
 
 Uses
   Classes, SysUtils, dglOpenGL;
@@ -49,11 +56,11 @@ Procedure RegisterLegacyCheckerCallback(Const aCallback: TErrorInfoCallback);
 
 (*
  * If you want to use the KHR_debug debug system you also need to set:
- * 
- *  OpenGLControl1.DebugContext := True; 
+ *
+ *  OpenGLControl1.DebugContext := True;
  *
  * During Mainform.create and call
- * 
+ *
  * ReActivateKHRDebug when finally activating Rendering in MakeCurrent
  *)
 Procedure ReActivateKHRDebug;
@@ -150,6 +157,11 @@ Var
   glEnablecapture: TglEnable;
   glDisablecapture: TglDisable;
   glIsEnabledcapture: TglIsEnabled;
+
+{$IFDEF CHECK_FORWARD_COMPATIBLE}
+  glLineWidthCapture: TglLineWidth;
+  glPointSizeCapture: TglPointSize;
+{$ENDIF}
 
 Procedure glVertex2fvWatcher(Const v: PGLfloat); cdecl;
 Begin
@@ -618,6 +630,28 @@ Begin
   result := glIsEnabledcapture(cap);
 End;
 
+{$IFDEF CHECK_FORWARD_COMPATIBLE}
+
+Procedure glLineWidthWatcher(width: GLfloat); cdecl;
+Begin
+  If width > 1.0 Then Begin
+    (*
+     * deprecated since OpenGL 3.0 (2008)
+     *)
+    fCallback(0, 'glLineWidthWatcher');
+  End;
+  glLineWidthCapture(width);
+End;
+
+Procedure glPointSizeWatcher(size: GLfloat); cdecl;
+Begin
+  If Not glIsEnabled(GL_PROGRAM_POINT_SIZE) Then Begin
+    fCallback(0, 'glPointSizeWatcher');
+  End;
+  glPointSizeCapture(size);
+End;
+{$ENDIF}
+
 // GL_KHR_debug driver callback: forwards all non-notification messages to fCallback.
 // Must be a plain cdecl procedure (no method, no closure) because it is passed
 // directly to the OpenGL driver via glDebugMessageCallback.
@@ -807,6 +841,14 @@ Begin
   glDisable := @glDisableWatcher;
   glIsEnabledcapture := glIsEnabled;
   glIsEnabled := @IsEnabledWatcher;
+
+{$IFDEF CHECK_FORWARD_COMPATIBLE}
+  glLineWidthCapture := glLineWidth;
+  glLineWidth := @glLineWidthWatcher;
+
+  glPointSizeCapture := glPointSize;
+  glPointSize := @glPointSizeWatcher;
+{$ENDIF}
 
   // If OpenGL 4.3+ is available, additionally activate the driver-level
   // GL_KHR_debug system. It fires synchronously at the exact offending call
