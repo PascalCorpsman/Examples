@@ -219,6 +219,9 @@ Procedure RenderTiledQuad(Left, Top: Single; Index, TilesPerRow, TilesPerCol: in
 // Shader mode rendering helper
 Procedure RenderQuad(Left, Top, Depth: Single; Image: TGraphikItem);
 Procedure RenderAlphaQuad(Left, Top, Depth: Single; Image: TGraphikItem);
+
+Procedure RenderTiledQuad(Left, Top, Depth: Single; Index, TilesPerRow, TilesPerCol: integer; Const Image: TGraphikItem);
+Procedure RenderAlphaTiledQuad(Left, Top, Depth: Single; Index, TilesPerRow, TilesPerCol: integer; Const Image: TGraphikItem);
 {$ENDIF}
 (*
  * 2D rendering mode setup
@@ -906,7 +909,7 @@ Begin
   glend;
 End;
 
-Procedure RenderAlphaTiledQuad(Left, Top: Single; Index, TilesPerRow,
+Procedure RenderAlphaTiledQuad(Left, Top{$IFNDEF LEGACYMODE}, Depth{$ENDIF}: Single; Index, TilesPerRow,
   TilesPerCol: integer; Const Image: TGraphikItem);
 Var
   b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
@@ -915,7 +918,7 @@ Begin
   If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
     glenable(gl_Blend);
   glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-  RenderTiledQuad(Left, Top, Index, TilesPerRow, TilesPerCol, Image);
+  RenderTiledQuad(Left, Top{$IFNDEF LEGACYMODE}, Depth{$ENDIF}, Index, TilesPerRow, TilesPerCol, Image);
   If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
     gldisable(gl_blend);
 End;
@@ -1127,6 +1130,88 @@ Begin
   vertices[13] := top;
   vertices[14] := 0;
   vertices[15] := 0;
+
+  glBindTexture(GL_TEXTURE_2D, image.Image);
+  glBindVertexArray(ShaderVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, ShaderVBO);
+  glBufferData(GL_ARRAY_BUFFER, SizeOf(vertices), @vertices[0], GL_DYNAMIC_DRAW);
+
+  // Set depth uniform
+  glGetIntegerv(GL_CURRENT_PROGRAM, @CurrentProgram);
+  LocDepth := glGetUniformLocation(CurrentProgram, 'uDepth');
+  If LocDepth >= 0 Then
+    glUniform1f(LocDepth, Depth);
+
+  // Position attribute (location = 0)
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * SizeOf(GLfloat), Nil);
+
+  // TexCoord attribute (location = 1)
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * SizeOf(GLfloat), Pointer(2 * SizeOf(GLfloat)));
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glBindVertexArray(0);
+End;
+
+(*
+ * Die Idee, ist dass wir die Textur betrachten als "Collection" von vielen Tiles
+ * Diese collection wird zu einer Rechteckfläche von TilesPerRow und TilesPerCol
+ * in die wir via Index zugreifen, und dann immer nur das passende "teilstück"
+ * Rendern ;).
+ *)
+
+Procedure RenderTiledQuad(Left, Top, Depth: Single; Index, TilesPerRow,
+  TilesPerCol: integer; Const Image: TGraphikItem);
+Var
+  w, h, tw, th: Single;
+  ix, iy: integer;
+  vertices: Array[0..15] Of GLfloat; // 4 vertices * (2 pos + 2 texcoord)
+  LocDepth: GLint;
+  CurrentProgram: GLint;
+Begin
+  ix := index Mod TilesPerRow;
+  iy := index Div TilesPerRow;
+  w := Image.OrigWidth / TilesPerRow;
+  h := Image.OrigHeight / TilesPerCol;
+  Case Image.Stretched Of
+    smClamp: Begin
+        tw := w / Image.StretchedWidth;
+        th := h / Image.StretchedHeight;
+      End;
+    smNone, smStretch, smStretchHard: Begin
+        tw := w;
+        th := h;
+      End;
+  End;
+  glBindTexture(gl_texture_2d, image.Image);
+
+  // Vertex 0: bottom-left
+  vertices[0] := left;
+  vertices[1] := top + h;
+  vertices[2] := tw * ix;
+  vertices[3] := th * (iy + 1);
+
+  // Vertex 1: bottom-right
+  vertices[4] := left + w;
+  vertices[5] := top + h;
+  vertices[6] := tw * (ix + 1);
+  vertices[7] := th * (iy + 1);
+
+  // Vertex 2: top-right
+  vertices[8] := left + w;
+  vertices[9] := top;
+  vertices[10] := tw * (ix + 1);
+  vertices[11] := th * iy;
+
+  // Vertex 3: top-left
+  vertices[12] := left;
+  vertices[13] := top;
+  vertices[14] := tw * ix;
+  vertices[15] := th * iy;
 
   glBindTexture(GL_TEXTURE_2D, image.Image);
   glBindVertexArray(ShaderVAO);
