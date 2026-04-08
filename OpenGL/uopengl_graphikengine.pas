@@ -153,9 +153,10 @@ Type
     Function LoadGraphik(Filename: String; Stretch: TStretchmode = smNone): Integer; overload; // Laden einer Graphik ohne Alphakanal
     Function LoadGraphikItem(Filename: String; Stretch: TStretchmode = smNone): TGraphikItem; overload; // Laden einer Graphik ohne Alphakanal
     Function LoadGraphik(Const Graphik: TBitmap; Name: String; Stretch: TStretchmode = smNone): Integer; overload; // Laden einer Graphik ohne Alphakanal
+    Function LoadGraphikItem(Const Graphik: TBitmap; Name: String; Stretch: TStretchmode = smNone): TGraphikItem; overload; // Laden einer Graphik ohne Alphakanal
     Function LoadAlphaColorGraphik(Filename: String; Color: TRGB; Stretch: TStretchmode = smNone): Integer; overload; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
-    Function LoadAlphaColorGraphik(Const Graphik: TBitmap; Name: String; Color: TRGB; Stretch: TStretchmode = smNone): Integer; overload; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
     Function LoadAlphaColorGraphikItem(Filename: String; Color: TRGB; Stretch: TStretchmode = smNone): TGraphikItem; overload;
+    Function LoadAlphaColorGraphik(Const Graphik: TBitmap; Name: String; Color: TRGB; Stretch: TStretchmode = smNone): Integer; overload; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
     Function LoadAlphaColorGraphikItem(Const Graphik: TBitmap; Name: String; Color: TRGB; Stretch: TStretchmode = smNone): TGraphikItem; overload;
     (*
     Funktionen die NICHT Machen was sie sollen
@@ -1280,12 +1281,14 @@ Begin
 {$ENDIF}
 End;
 
-Function TOpenGL_GraphikEngine.LoadGraphik(Filename: String; Stretch: TStretchmode): Integer;
+Function TOpenGL_GraphikEngine.LoadGraphik(Filename: String;
+  Stretch: TStretchmode): Integer;
 Begin
   result := LoadGraphikItem(Filename, Stretch).Image;
 End;
 
-Function TOpenGL_GraphikEngine.LoadGraphikItem(Filename: String; Stretch: TStretchmode): TGraphikItem;
+Function TOpenGL_GraphikEngine.LoadGraphikItem(Filename: String;
+  Stretch: TStretchmode): TGraphikItem;
 Var
   OpenGLData: Array Of Array[0..2] Of Byte;
   Data: String;
@@ -1460,7 +1463,8 @@ Begin
   End;
 End;
 
-Function TOpenGL_GraphikEngine.LoadGraphik(Const Graphik: TBitmap; Name: String; Stretch: TStretchmode): Integer; // Laden einer Graphik ohne Alphakanal
+Function TOpenGL_GraphikEngine.LoadGraphikItem(Const Graphik: TBitmap;
+  Name: String; Stretch: TStretchmode): TGraphikItem; // Laden einer Graphik ohne Alphakanal
 Var
   OpenGLData: Array Of Array[0..2] Of Byte;
   Data: String;
@@ -1468,14 +1472,16 @@ Var
   IntfImg1: TLazIntfImage;
   CurColor: TFPColor;
   c, j, i: Integer;
+{$IFDEF LEGACYMODE}
   bool: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
-  ow, oh, nw, nh: Integer;
+{$ENDIF}
+  img, ow, oh, nw, nh: Integer;
 Begin
   Data := LowerCase(name);
   // Graphik bereits geladen
   For i := 0 To high(Fimages) Do
     If Fimages[i].Name = Data Then Begin
-      result := Fimages[i].Image;
+      result := Fimages[i];
 {$IFDEF DEBUGGOUTPUT}
       writeln('TGraphikEngine.LoadGraphik(' + name + ')');
       writeln('OpenGL Buffer : ' + FileSizetoString(OpenGLBufCount));
@@ -1554,13 +1560,13 @@ Begin
       End;
     End;
     // Übergeben an OpenGL
-    glGenTextures(1, @Result);
+    glGenTextures(1, @img);
 {$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
 {$ENDIF}
-    glBindTexture(GL_TEXTURE_2D, result);
+    glBindTexture(GL_TEXTURE_2D, img);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGB, b.width, b.height, 0, GL_RGB, GL_UNSIGNED_BYTE, @OpenGLData[0]);
@@ -1571,7 +1577,7 @@ Begin
     IntfImg1.free;
     // Übernehmen in die Engine
     setlength(Fimages, high(Fimages) + 2);
-    Fimages[high(Fimages)].Image := Result;
+    Fimages[high(Fimages)].Image := img;
     Fimages[high(Fimages)].Name := data;
     Fimages[high(Fimages)].Stretched := stretch;
     Fimages[high(Fimages)].OrigWidth := ow;
@@ -1579,6 +1585,7 @@ Begin
     Fimages[high(Fimages)].StretchedWidth := nw;
     Fimages[high(Fimages)].StretchedHeight := nh;
     Fimages[high(Fimages)].IsAlphaImage := false;
+    result := Fimages[high(Fimages)];
 {$IFDEF DEBUGGOUTPUT}
     writeln('TextureCount : ' + inttostr(high(Fimages) + 1));
 {$ENDIF}
@@ -1586,6 +1593,15 @@ Begin
   Else
     Raise Exception.create('Error Image ' + extractfilename(name) + ' has invalid Width / Height, has to be 2^x.');
   b.free;
+End;
+
+Function TOpenGL_GraphikEngine.LoadGraphik(Const Graphik: TBitmap;
+  Name: String; Stretch: TStretchmode): Integer;
+Var
+  gi: TGraphikItem;
+Begin
+  gi := LoadGraphikitem(Graphik, Name, Stretch);
+  result := gi.image;
 End;
 
 Function TOpenGL_GraphikEngine.GetInfo(Value: String): TGraphikItem;
@@ -1772,12 +1788,13 @@ Begin
   End;
 End;
 
-Function TOpenGL_GraphikEngine.LoadAlphaColorGraphik(Const Graphik: TBitmap;
-  Name: String; Color: TRGB; Stretch: TStretchmode): Integer; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
+Function TOpenGL_GraphikEngine.LoadAlphaColorGraphikItem(
+  Const Graphik: TBitmap; Name: String; Color: TRGB; Stretch: TStretchmode
+  ): TGraphikItem; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
 Var
   Data: String;
   b2, b: Tbitmap;
-  ow, oh, nw, nh, j, i: Integer;
+  img, ow, oh, nw, nh, j, i: Integer;
   pSrc: PRGBA;
   pDst, pStart: PByte;
   Line: Pointer;
@@ -1793,7 +1810,7 @@ Begin
   // Graphik bereits geladen
   For i := 0 To high(Fimages) Do
     If Fimages[i].Name = Data Then Begin
-      result := Fimages[i].Image;
+      result := Fimages[i];
 {$IFDEF DEBUGGOUTPUT}
       writeln('TGraphikEngine.LoadAlphaColorgraphik(' + name + ')');
       writeln('OpenGL Buffer : ' + FileSizetoString(OpenGLBufCount));
@@ -1895,13 +1912,13 @@ Begin
       End;
     End;
     // Übergeben an OpenGL
-    glGenTextures(1, @Result);
+    glGenTextures(1, @img);
 {$IFDEF LEGACYMODE}
     bool := glIsEnabled(GL_TEXTURE_2D);
     If Not (Bool{$IFDEF USE_GL} = 1{$ENDIF}) Then
       glEnable(GL_TEXTURE_2D);
 {$ENDIF}
-    glBindTexture(GL_TEXTURE_2D, result);
+    glBindTexture(GL_TEXTURE_2D, img);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, gl_RGBA, b.width, b.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pStart);
@@ -1912,7 +1929,7 @@ Begin
     FreeMem(pStart);
     // Übernehmen in die Engine
     setlength(Fimages, high(Fimages) + 2);
-    Fimages[high(Fimages)].Image := Result;
+    Fimages[high(Fimages)].Image := img;
     Fimages[high(Fimages)].Name := data;
     Fimages[high(Fimages)].Stretched := stretch;
     Fimages[high(Fimages)].OrigHeight := oh;
@@ -1920,6 +1937,7 @@ Begin
     Fimages[high(Fimages)].StretchedHeight := nh;
     Fimages[high(Fimages)].StretchedWidth := nw;
     Fimages[high(Fimages)].IsAlphaImage := true;
+    result := Fimages[high(Fimages)];
 {$IFDEF DEBUGGOUTPUT}
     writeln('TextureCount : ' + inttostr(high(Fimages) + 1));
 {$ENDIF}
@@ -1931,40 +1949,20 @@ Begin
   b.free;
 End;
 
+Function TOpenGL_GraphikEngine.LoadAlphaColorGraphik(Filename: String;
+  Color: TRGB; Stretch: TStretchmode): Integer;
+Begin
+  result := LoadAlphaColorGraphikItem(Filename, Color, Stretch).Image;
+End;
+
+Function TOpenGL_GraphikEngine.LoadAlphaColorGraphik(Const Graphik: TBitmap;
+  Name: String; Color: TRGB; Stretch: TStretchmode): Integer;
+Begin
+  result := LoadAlphaColorGraphikitem(Graphik, Name, Color, Stretch).Image;
+End;
+
 Function TOpenGL_GraphikEngine.LoadAlphaColorGraphikItem(Filename: String;
-  Color: TRGB; Stretch: TStretchmode): TGraphikItem;
-Var
-  img, i: integer;
-Begin
-  // TODO: Das sollte so umgeschrieben werden, dass alle Funtionen LoadAlphaColorGraphikItem aufrufen und man sich hier das Suchen sparen kann
-  img := LoadAlphaColorGraphik(Filename, Color, Stretch);
-  For i := 0 To high(FImages) Do Begin
-    If FImages[i].Image = img Then Begin
-      result := FImages[i];
-      exit;
-    End;
-  End;
-  Raise exception.Create('TOpenGL_GraphikEngine.LoadAlphaColorGraphikItem: Unable to load');
-End;
-
-Function TOpenGL_GraphikEngine.LoadAlphaColorGraphikItem(
-  Const Graphik: TBitmap; Name: String; Color: TRGB; Stretch: TStretchmode
-  ): TGraphikItem;
-Var
-  img, i: integer;
-Begin
-  // TODO: Das sollte so umgeschrieben werden, dass alle Funtionen LoadAlphaColorGraphikItem aufrufen und man sich hier das Suchen sparen kann
-  img := LoadAlphaColorGraphik(Graphik, Name, Color, Stretch);
-  For i := 0 To high(FImages) Do Begin
-    If FImages[i].Image = img Then Begin
-      result := FImages[i];
-      exit;
-    End;
-  End;
-  Raise exception.Create('TOpenGL_GraphikEngine.LoadAlphaColorGraphikItem: Unable to load');
-End;
-
-Function TOpenGL_GraphikEngine.LoadAlphaColorGraphik(Filename: String; Color: TRGB; Stretch: TStretchmode): Integer; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
+  Color: TRGB; Stretch: TStretchmode): TGraphikItem; // Lädt eine Alphagraphik und setzt den Wert von Color = Transparent.
 Var
   Data: String;
   temp, b: TBitmap;
@@ -1975,13 +1973,13 @@ Var
   IntfImg: TLazIntfImage;
 {$ENDIF}
 Begin
-  result := 0;
+  result.Image := 0;
   If Not FileExists(Filename) Then exit;
   Data := LowerCase(Filename);
   // Graphik bereits geladen
   For i := 0 To high(Fimages) Do
     If Fimages[i].Name = Data Then Begin
-      result := Fimages[i].Image;
+      result := Fimages[i];
 {$IFDEF DEBUGGOUTPUT}
       writeln('TGraphikEngine.LoadAlphaColorgraphik(' + Filename + ')');
       writeln('OpenGL Buffer : ' + FileSizetoString(OpenGLBufCount));
@@ -2024,16 +2022,18 @@ Begin
       temp.Free;
     End;
   End;
-  result := LoadAlphaColorGraphik(b, Filename, Color, Stretch);
+  result := LoadAlphaColorGraphikitem(b, Filename, Color, Stretch);
   b.free;
 End;
 
-Function TOpenGL_GraphikEngine.LoadAlphaGraphik(Filename: String; Stretch: TStretchmode): Integer;
+Function TOpenGL_GraphikEngine.LoadAlphaGraphik(Filename: String;
+  Stretch: TStretchmode): Integer;
 Begin
   result := LoadAlphaGraphikItem(Filename, Stretch).Image;
 End;
 
-Function TOpenGL_GraphikEngine.LoadAlphaGraphikItem(Filename: String; Stretch: TStretchmode): TGraphikItem;
+Function TOpenGL_GraphikEngine.LoadAlphaGraphikItem(Filename: String;
+  Stretch: TStretchmode): TGraphikItem;
 Var
   OpenGLData: Array Of Array[0..3] Of Byte;
   tmp, AlphaMask: Array Of Array Of Byte;
@@ -2047,7 +2047,9 @@ Var
   c, j, i: Integer;
   fi, fj, uu, vv, u, v: Single;
   xi, yi: integer;
+{$IFDEF LEGACYMODE}
   bool: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+{$ENDIF}
 Begin
   (*
   Die Funktion tut in keinster weise was oben steht das sie tun würde
@@ -2309,7 +2311,8 @@ Begin
     result.Image := 0;
 End;
 
-Function TOpenGL_GraphikEngine.LoadAlphaGraphik(Const Graphik, AlphaMask: Tbitmap; Name: String; Stretch: TStretchmode): integer; // Lädt eine Graphik aus TBitmap, und Lädt den Alphakanal aus den Luminanzdaten von Alphamask, Name dient zum späteren Wiederfinden
+Function TOpenGL_GraphikEngine.LoadAlphaGraphik(Const Graphik,
+  AlphaMask: Tbitmap; Name: String; Stretch: TStretchmode): integer; // Lädt eine Graphik aus TBitmap, und Lädt den Alphakanal aus den Luminanzdaten von Alphamask, Name dient zum späteren Wiederfinden
 Var
   g, a: TBitmap;
   OpenGLData: Array Of Array[0..3] Of Byte;
@@ -2501,7 +2504,9 @@ Var
   CurColor: TFPColor;
   OpenGLData: Array Of Array[0..3] Of Byte;
   c, j, i: Integer;
+{$IFDEF LEGACYMODE}
   bool: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+{$ENDIF}
 Begin
   (*
   Die Funktion tut in keinster weise, was oben steht das sie tun würde.
