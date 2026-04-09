@@ -163,415 +163,415 @@ Var
   glPointSizeCapture: TglPointSize;
 {$ENDIF}
 
-Procedure glVertex2fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glVertex2fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2fvWatcher');
   glVertex2fvcapture(v);
 End;
 
-Procedure glVertex3fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glVertex3fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3fvWatcher');
   glVertex3fvcapture(v);
 End;
 
-Procedure glVertex4fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glVertex4fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4fvWatcher');
   glVertex4fvcapture(v);
 End;
 
-Procedure glVertex2ivWatcher(Const v: PGLint); cdecl;
+Procedure glVertex2ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2ivWatcher');
   glVertex2ivcapture(v);
 End;
 
-Procedure glVertex3ivWatcher(Const v: PGLint); cdecl;
+Procedure glVertex3ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3ivWatcher');
   glVertex3ivcapture(v);
 End;
 
-Procedure glVertex4ivWatcher(Const v: PGLint); cdecl;
+Procedure glVertex4ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4ivWatcher');
   glVertex4ivcapture(v);
 End;
 
-Procedure glVertex2dvWatcher(Const v: PGLdouble); cdecl;
+Procedure glVertex2dvWatcher(Const v: PGLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2dvWatcher');
   glVertex2dvcapture(v);
 End;
 
-Procedure glVertex3dvWatcher(Const v: PGLdouble); cdecl;
+Procedure glVertex3dvWatcher(Const v: PGLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3dvWatcher');
   glVertex3dvcapture(v);
 End;
 
-Procedure glVertex4dvWatcher(Const v: PGLdouble); cdecl;
+Procedure glVertex4dvWatcher(Const v: PGLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4dvWatcher');
   glVertex4dvcapture(v);
 End;
 
-Procedure glColor3fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glColor3fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3fvWatcher');
   glColor3fvcapture(v);
 End;
 
-Procedure glColor4fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glColor4fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4fvWatcher');
   glColor4fvcapture(v);
 End;
 
-Procedure glColor3ivWatcher(Const v: PGLint); cdecl;
+Procedure glColor3ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3ivWatcher');
   glColor3ivcapture(v);
 End;
 
-Procedure glColor4ivWatcher(Const v: PGLint); cdecl;
+Procedure glColor4ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4ivWatcher');
   glColor4ivcapture(v);
 End;
 
-Procedure glColor3ubvWatcher(Const v: PGLubyte); cdecl;
+Procedure glColor3ubvWatcher(Const v: PGLubyte){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3ubvWatcher');
   glColor3ubvcapture(v);
 End;
 
-Procedure glColor4ubvWatcher(Const v: PGLubyte); cdecl;
+Procedure glColor4ubvWatcher(Const v: PGLubyte){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4ubvWatcher');
   glColor4ubvcapture(v);
 End;
 
-Procedure glTexCoord2fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glTexCoord2fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2fvWatcher');
   glTexCoord2fvcapture(v);
 End;
 
-Procedure glTexCoord2ivWatcher(Const v: PGLint); cdecl;
+Procedure glTexCoord2ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2ivWatcher');
   glTexCoord2ivcapture(v);
 End;
 
-Procedure glTexCoord2dvWatcher(Const v: PGLdouble); cdecl;
+Procedure glTexCoord2dvWatcher(Const v: PGLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2dvWatcher');
   glTexCoord2dvcapture(v);
 End;
 
-Procedure glNormal3fvWatcher(Const v: PGLfloat); cdecl;
+Procedure glNormal3fvWatcher(Const v: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3fvWatcher');
   glNormal3fvcapture(v);
 End;
 
-Procedure glNormal3ivWatcher(Const v: PGLint); cdecl;
+Procedure glNormal3ivWatcher(Const v: PGLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3ivWatcher');
   glNormal3ivcapture(v);
 End;
 
-Procedure glNormal3dvWatcher(Const v: PGLdouble); cdecl;
+Procedure glNormal3dvWatcher(Const v: PGLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3dvWatcher');
   glNormal3dvcapture(v);
 End;
 
-Procedure glBeginWatcher(mode: GLenum); cdecl;
+Procedure glBeginWatcher(mode: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glBeginWatcher');
   glBegincapture(mode);
 End;
 
-Procedure glEndWatcher(); cdecl;
+Procedure glEndWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glEndWatcher');
   glEndcapture();
 End;
 
-Procedure glVertex2fWatcher(x: GLfloat; y: GLfloat); cdecl;
+Procedure glVertex2fWatcher(x: GLfloat; y: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2fWatcher');
   glVertex2fcapture(x, y);
 End;
 
-Procedure glVertex3fWatcher(x: GLfloat; y: GLfloat; z: GLfloat); cdecl;
+Procedure glVertex3fWatcher(x: GLfloat; y: GLfloat; z: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3fWatcher');
   glVertex3fcapture(x, y, z);
 End;
 
-Procedure glVertex4fWatcher(x: GLfloat; y: GLfloat; z: GLfloat; w: GLfloat); cdecl;
+Procedure glVertex4fWatcher(x: GLfloat; y: GLfloat; z: GLfloat; w: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4fWatcher');
   glVertex4fcapture(x, y, z, w);
 End;
 
-Procedure glColor3fWatcher(red: GLfloat; green: GLfloat; blue: GLfloat); cdecl;
+Procedure glColor3fWatcher(red: GLfloat; green: GLfloat; blue: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3fWatcher');
   glColor3fcapture(red, green, blue);
 End;
 
-Procedure glColor4fWatcher(red: GLfloat; green: GLfloat; blue: GLfloat; alpha: GLfloat); cdecl;
+Procedure glColor4fWatcher(red: GLfloat; green: GLfloat; blue: GLfloat; alpha: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4fWatcher');
   glColor4fcapture(red, green, blue, alpha);
 End;
 
-Procedure glNormal3fWatcher(nx: GLfloat; ny: GLfloat; nz: GLfloat); cdecl;
+Procedure glNormal3fWatcher(nx: GLfloat; ny: GLfloat; nz: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3fWatcher');
   glNormal3fcapture(nx, ny, nz);
 End;
 
-Procedure glTexCoord2fWatcher(s: GLfloat; t: GLfloat); cdecl;
+Procedure glTexCoord2fWatcher(s: GLfloat; t: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2fWatcher');
   glTexCoord2fcapture(s, t);
 End;
 
-Procedure glPushMatrixWatcher(); cdecl;
+Procedure glPushMatrixWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glPushMatrixWatcher');
   glPushMatrixcapture();
 End;
 
-Procedure glPopMatrixWatcher(); cdecl;
+Procedure glPopMatrixWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glPopMatrixWatcher');
   glPopMatrixcapture();
 End;
 
-Procedure glPushAttribWatcher(mask: GLbitfield); cdecl;
+Procedure glPushAttribWatcher(mask: GLbitfield){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glPushAttribWatcher');
   glPushAttribcapture(mask);
 End;
 
-Procedure glPopAttribWatcher(); cdecl;
+Procedure glPopAttribWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glPopAttribWatcher');
   glPopAttribcapture();
 End;
 
-Procedure glMatrixModeWatcher(mode: GLenum); cdecl;
+Procedure glMatrixModeWatcher(mode: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glMatrixModeWatcher');
   glMatrixModecapture(mode);
 End;
 
-Procedure glLoadIdentityWatcher(); cdecl;
+Procedure glLoadIdentityWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glLoadIdentityWatcher');
   glLoadIdentitycapture();
 End;
 
-Procedure glLoadMatrixfWatcher(Const m: PGLfloat); cdecl;
+Procedure glLoadMatrixfWatcher(Const m: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glLoadMatrixfWatcher');
   glLoadMatrixfcapture(m);
 End;
 
-Procedure glMultMatrixfWatcher(Const m: PGLfloat); cdecl;
+Procedure glMultMatrixfWatcher(Const m: PGLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glMultMatrixfWatcher');
   glMultMatrixfcapture(m);
 End;
 
-Procedure glRotatefWatcher(angle: GLfloat; x: GLfloat; y: GLfloat; z: GLfloat); cdecl;
+Procedure glRotatefWatcher(angle: GLfloat; x: GLfloat; y: GLfloat; z: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glRotatefWatcher');
   glRotatefcapture(angle, x, y, z);
 End;
 
-Procedure glTranslatefWatcher(x: GLfloat; y: GLfloat; z: GLfloat); cdecl;
+Procedure glTranslatefWatcher(x: GLfloat; y: GLfloat; z: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTranslatefWatcher');
   glTranslatefcapture(x, y, z);
 End;
 
-Procedure glScalefWatcher(x: GLfloat; y: GLfloat; z: GLfloat); cdecl;
+Procedure glScalefWatcher(x: GLfloat; y: GLfloat; z: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glScalefWatcher');
   glScalefcapture(x, y, z);
 End;
 
-Procedure glOrthoWatcher(left: GLdouble; right: GLdouble; bottom: GLdouble; top: GLdouble; zNear: GLdouble; zFar: GLdouble); cdecl;
+Procedure glOrthoWatcher(left: GLdouble; right: GLdouble; bottom: GLdouble; top: GLdouble; zNear: GLdouble; zFar: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glOrthoWatcher');
   glOrthocapture(left, right, bottom, top, zNear, zFar);
 End;
 
-Procedure glFrustumWatcher(left: GLdouble; right: GLdouble; bottom: GLdouble; top: GLdouble; zNear: GLdouble; zFar: GLdouble); cdecl;
+Procedure glFrustumWatcher(left: GLdouble; right: GLdouble; bottom: GLdouble; top: GLdouble; zNear: GLdouble; zFar: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glFrustumWatcher');
   glFrustumcapture(left, right, bottom, top, zNear, zFar);
 End;
 
-Procedure glEnableClientStateWatcher(array_: GLenum); cdecl;
+Procedure glEnableClientStateWatcher(array_: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glEnableClientStateWatcher');
   glEnableClientStatecapture(array_);
 End;
 
-Procedure glDisableClientStateWatcher(array_: GLenum); cdecl;
+Procedure glDisableClientStateWatcher(array_: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glDisableClientStateWatcher');
   glDisableClientStatecapture(array_);
 End;
 
-Procedure glVertexPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid); cdecl;
+Procedure glVertexPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertexPointerWatcher');
   glVertexPointercapture(size, _type, stride, _pointer);
 End;
 
-Procedure glColorPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid); cdecl;
+Procedure glColorPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColorPointerWatcher');
   glColorPointercapture(size, _type, stride, _pointer);
 End;
 
-Procedure glNormalPointerWatcher(_type: GLenum; stride: GLsizei; Const _pointer: PGLvoid); cdecl;
+Procedure glNormalPointerWatcher(_type: GLenum; stride: GLsizei; Const _pointer: PGLvoid){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormalPointerWatcher');
   glNormalPointercapture(_type, stride, _pointer);
 End;
 
-Procedure glTexCoordPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid); cdecl;
+Procedure glTexCoordPointerWatcher(size: GLint; _type: GLenum; stride: GLsizei; Const _pointer: PGLvoid){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoordPointerWatcher');
   glTexCoordPointercapture(size, _type, stride, _pointer);
 End;
 
-Procedure glNewListWatcher(list: GLuint; mode: GLenum); cdecl;
+Procedure glNewListWatcher(list: GLuint; mode: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNewListWatcher');
   glNewListcapture(list, mode);
 End;
 
-Procedure glEndListWatcher(); cdecl;
+Procedure glEndListWatcher(){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glEndListWatcher');
   glEndListcapture();
 End;
 
-Procedure glCallListWatcher(list: GLuint); cdecl;
+Procedure glCallListWatcher(list: GLuint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glCallListWatcher');
   glCallListcapture(list);
 End;
 
-Function glGenListsWatcher(range: GLsizei): GLuint; cdecl;
+Function glGenListsWatcher(range: GLsizei): GLuint{$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glGenListsWatcher');
   result := glGenListscapture(range);
 End;
 
-Procedure glDeleteListsWatcher(list: GLuint; range: GLsizei); cdecl;
+Procedure glDeleteListsWatcher(list: GLuint; range: GLsizei){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glDeleteListsWatcher');
   glDeleteListscapture(list, range);
 End;
 
-Procedure glTexEnvfWatcher(target: GLenum; pname: GLenum; param: GLfloat); cdecl;
+Procedure glTexEnvfWatcher(target: GLenum; pname: GLenum; param: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexEnvfWatcher');
   glTexEnvcapture(target, pname, param);
 End;
 
-Procedure glVertex2iWatcher(x: GLint; y: GLint); cdecl;
+Procedure glVertex2iWatcher(x: GLint; y: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2iWatcher');
   glVertex2icapture(x, y);
 End;
 
-Procedure glVertex3iWatcher(x: GLint; y: GLint; z: GLint); cdecl;
+Procedure glVertex3iWatcher(x: GLint; y: GLint; z: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3iWatcher');
   glVertex3icapture(x, y, z);
 End;
 
-Procedure glVertex4iWatcher(x: GLint; y: GLint; z: GLint; w: GLint); cdecl;
+Procedure glVertex4iWatcher(x: GLint; y: GLint; z: GLint; w: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4iWatcher');
   glVertex4icapture(x, y, z, w);
 End;
 
-Procedure glVertex2dWatcher(x: GLdouble; y: GLdouble); cdecl;
+Procedure glVertex2dWatcher(x: GLdouble; y: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex2dWatcher');
   glVertex2dcapture(x, y);
 End;
 
-Procedure glVertex3dWatcher(x: GLdouble; y: GLdouble; z: GLdouble); cdecl;
+Procedure glVertex3dWatcher(x: GLdouble; y: GLdouble; z: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex3dWatcher');
   glVertex3dcapture(x, y, z);
 End;
 
-Procedure glVertex4dWatcher(x: GLdouble; y: GLdouble; z: GLdouble; w: GLdouble); cdecl;
+Procedure glVertex4dWatcher(x: GLdouble; y: GLdouble; z: GLdouble; w: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glVertex4dWatcher');
   glVertex4dcapture(x, y, z, w);
 End;
 
-Procedure glColor3ubWatcher(r: GLubyte; g: GLubyte; b: GLubyte); cdecl;
+Procedure glColor3ubWatcher(r: GLubyte; g: GLubyte; b: GLubyte){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3ubWatcher');
   glColor3ubcapture(r, g, b);
 End;
 
-Procedure glColor4ubWatcher(r: GLubyte; g: GLubyte; b: GLubyte; a: GLubyte); cdecl;
+Procedure glColor4ubWatcher(r: GLubyte; g: GLubyte; b: GLubyte; a: GLubyte){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4ubWatcher');
   glColor4ubcapture(r, g, b, a);
 End;
 
-Procedure glColor3iWatcher(r: GLint; g: GLint; b: GLint); cdecl;
+Procedure glColor3iWatcher(r: GLint; g: GLint; b: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor3iWatcher');
   glColor3icapture(r, g, b);
 End;
 
-Procedure glColor4iWatcher(r: GLint; g: GLint; b: GLint; a: GLint); cdecl;
+Procedure glColor4iWatcher(r: GLint; g: GLint; b: GLint; a: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glColor4iWatcher');
   glColor4icapture(r, g, b, a);
 End;
 
-Procedure glTexCoord2dWatcher(s: GLdouble; t: GLdouble); cdecl;
+Procedure glTexCoord2dWatcher(s: GLdouble; t: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2dWatcher');
   glTexCoord2dcapture(s, t);
 End;
 
-Procedure glTexCoord2iWatcher(s: GLint; t: GLint); cdecl;
+Procedure glTexCoord2iWatcher(s: GLint; t: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glTexCoord2iWatcher');
   glTexCoord2icapture(s, t);
 End;
 
-Procedure glNormal3dWatcher(nx: GLdouble; ny: GLdouble; nz: GLdouble); cdecl;
+Procedure glNormal3dWatcher(nx: GLdouble; ny: GLdouble; nz: GLdouble){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3dWatcher');
   glNormal3dcapture(nx, ny, nz);
 End;
 
-Procedure glNormal3iWatcher(nx: GLint; ny: GLint; nz: GLint); cdecl;
+Procedure glNormal3iWatcher(nx: GLint; ny: GLint; nz: GLint){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   fCallback(0, 'glNormal3iWatcher');
   glNormal3icapture(nx, ny, nz);
@@ -606,7 +606,7 @@ Begin
     (cap = GL_CLIP_PLANE0 + 4) Or (cap = GL_CLIP_PLANE0 + 5);
 End;
 
-Procedure glEnableWatcher(cap: GLenum); cdecl;
+Procedure glEnableWatcher(cap: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   If IsLegacyEnum(cap) Then Begin
     fCallback(0, 'glEnableWatcher');
@@ -614,7 +614,7 @@ Begin
   glEnablecapture(cap);
 End;
 
-Procedure glDisableWatcher(cap: GLenum); cdecl;
+Procedure glDisableWatcher(cap: GLenum){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   If IsLegacyEnum(cap) Then Begin
     fCallback(0, 'glDisableWatcher');
@@ -622,7 +622,7 @@ Begin
   glDisablecapture(cap);
 End;
 
-Function IsEnabledWatcher(cap: GLenum): GLboolean; cdecl;
+Function IsEnabledWatcher(cap: GLenum): GLboolean{$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   If IsLegacyEnum(cap) Then Begin
     fCallback(0, 'IsEnabledWatcher');
@@ -632,7 +632,7 @@ End;
 
 {$IFDEF CHECK_FORWARD_COMPATIBLE}
 
-Procedure glLineWidthWatcher(width: GLfloat); cdecl;
+Procedure glLineWidthWatcher(width: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   If width > 1.0 Then Begin
     (*
@@ -643,7 +643,7 @@ Begin
   glLineWidthCapture(width);
 End;
 
-Procedure glPointSizeWatcher(size: GLfloat); cdecl;
+Procedure glPointSizeWatcher(size: GLfloat){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   If Not glIsEnabled(GL_PROGRAM_POINT_SIZE) Then Begin
     fCallback(0, 'glPointSizeWatcher');
@@ -658,7 +658,7 @@ End;
 
 Procedure glKHRDebugCallbackProc(source: GLEnum; type_: GLEnum; id: GLUInt;
   severity: GLUInt; length: GLsizei; Const message_: PGLchar;
-  userParam: PGLvoid); cdecl;
+  userParam: PGLvoid){$IFDEF Windows} stdcall{$ELSE} cdecl{$ENDIF};
 Begin
   // GL_DEBUG_SEVERITY_NOTIFICATION is purely informational – skip it to reduce noise.
   If severity <> GL_DEBUG_SEVERITY_NOTIFICATION Then Begin
