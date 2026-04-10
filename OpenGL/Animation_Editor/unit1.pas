@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* Animation Editor                                                ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.09                                                         *)
+(* Version     : 0.10                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -39,6 +39,7 @@
 (*                      Remove unused subimages                               *)
 (*               0.08 - ADD: drop .ani files on app                           *)
 (*               0.09 - FIX: Preview image was not correct                    *)
+(*               0.10 - ADD: swap to shader mode                              *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -178,8 +179,6 @@ Type
     Procedure LoadAniFile(Const Filename: String);
   public
     { public declarations }
-    Procedure Go2d();
-    Procedure Exit2d();
   End;
 
 Var
@@ -192,32 +191,32 @@ Implementation
 
 {$R *.lfm}
 
-Uses math, uopengl_spriteengine, LCLType, IntfGraphics, ugraphics, GraphType, Unit2, uvectormath;
+Uses math, LCLType, IntfGraphics, GraphType
+  , Unit2 // Preview
+  , uopengl_spriteengine
+  , ugraphics
+  , uvectormath
+{$IFNDEF LEGACYMODE}
+  , uopengl_legacychecker
+  , uopengl_shaderprimitives
+{$ENDIF}
+  ;
 
 { TForm1 }
 
-Procedure TForm1.Go2d();
-Begin
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix(); // Store The Projection Matrix
-  glLoadIdentity(); // Reset The Projection Matrix
-  //  glOrtho(0, 640, 0, 480, -1, 1); // Set Up An Ortho Screen
-  glOrtho(0, OpenGLControl1.Width, OpenGLControl1.height, 0, -1, 1); // Set Up An Ortho Screen
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix(); // Store old Modelview Matrix
-  glLoadIdentity(); // Reset The Modelview Matrix
-End;
-
-Procedure TForm1.Exit2d();
-Begin
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix(); // Restore old Projection Matrix
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix(); // Restore old Projection Matrix
-End;
-
 Var
   allowcnt: Integer = 0;
+
+{$IFNDEF LEGACYMODE}
+
+Procedure OnOpenGLLegacyCall(Severity: GLuint; aMessage: String);
+Begin
+  showmessage(
+    format('Error, unallowed OpenGL legacy call: %d = %s', [Severity, aMessage])
+    );
+  halt;
+End;
+{$ENDIF}
 
 Procedure TForm1.OpenGLControl1MakeCurrent(Sender: TObject; Var Allow: boolean);
 Begin
@@ -230,6 +229,9 @@ Begin
     // Init dglOpenGL.pas , Teil 2
     ReadExtensions; // Anstatt der Extentions kann auch nur der Core geladen werden. ReadOpenGLCore;
     ReadImplementationProperties;
+{$IFNDEF LEGACYMODE}
+    RegisterLegacyCheckerCallback(@OnOpenGLLegacyCall);
+{$ENDIF}
   End;
   If allowcnt = 2 Then Begin // Dieses If Sorgt mit dem obigen dafür, dass der Code nur 1 mal ausgeführt wird.
     (*
@@ -238,13 +240,31 @@ Begin
     *)
 
     OpenGL_GraphikEngine.clear;
+{$IFDEF LEGACYMODE}
     glenable(GL_TEXTURE_2D); // Texturen
-    glEnable(GL_DEPTH_TEST); // Tiefentest
+{$ENDIF}
     glDepthFunc(gl_less);
-
+{$IFNDEF LEGACYMODE}
+    If Not Assigned(glCreateShader) Then Begin
+      // On Windows it seems that you need to "reload" the core functions for proper function
+      ReadExtensions;
+      ReadImplementationProperties;
+      RegisterLegacyCheckerCallback(@OnOpenGLLegacyCall);
+      // if still not available, then halt
+      If Not Assigned(glCreateShader) Then Begin
+        showmessage('glCreateShader not available, use legacy mode..');
+        halt;
+      End;
+    End;
+    OpenGL_GraphikEngine_InitializeShaderSystem;
+    OpenGL_ShaderPrimitives_InitializeShaderSystem;
+{$ENDIF}
     Ani := TOpenGL_Animation.Create;
     // Der Anwendung erlauben zu Rendern.
     Initialized := True;
+{$IFNDEF LEGACYMODE}
+    ReActivateKHRDebug; // Reenable KHRDebug
+{$ENDIF}
     OpenGLControl1Resize(Nil);
     MenuItem2Click(Nil); // New
 
@@ -262,22 +282,34 @@ End;
 
 Procedure TForm1.OpenGLControl1Paint(Sender: TObject);
 Var
-  s: Single;
   c: TRGB;
+  s: Single;
+{$IFNDEF LEGACYMODE}
+  m: TMatrix4x4;
+{$ENDIF}
 Begin
   If Not Initialized Then Exit;
   // Render Szene
   c := ColorToRGB(Shape1.Brush.Color);
   glClearColor(c.r / 255, c.g / 255, c.b / 255, 0.0);
-  //glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT Or GL_DEPTH_BUFFER_BIT);
+{$IFDEF LEGACYMODE}
   glLoadIdentity();
-  go2d;
-  glPushMatrix();
+{$ENDIF}
+  go2d(OpenGLControl1.Width, OpenGLControl1.Height);
   s := ScrollBar2.Position / 10;
+{$IFDEF LEGACYMODE}
+  glPushMatrix();
   glScalef(s, s, 1);
   glTranslatef(10 / s, 10 / s, 0);
-  Ani.Render(ScrollBar1.Position);
+{$ELSE}
+  m := IdentityMatrix4x4;
+  m := ScaleMatrix4x4(m, s, s, 1);
+  m := TranslateMatrix4x4(m, 10 / s, 10 / s, 0);
+  // Zoom und Verzerrung rausrechnen
+  SetShaderTransform(m); // Anfahren der Linken Oberen Ecke
+{$ENDIF}
+  Ani.Render({$IFNDEF LEGACYMODE}0, 0, 0, {$ENDIF}ScrollBar1.Position);
   //If CheckBox3.Checked Then Begin
   //  If Ani.Sprite[0].SpriteIndex <> -1 Then Begin
   //    RenderAlphaQuad(point(32, 32), 64, -64, 0,
@@ -285,7 +317,11 @@ Begin
   //      );
   //  End;
   //End;
+{$IFDEF LEGACYMODE}
   glPopMatrix();
+{$ELSE}
+  ResetShaderTransform;
+{$ENDIF}
   exit2d;
   OpenGLControl1.SwapBuffers;
 End;
@@ -293,12 +329,17 @@ End;
 Procedure TForm1.OpenGLControl1Resize(Sender: TObject);
 Begin
   If Initialized Then Begin
+{$IFDEF LEGACYMODE}
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glViewport(0, 0, OpenGLControl1.Width, OpenGLControl1.Height);
     gluPerspective(45.0, OpenGLControl1.Width / OpenGLControl1.Height, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
-  End;
+{$ELSE}
+    If OpenGLControl1.MakeCurrent Then
+      glViewport(0, 0, OpenGLControl1.Width, OpenGLControl1.Height);
+    OpenGLControl1.Invalidate;
+{$ENDIF} End;
 End;
 
 Procedure TForm1.PaintBox1Paint(Sender: TObject);
@@ -349,7 +390,7 @@ End;
 
 Procedure TForm1.FormCreate(Sender: TObject);
 Begin
-  defcaption := 'Animation Editor ver. 0.09 by Corpsman';
+  defcaption := 'Animation Editor ver. 0.10 by Corpsman';
   caption := defcaption;
   Application.Title := Caption;
   edit2.text := format('%0.1f', [0.0]);
@@ -367,7 +408,13 @@ Begin
   Ist Interval auf 16 hängt das gesamte system, bei 17 nicht.
   Generell sollte die Interval Zahl also dynamisch zum Rechenaufwand, mindestens aber immer 17 sein.
   *)
+{$IFNDEF LEGACYMODE}
+  OpenGLControl1.AutoResizeViewport := True; // This is crucial for GTK3, don't know why, but without it the demo does not work
+{$ENDIF}
   Timer1.Interval := 17;
+{$IFDEF LCLGTK3}
+  height := height + Scale96ToForm(25);
+{$ENDIF}
   Constraints.MinHeight := Height;
   Constraints.MinWidth := Width;
   Constraints.MaxHeight := Height;
@@ -443,6 +490,10 @@ Procedure TForm1.FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
 Begin
   // Wird die Anwendung Geschlossen, bevor der Rendering Context erstellt werden kann Knallts hier sonst..
   Initialized := false;
+{$IFNDEF LEGACYMODE}
+  OpenGL_GraphikEngine_FinalizeShaderSystem;
+  OpenGL_ShaderPrimitives_FinalizeShaderSystem;
+{$ENDIF}
   If assigned(ani) Then Begin
     ani.free;
     ani := Nil;
@@ -933,8 +984,12 @@ Begin
 {$IFDEF Windows}
     OpenGLControl1.Invalidate;
 {$ELSE}
-    // Why the heck does invalidate not work under Linux ?
+{$IFDEF LCLGTK3}
+    OpenGLControl1.Invalidate;
+{$ELSE}
+    // Why the heck does invalidate Not work under Linux ?
     OpenGLControl1.DoOnPaint;
+{$ENDIF}
 {$ENDIF}
 {$IFDEF DebuggMode}
     i := glGetError();
@@ -1028,10 +1083,16 @@ Begin
       Derivedindex := ani.GetDerivedIndexOf(ListBox1.ItemIndex);
       If assigned(Ani.Sprite[Derivedindex].AlphaMask) Then Begin
         c := MulImage(sb, Ani.Sprite[Derivedindex].AlphaMask, true);
+{$IFDEF LCLGTK3}
+{$WARNING on date 2026.04.06 TCanvas.draw did not work with GTK3 -> Leaving an empty preview image}
+{$ENDIF}
         b.Canvas.Draw(-Sprite.Rect.Left, -Sprite.Rect.Top, c);
         c.free;
       End
       Else Begin
+{$IFDEF LCLGTK3}
+{$WARNING on date 2026.04.06 TCanvas.draw did not work with GTK3 -> Leaving an empty preview image}
+{$ENDIF}
         b.Canvas.Draw(-Sprite.Rect.Left, -Sprite.Rect.Top, sb);
       End;
       Image1.Picture.Assign(b);
