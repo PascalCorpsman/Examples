@@ -1104,7 +1104,9 @@ Procedure TOpenGl_Button.OnRender;
 Var
   tex: String;
 Begin
+{$IFDEF LEGACYMODE}
   glColor4f(1, 1, 1, 1);
+{$ENDIF}
   If fMouseDown Then Begin
     If fDownTex.Image = 0 Then Begin
       glBindTexture(GL_TEXTURE_2D, 0);

@@ -734,7 +734,9 @@ Begin
   font1.Textout(x, y, depth, text);
   glPopMatrix;
 {$ELSE}
+  glDepthMask(GL_FALSE);
   font2.Textout(x, y, depth, text);
+  glDepthMask(GL_TRUE);
   font1.Textout(x, y, depth - 0.001, text);
 {$ENDIF}
 End;
@@ -768,7 +770,9 @@ Begin
   font1.RenderTextToRect(rect, depth, text);
   glPopMatrix;
 {$ELSE}
+  glDepthMask(GL_FALSE);
   font2.RenderTextToRect(rect, depth, text);
+  glDepthMask(GL_TRUE);
   font1.RenderTextToRect(rect, depth - 0.001, text);
 {$ENDIF}
 End;
