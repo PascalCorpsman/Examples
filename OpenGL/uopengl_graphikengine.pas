@@ -271,7 +271,8 @@ Procedure UseColorShader;
  * Switches back to texture shader for rendering textured geometry
  * Call this to return to normal texture rendering after UseColorShader
  *)
-Procedure UseTextureShader;
+Procedure UseTextureShader(); overload;
+Procedure UseTextureShader(const c: TVector4); overload;
 
 (*
  * Sets the color for the color shader
@@ -362,8 +363,8 @@ Var
 
   ShaderVBO: GLuint = 0;
 
-//{$IFNDEF LEGACYMODE}
-  // Shader system variables (only used when not in legacy OpenGL mode)
+  //{$IFNDEF LEGACYMODE}
+    // Shader system variables (only used when not in legacy OpenGL mode)
   ShaderProgram: GLuint = 0;
   ShaderVAO: GLuint = 0;
 
@@ -374,7 +375,7 @@ Var
   // Color shader for rendering without textures
   ColorShaderProgram: GLuint = 0;
   ColorShaderVAO: GLuint = 0;
-//{$ENDIF}
+  //{$ENDIF}
 
 {$IFDEF DEBUGGOUTPUT}
 
@@ -525,6 +526,13 @@ Begin
 End;
 
 Procedure UseTextureShader;
+Const
+  White: TVector4 = (x: 1.0; y: 1.0; z: 1.0; w: 1.0);
+Begin
+  UseTextureShader(White);
+End;
+
+Procedure UseTextureShader(Const c: TVector4);
 Var
   LocColor: GLint;
 Begin
@@ -532,7 +540,7 @@ Begin
   glBindVertexArray(ShaderVAO);
   LocColor := glGetUniformLocation(ShaderProgram, 'uColor');
   If LocColor >= 0 Then
-    glUniform4f(LocColor, 1.0, 1.0, 1.0, 1.0);
+    glUniform4f(LocColor, c.x, c.y, c.z, c.w);
 End;
 
 Procedure SetShaderColor(r, g, b: Single; a: Single);
