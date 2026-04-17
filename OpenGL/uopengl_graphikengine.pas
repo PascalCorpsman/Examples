@@ -1078,8 +1078,6 @@ Begin
   ShaderProgram := 0;
 End;
 
-{$ENDIF}
-
 Procedure RenderAlphaTiledQuad(Left, Top, Depth, TileRenderWidth,
   TileRenderHeight: Single; Index, TilesPerRow, TilesPerCol: integer;
   Const Image: TGraphikItem);
@@ -1095,10 +1093,13 @@ Begin
     gldisable(gl_blend);
 
 End;
+{$ENDIF}
 
 Procedure Go2d(Width, Height: Integer);
+{$IFNDEF LEGACYMODE}
 Var
   LocRes: GLint;
+{$ENDIF}
 Begin
 {$IFDEF LEGACYMODE}
   glMatrixMode(GL_PROJECTION);
