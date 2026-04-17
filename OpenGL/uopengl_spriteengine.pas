@@ -136,6 +136,7 @@ Type
     Procedure RenderSprite(Value: Integer; AnimationOffset_ms: integer = 0);
 {$ELSE}
     Procedure RenderSprite(x, y, z: Single; Value: Integer; AnimationOffset_ms: integer = 0);
+    Procedure RenderSprite(x, y, z, RenderWidth, RenderHeight: Single; Value: Integer; AnimationOffset_ms: integer = 0);
 {$ENDIF}
 
     Procedure ResetSprite(Value: Integer); // Setzt LastRenderTime = Gettickcount und AktualFrame = 0 => Restart der Animation
@@ -238,13 +239,15 @@ Procedure TOpenGL_SpriteEngine.RenderSprite(Value: Integer; AnimationOffset_ms: 
 
 Procedure TOpenGL_SpriteEngine.RenderSprite(x, y, z: Single; Value: Integer; AnimationOffset_ms: integer = 0);
 {$ENDIF}
-
+// FIXME: das ist Redundant zu der Variante mit RenderWidth / RenderHeight, sollte durch einen Aufruf realisiert werden, dass der Code nur 1 mal da ist.
 Var
   aTime: qWord;
   b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
   Frame, OldFrame, Steps: Integer;
 {$IFDEF LEGACYMODE}
   ddw, ddh, dw, dh: double;
+{$ELSE}
+  img: TGraphikItem;
 {$ENDIF}
 Begin
   If (Value < 0) Or (value > high(Fsprites)) Then exit;
@@ -302,13 +305,99 @@ Begin
   glVertex2f(Fsprites[value].Width, 0);
   glend;
 {$ELSE}
-  RenderTiledQuad(x, y, z, Frame, Fsprites[value].FramesPerRow, Fsprites[value].FramesPerCol, Fsprites[value].Image);
+  img := Fsprites[value].Image;
+  // TODO: das ist nicht Optimal, aber funktioniert wenigstens
+  img.OrigWidth := round(Fsprites[value].Image.StretchedWidth * Fsprites[value].ddw * Fsprites[value].FramesPerRow);
+  img.OrigHeight := round(Fsprites[value].Image.StretchedHeight * Fsprites[value].ddh * Fsprites[value].FramesPerCol);
+  RenderTiledQuad(x, y, z, Frame, Fsprites[value].FramesPerRow, Fsprites[value].FramesPerCol, img);
 {$ENDIF}
   If Fsprites[value].AlphaImage Then Begin
     If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
       gldisable(gl_blend);
   End;
 End;
+
+{$IFNDEF LEGACYMODE}
+
+Procedure TOpenGL_SpriteEngine.RenderSprite(x, y, z, RenderWidth, RenderHeight: Single; Value: Integer; AnimationOffset_ms: integer);
+
+Var
+  aTime: qWord;
+  b: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
+  Frame, OldFrame, Steps: Integer;
+{$IFDEF LEGACYMODE}
+  ddw, ddh, dw, dh: double;
+{$ELSE}
+  img: TGraphikItem;
+{$ENDIF}
+Begin
+  If (Value < 0) Or (value > high(Fsprites)) Then exit;
+  (*
+  Nur wenn es mehr wie ein Frame gibt, brauchen wir eine Weiterschaltung ...
+  *)
+  If Fsprites[value].Framecount <> 1 Then Begin
+    atime := GetTickCount64;
+    Steps := (aTime - Fsprites[value].LastRenderTime) Div Fsprites[value].dtTime;
+    Fsprites[value].LastRenderTime := Fsprites[value].LastRenderTime + Steps * Fsprites[value].dtTime;
+    OldFrame := Fsprites[value].AktualFrame;
+    If enabled Then Begin
+      Fsprites[value].AktualFrame := Fsprites[value].AktualFrame - Fsprites[Value].FrameStart;
+      Fsprites[value].AktualFrame := (Fsprites[value].AktualFrame + Steps) Mod Fsprites[Value].FrameCount;
+      Fsprites[value].AktualFrame := Fsprites[value].AktualFrame + Fsprites[Value].FrameStart;
+    End;
+    If assigned(Fsprites[value].Callback) And ((steps >= Fsprites[value].FrameCount + Fsprites[Value].FrameStart) Or (OldFrame > Fsprites[value].AktualFrame)) Then Begin
+      (*
+       * User did not want overflow, but not rendering the frame results in a visible glitch (looks like Z-Fighting) -> render the last frame again!
+       *)
+      If Not Fsprites[value].Callback(self, Fsprites[value].MetaData) Then Begin
+        Fsprites[value].AktualFrame := Fsprites[value].FrameStart + Fsprites[Value].FrameCount;
+      End;
+    End;
+  End;
+  // Aus AktualFrame Berechnen wir nun den Teil der angesehen werden mus.
+  Frame := Fsprites[value].AktualFrame;
+  If AnimationOffset_ms <> 0 Then Begin
+    frame := frame - Fsprites[Value].FrameStart;
+    Frame := (Frame + (AnimationOffset_ms Div Fsprites[value].dtTime)) Mod Fsprites[Value].FrameCount;
+    frame := frame + Fsprites[Value].FrameStart;
+  End;
+{$IFDEF LEGACYMODE}
+  ddw := Fsprites[value].ddw;
+  ddh := Fsprites[value].ddh;
+  dw := ddw * (Frame Mod Fsprites[value].FramesPerRow);
+  dh := ddh * (Frame Div Fsprites[value].FramesPerRow);
+{$ENDIF}
+  If Fsprites[value].AlphaImage Then Begin
+    B := glIsEnabled(gl_Blend);
+    If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+      glenable(gl_Blend);
+    glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+  End;
+{$IFDEF LEGACYMODE}
+  glBindTexture(gl_texture_2d, Fsprites[value].Image.Image);
+  glBegin(gl_quads);
+  glTexCoord2f(Fsprites[value].Rect.left + dw, Fsprites[value].Rect.top + dh);
+  glVertex2f(0, 0);
+  glTexCoord2f(Fsprites[value].Rect.left + dw, Fsprites[value].Rect.top + dh + ddh);
+  glVertex2f(0, Fsprites[value].height);
+  glTexCoord2f(Fsprites[value].Rect.left + dw + ddw, Fsprites[value].Rect.top + dh + ddh);
+  glVertex2f(Fsprites[value].Width, Fsprites[value].height);
+  glTexCoord2f(Fsprites[value].Rect.left + dw + ddw, Fsprites[value].Rect.top + dh);
+  glVertex2f(Fsprites[value].Width, 0);
+  glend;
+{$ELSE}
+  img := Fsprites[value].Image;
+  // TODO: das ist nicht Optimal, aber funktioniert wenigstens
+  img.OrigWidth := round(Fsprites[value].Image.StretchedWidth * Fsprites[value].ddw * Fsprites[value].FramesPerRow);
+  img.OrigHeight := round(Fsprites[value].Image.StretchedHeight * Fsprites[value].ddh * Fsprites[value].FramesPerCol);
+  RenderTiledQuad(x, y, z, RenderWidth, RenderHeight, Frame, Fsprites[value].FramesPerRow, Fsprites[value].FramesPerCol, img);
+{$ENDIF}
+  If Fsprites[value].AlphaImage Then Begin
+    If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
+      gldisable(gl_blend);
+  End;
+End;
+{$ENDIF}
 
 Procedure TOpenGL_SpriteEngine.ResetSprite(Value: Integer);
 Begin
