@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* umapviewer demo                                                 ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Switch to shader rendering by default                 *)
 (*                                                                            *)
 (******************************************************************************)
 Unit Unit1;
@@ -88,6 +89,7 @@ Type
     Procedure Edit8Change(Sender: TObject);
     Procedure FormCloseQuery(Sender: TObject; Var CanClose: boolean);
     Procedure FormCreate(Sender: TObject);
+    Procedure FormDestroy(Sender: TObject);
     Procedure OpenGLControl1DblClick(Sender: TObject);
     Procedure OpenGLControl1MakeCurrent(Sender: TObject; Var Allow: boolean);
     Procedure OpenGLControl1MouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -97,10 +99,8 @@ Type
     Procedure OpenGLControl1Paint(Sender: TObject);
     Procedure OpenGLControl1Resize(Sender: TObject);
   private
-    fPointImage: integer;
+    fPointImage: TGraphikItem;
     fMV: tMapViewer;
-    Procedure Exit2d();
-    Procedure Go2d();
   public
 
   End;
@@ -117,11 +117,15 @@ Implementation
 { TForm1 }
 
 Uses
-  uvectormath,
-  ugraphics,
-  uOpenGL_ASCII_Font,
-  LazFileUtils,
-  FileUtil;
+  uvectormath
+  , ugraphics
+  , uOpenGL_ASCII_Font
+  , uopengl_shaderprimitives
+{$IFNDEF LEGACYMODE}
+  , uopengl_legacychecker
+{$ENDIF}
+  , LazFileUtils
+  , FileUtil;
 
 Var
   allowcnt: Integer = 0;
@@ -137,25 +141,17 @@ Begin
   result := p + format(' %d° %0.2d.%0.3d', [abs(strtoint(a)), abs(strtoint(b)), abs(strtoint(c))]);
 End;
 
-Procedure Tform1.Go2d();
-Begin
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix(); // Store The Projection Matrix
-  glLoadIdentity(); // Reset The Projection Matrix
-  //  glOrtho(0, 640, 0, 480, -1, 1); // Set Up An Ortho Screen
-  glOrtho(0, OpenGLControl1.Width, OpenGLControl1.height, 0, -1, 1); // Set Up An Ortho Screen
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix(); // Store old Modelview Matrix
-  glLoadIdentity(); // Reset The Modelview Matrix
-End;
+{$IFNDEF LEGACYMODE}
 
-Procedure Tform1.Exit2d();
+Procedure OnOpenGLLegacyCall(Severity: GLuint; aMessage: String);
 Begin
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix(); // Restore old Projection Matrix
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix(); // Restore old Projection Matrix
+  Initialized := false;
+  showmessage(
+    format('Error, unallowed OpenGL legacy call: %d = %s', [Severity, aMessage])
+    );
+  halt;
 End;
+{$ENDIF}
 
 Procedure TForm1.OpenGLControl1MakeCurrent(Sender: TObject; Var Allow: boolean);
 Var
@@ -170,6 +166,9 @@ Begin
     // Init dglOpenGL.pas , Teil 2
     ReadExtensions; // Anstatt der Extentions kann auch nur der Core geladen werden. ReadOpenGLCore;
     ReadImplementationProperties;
+{$IFNDEF LEGACYMODE}
+    RegisterLegacyCheckerCallback(@OnOpenGLLegacyCall);
+{$ENDIF}
   End;
   If allowcnt = 2 Then Begin // Dieses If Sorgt mit dem obigen dafür, dass der Code nur 1 mal ausgeführt wird.
     (*
@@ -177,10 +176,30 @@ Begin
     Bei Nutzung der TOpenGLGraphikengine, bedeutet dies, das hier ein clear durchgeführt werden mus !!
     *)
     OpenGL_GraphikEngine.clear;
+{$IFDEF LEGACYMODE}
     glenable(GL_TEXTURE_2D); // Texturen
+{$ENDIF}
     // glEnable(GL_DEPTH_TEST); // Tiefentest
     // glDepthFunc(gl_less);
+{$IFNDEF LEGACYMODE}
+    If Not Assigned(glCreateShader) Then Begin
+      // On Windows it seems that you need to "reload" the core functions for proper function
+      ReadExtensions;
+      ReadImplementationProperties;
+      RegisterLegacyCheckerCallback(@OnOpenGLLegacyCall);
+      // if still not available, then halt
+      If Not Assigned(glCreateShader) Then Begin
+        showmessage('glCreateShader not available, use legacy mode..');
+        halt;
+      End;
+    End;
+    OpenGL_GraphikEngine_InitializeShaderSystem;
+    OpenGL_ShaderPrimitives_InitializeShaderSystem;
+{$ENDIF}
     Create_ASCII_Font();
+{$IFNDEF LEGACYMODE}
+    ReActivateKHRDebug; // Reenable KHRDebug
+{$ENDIF}
     If assigned(fmv) Then fmv.free;
     fmv := tMapViewer.Create(OpenGLControl1);
     fmv.ScrollGrid := 1;
@@ -195,7 +214,7 @@ Begin
     bm.Canvas.Brush.Color := clFuchsia;
     bm.Canvas.Rectangle(-1, -1, 33, 33);
     ImageList1.Draw(bm.Canvas, 0, 0, 0);
-    fPointImage := OpenGL_GraphikEngine.LoadAlphaColorGraphik(bm, 'CustomPointImage1', ColorToRGB(clFuchsia));
+    fPointImage := OpenGL_GraphikEngine.LoadAlphaColorGraphikItem(bm, 'CustomPointImage1', ColorToRGB(clFuchsia));
     bm.free;
   End;
   Form1.Invalidate;
@@ -233,6 +252,10 @@ Begin
     showmessage('Error, could not init dglOpenGL.pas');
     Halt;
   End;
+{$IFNDEF LEGACYMODE}
+  OpenGLControl1.AutoResizeViewport := True; // This is crucial for GTK3, don't know why, but without it the demo does not work
+  OpenGLControl1.DebugContext := True; // Required so the GL driver actually generates KHR_debug messages
+{$ENDIF}
   engFormat := DefaultFormatSettings;
   engFormat.DecimalSeparator := '.';
   fMV := Nil;
@@ -246,6 +269,16 @@ Begin
   edit6.text := '';
   edit7.text := '';
   edit8.text := '';
+End;
+
+Procedure TForm1.FormDestroy(Sender: TObject);
+Begin
+{$IFNDEF LEGACYMODE}
+  If OpenGLControl1.MakeCurrent Then Begin
+    OpenGL_GraphikEngine_FinalizeShaderSystem;
+    OpenGL_ShaderPrimitives_FinalizeShaderSystem;
+  End;
+{$ENDIF}
 End;
 
 Procedure TForm1.OpenGLControl1DblClick(Sender: TObject);
@@ -371,7 +404,9 @@ Begin
   // Render Szene
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glClear(GL_COLOR_BUFFER_BIT Or GL_DEPTH_BUFFER_BIT);
+{$IFDEF LEGACYMODE}
   glLoadIdentity();
+{$ENDIF}
   fMV.Render();
 
   OpenGLControl1.SwapBuffers;
@@ -391,11 +426,17 @@ Procedure TForm1.OpenGLControl1Resize(Sender: TObject);
 Begin
   // Fixed, aber dennoch ..
   If Initialized Then Begin
+{$IFDEF LEGACYMODE}
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glViewport(0, 0, OpenGLControl1.Width, OpenGLControl1.Height);
     gluPerspective(45.0, OpenGLControl1.Width / OpenGLControl1.Height, 0.1, 100.0);
     glMatrixMode(GL_MODELVIEW);
+{$ELSE}
+    If OpenGLControl1.MakeCurrent Then
+      glViewport(0, 0, OpenGLControl1.Width, OpenGLControl1.Height);
+    OpenGLControl1.Invalidate;
+{$ENDIF}
   End;
 End;
 

@@ -7,9 +7,10 @@ object Form1: TForm1
   ClientHeight = 498
   ClientWidth = 932
   Position = poScreenCenter
-  LCLVersion = '3.99.0.0'
+  LCLVersion = '4.99.0.0'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   object OpenGLControl1: TOpenGLControl
     Left = 8
     Height = 480
@@ -62,14 +63,14 @@ object Form1: TForm1
     Left = 656
     Height = 16
     Top = 80
-    Width = 54
+    Width = 53
     Caption = 'Maptype'
   end
   object Label2: TLabel
     Left = 656
     Height = 16
     Top = 112
-    Width = 72
+    Width = 71
     Caption = 'Localization'
   end
   object ComboBox2: TComboBox
@@ -93,7 +94,7 @@ object Form1: TForm1
     Left = 656
     Height = 22
     Top = 469
-    Width = 90
+    Width = 89
     Caption = 'Show scale'
     Checked = True
     State = cbChecked
@@ -154,7 +155,7 @@ object Form1: TForm1
     Left = 657
     Height = 22
     Top = 448
-    Width = 131
+    Width = 130
     Caption = 'Show point labels'
     TabOrder = 12
     OnChange = CheckBox2Change
@@ -163,7 +164,7 @@ object Form1: TForm1
     Left = 657
     Height = 22
     Top = 424
-    Width = 138
+    Width = 139
     Caption = 'show 161m ranges'
     TabOrder = 13
     OnChange = CheckBox3Change

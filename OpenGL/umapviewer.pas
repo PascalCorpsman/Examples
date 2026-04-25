@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* umapviewer.pas                                                  ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -39,6 +39,7 @@
 (*                       - Download via Thread for smoother rendering ?       *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Port to shader                                        *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -49,7 +50,7 @@ Unit umapviewer;
 Interface
 
 Uses
-  Classes, SysUtils, Controls, OpenGlcontext, uvectormath;
+  Classes, SysUtils, Controls, OpenGlcontext, uvectormath, uopengl_graphikengine;
 
 Type
 
@@ -70,7 +71,7 @@ Type
 
   TImageInfoRecord = Record
     x, y: Extended;
-    ImageIndex: integer;
+    ImageIndex: TGraphikItem;
     W, H, OffX, OffY: integer;
     Label_: String;
     MetaInfo: String; // Wird nicht gerendert einfach nur so zur info --> TODO: das sollte ein PTRInt werden !
@@ -152,6 +153,9 @@ Type
     ShowPointLabels: Boolean;
     Show161Ranges: Boolean;
     MapLocalization: String; // de = Deutsch, en = Englisch, ja = Japan ...
+{$IFNDEF LEGACYMODE}
+    depth: Single;
+{$ENDIF}
     Property CacheFolder: String read fCacheFolder write SetCacheFolder; // Das Verzeichnis in welchem die herunter geladenen Tiles gespeichert werden (Default paramstr(0)+\temp
 
     Property ProxyHost: String read getProxyHost write SetProxyHost;
@@ -192,7 +196,7 @@ Type
      * offx und offy verschieben das Bild nach Wunsch
      * Label_ beschriftet das Bild wenn gewünscht.
      *)
-    Function AddImageOnCoord(lon, lat: Extended; ImageIndex, w, h, offx,
+    Function AddImageOnCoord(lon, lat: Extended; Const ImageIndex: TGraphikItem; w, h, offx,
       offy: integer; Label_, MetaInfo: String): boolean;
     Procedure DelImageWith(Label_, MetaInfo: String);
     Procedure ClearImagesOnCoords;
@@ -223,8 +227,8 @@ Implementation
 
 Uses
   dglOpenGL,
-  uopengl_graphikengine,
   uopengl_ascii_font,
+  uopengl_shaderprimitives,
   httpsend,
   Graphics,
   LazUTF8, LazFileUtils, math, Dialogs;
@@ -277,7 +281,7 @@ Begin
   result :=
     (a.x = b.x) And
     (a.y = b.y) And
-    (a.ImageIndex = b.ImageIndex) And
+    (a.ImageIndex.Image = b.ImageIndex.Image) And
     (a.W = b.W) And
     (a.H = b.H) And
     (a.OffX = b.OffX) And
@@ -448,6 +452,10 @@ End;
 
 Constructor tMapViewer.Create(OpenGLControl: TOpenGLControl);
 Begin
+{$IFNDEF LEGACYMODE}
+  depth := 0.0;
+{$ENDIF}
+
   fProxy.ProxyHost := '';
   fProxy.ProxyPass := '';
   fProxy.ProxyPort := '';
@@ -492,21 +500,12 @@ End;
 
 Procedure tMapViewer.Go2d;
 Begin
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix(); // Store The Projection Matrix
-  glLoadIdentity(); // Reset The Projection Matrix
-  glOrtho(0, fOpenGLControl.Width, fOpenGLControl.height, 0, -1, 1); // Set Up An Ortho Screen
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix(); // Store old Modelview Matrix
-  glLoadIdentity(); // Reset The Modelview Matrix
+  uopengl_graphikengine.Go2d(fOpenGLControl.Width, fOpenGLControl.height);
 End;
 
 Procedure tMapViewer.Exit2d;
 Begin
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix(); // Restore old Projection Matrix
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix(); // Restore old Projection Matrix
+  uopengl_graphikengine.Exit2d();
 End;
 
 Procedure tMapViewer.SetCacheFolder(AValue: String);
@@ -558,8 +557,9 @@ Begin
   CenterLongLat(0, 0);
 End;
 
-Function tMapViewer.AddImageOnCoord(lon, lat: Extended; ImageIndex, w, h, offx,
-  offy: integer; Label_, MetaInfo: String): boolean;
+Function tMapViewer.AddImageOnCoord(lon, lat: Extended;
+  Const ImageIndex: TGraphikItem; w, h, offx, offy: integer; Label_,
+  MetaInfo: String): boolean;
 Begin
   result := true;
   Setlength(fPoints, high(fPoints) + 2);
@@ -735,6 +735,9 @@ Procedure tMapViewer.Render;
     result := format('%0.1f', [value], DefFormat) + s;
   End;
 
+Const
+  epsilon = 0.05;
+
 Var
   b, dt: {$IFDEF USE_GL}Byte{$ELSE}Boolean{$ENDIF};
   AX, AY, FMaxX, FMaxY: Int64;
@@ -745,6 +748,7 @@ Var
   s: String;
   si, co, d: Extended;
   p: Tpoint;
+  t, l: Single;
 Begin
   Go2d();
   dt := glIsEnabled(GL_DEPTH_TEST);
@@ -752,7 +756,9 @@ Begin
     glDisable(GL_DEPTH_TEST);
 
   glBindTexture(GL_TEXTURE_2D, 0);
+{$IFDEF LEGACYMODE}
   glColor3f(1, 1, 1);
+{$ENDIF}
 
   (*
    * Rendern der Eigentlichen Karte
@@ -774,19 +780,22 @@ Begin
    *)
   Topleft := GetMouseMapLongLat(0, 0);
   BottomRight := GetMouseMapLongLat(fOpenGLControl.Width, fOpenGLControl.Height);
+{$IFDEF LEGACYMODE}
   glPushMatrix;
+{$ENDIF}
   For i := 0 To high(fPoints) Do Begin
     If (fPoints[i].x >= min(TopLeft.X, BottomRight.X)) And (fPoints[i].x <= max(TopLeft.X, BottomRight.X)) And
       (fPoints[i].y >= min(TopLeft.y, BottomRight.y)) And (fPoints[i].y <= max(TopLeft.y, BottomRight.y)) Then Begin
       p := GetMouseMapLongLatRev(V2(fPoints[i].x, fPoints[i].y));
       x := p.x + fPoints[i].OffX;
       y := p.y + fPoints[i].Offy;
+{$IFDEF LEGACYMODE}
       B := glIsEnabled(gl_Blend);
       If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
         glenable(gl_Blend);
       glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
       glColor3d(1, 1, 1);
-      glBindTexture(GL_TEXTURE_2D, fPoints[i].ImageIndex);
+      glBindTexture(GL_TEXTURE_2D, fPoints[i].ImageIndex.Image);
       glbegin(GL_QUADS);
       glTexCoord2f(0, 1);
       glVertex2f(X, Y + fPoints[i].h);
@@ -799,16 +808,27 @@ Begin
       glend;
       If Not (b{$IFDEF USE_GL} = 1{$ENDIF}) Then
         gldisable(gl_blend);
+{$ELSE}
+      If fPoints[i].ImageIndex.IsAlphaImage Then Begin
+        RenderAlphaQuad(x, y, depth + epsilon, fPoints[i].W, fPoints[i].h, fPoints[i].ImageIndex);
+      End
+      Else Begin
+        RenderQuad(x, y, depth + epsilon, fPoints[i].W, fPoints[i].h, fPoints[i].ImageIndex);
+      End;
+{$ENDIF}
       If ShowPointLabels Then Begin
         glBindTexture(GL_TEXTURE_2D, 0);
         OpenGL_ASCII_Font.Color := clblack;
         OpenGL_ASCII_Font.Textout(x - round(OpenGL_ASCII_Font.TextWidth(fPoints[i].Label_) / 2), y + fPoints[i].H, fPoints[i].Label_);
+{$IFDEF LEGACYMODE}
         glColor3f(1, 1, 1);
+{$ENDIF}
       End;
       If Show161Ranges Then Begin
         d := ZoomLevelToGroundResolution(FZoom); // 256 Pixel sind nun diese Level
         d := (2 * 161 * 256) / d;
         If d > 5 Then Begin
+{$IFDEF LEGACYMODE}
           glPushMatrix;
           glTranslatef(x - fPoints[i].OffX, y - fPoints[i].OffY, 0);
           glBindTexture(GL_TEXTURE_2D, 0);
@@ -820,11 +840,26 @@ Begin
           End;
           glend;
           glPopMatrix;
+{$ELSE}
+          UseColorShader;
+          l := x - fPoints[i].OffX;
+          t := y - fPoints[i].OffY;
+          SetShaderColor(0, 0, 0);
+          glshaderbegin(GL_LINE_LOOP);
+          For j := 0 To 23 Do Begin
+            sincos(pi * 2 * j / 24, si, co);
+            glShaderVertex(l - co * d / 2, t + si * d / 2, depth + epsilon);
+          End;
+          glShaderEnd();
+          UseTextureShader();
+{$ENDIF}
         End;
       End;
     End;
   End;
+{$IFDEF LEGACYMODE}
   glPopMatrix;
+{$ENDIF}
   If fShowScale Then Begin
     OpenGL_ASCII_Font.Color := clblack;
     d := ZoomLevelToGroundResolution(FZoom); // 256 Pixel sind nun diese Level
@@ -832,11 +867,21 @@ Begin
     s := PrettyScale(d);
     glBindTexture(GL_TEXTURE_2D, 0);
     OpenGL_ASCII_Font.Textout(fOpenGLControl.Width - round(OpenGL_ASCII_Font.TextWidth(s)) - 50, fOpenGLControl.height - 50, s);
+{$IFDEF LEGACYMODE}
     glColor3f(0, 0, 0);
     glBegin(GL_LINES);
     glVertex2f(fOpenGLControl.Width - 50 - 100, fOpenGLControl.height - 50 - round(OpenGL_ASCII_Font.TextHeight('S')) - 10);
     glVertex2f(fOpenGLControl.Width - 50, fOpenGLControl.height - 50 - round(OpenGL_ASCII_Font.TextHeight('S')) - 10);
     glend();
+{$ELSE}
+    UseColorShader;
+    SetShaderColor(0, 0, 0);
+    glshaderbegin(GL_LINES);
+    glShaderVertex(fOpenGLControl.Width - 50 - 100, fOpenGLControl.height - 50 - round(OpenGL_ASCII_Font.TextHeight('S')) - 10, depth + epsilon);
+    glShaderVertex(fOpenGLControl.Width - 50, fOpenGLControl.height - 50 - round(OpenGL_ASCII_Font.TextHeight('S')) - 10, depth + epsilon);
+    glShaderEnd();
+    UseTextureShader();
+{$ENDIF}
   End;
   If (dt{$IFDEF USE_GL} = 1{$ENDIF}) Then
     glenable(GL_DEPTH_TEST);
@@ -859,6 +904,7 @@ Var
   XB, YB: Int64;
   maxOfZ: Int64;
   imageIndex: integer;
+  gi: TGraphikItem;
 Begin
   maxOfZ := 1 Shl Z;
   If Not ((Z = 0) And (X = 0) And (Y = 0)) Then
@@ -873,6 +919,7 @@ Begin
     fStopDownloading := true;
     showmessage('Error could not download imageIndex data. Stop downloading now.');
   End;
+{$IFDEF LEGACYMODE}
   glBindTexture(GL_TEXTURE_2D, imageIndex);
   glbegin(GL_QUADS);
   glTexCoord2f(0, 1);
@@ -884,6 +931,14 @@ Begin
   glTexCoord2f(0, 0);
   glVertex2f(XB, YB);
   glend;
+{$ELSE}
+  gi.Image := imageIndex;
+  gi.Name := 'Not needed';
+  gi.OrigWidth := 256;
+  gi.OrigHeight := 256;
+  gi.Stretched := smNone;
+  RenderQuad(xb, yb, depth, gi);
+{$ENDIF}
 End;
 
 Function tMapViewer.GetImageCount: integer;
