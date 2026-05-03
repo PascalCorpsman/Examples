@@ -1058,7 +1058,7 @@ Begin
   DefFormat.DecimalSeparator := '.';
   // Haben wir die Datei schon geladen ?
   s := format('%s_%s_%d_%d_%d', [MapSourceToString(FSource), lowercase(MapLocalization), x, y, z], DefFormat);
-  result := OpenGL_GraphikEngine.Find(s, false);
+  result := OpenGL_GraphikEngine.Finditem(s, false).Image;
   If result > 0 Then exit;
   // Nein, haben wir sie auf dem HDD Cache ?
   f := fCacheFolder + s;
@@ -1110,7 +1110,7 @@ Begin
     b.Assign(img);
     img.free;
     // Wat ein Glück, dass all diese Tiles alle 256x256 Groß sind ;)
-    result := OpenGL_GraphikEngine.LoadGraphik(b, s);
+    result := OpenGL_GraphikEngine.LoadGraphikItem(b, s).Image;
     b.free;
   End;
 End;
