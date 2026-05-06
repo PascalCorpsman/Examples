@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uJSON.pas                                                       ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.15                                                         *)
+(* Version     : 0.16                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -45,6 +45,7 @@
 (*                      Parent Property                                       *)
 (*                      Validy Checks on TJSONArray.addobj                    *)
 (*                      FIX: linebreak on TJSONNodeObj.ToString               *)
+(*               0.16 = Multi Dimensional JSON Array's                        *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uJSON;
@@ -560,7 +561,8 @@ End;
 Procedure TJSONArray.AddObj(JSONObj: TJSONObj);
 Begin
   If (JSONObj Is TJSONTerminal) Or
-    (JSONObj Is TJSONNode) Then Begin
+    (JSONObj Is TJSONNode) Or
+    (JSONObj Is TJSONArray) Then Begin
     setlength(fobjs, High(fobjs) + 2);
     fobjs[High(fobjs)] := JSONObj;
     JSONObj.fParent := self;
