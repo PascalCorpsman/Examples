@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uplayingcard.pas                                                25.04.2011 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -24,6 +24,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - Enable Click method                                   *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uplayingcard;
@@ -43,6 +44,8 @@ Type
   EPlayingCard = Class(Exception);
 
   TShowOption = (soFace, soTool, soBack);
+
+  { TPlayingCard }
 
   TPlayingCard = Class(TGraphicControl)
   private
@@ -73,12 +76,14 @@ Type
     Function LoadBack(Const Filename: String): Integer;
     Property ToolCount: Integer read GetToolCount;
     Property BackCount: Integer read GetBackCount;
+  public
+    Procedure Click; override;
   published
     {New properties}
-    Property FaceIndex: Integer read FFaceIndex write SetFaceIndex;
+    Property FaceIndex: Integer read FFaceIndex write SetFaceIndex; // 0 .. 53
     Property ToolIndex: Integer read FToolIndex write SetToolIndex;
     Property BackIndex: Integer read FBackIndex write SetBackIndex;
-    Property Value: Integer read FValue write SetValue;
+    Property Value: Integer read FValue write SetValue; // 1 = Ass, 13 = King
     Property Suit: Integer read FSuit write SetSuit;
     Property Show: TShowOption read FShow write SetShow;
     Property Selected: Boolean read FSelected write SetSelected;
@@ -437,6 +442,11 @@ End;
 Function TPlayingCard.LoadBack(Const Filename: String): Integer;
 Begin
   Result := LoadCardBack(Filename);
+End;
+
+Procedure TPlayingCard.Click;
+Begin
+  Inherited Click;
 End;
 
 Function TPlayingCard.GetBackCount: Integer;
