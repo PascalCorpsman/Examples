@@ -40,12 +40,6 @@ Uses
 
 Type
 
-  (*
-   * If you get a compiler error with missing file
-   * please see uvectormath.pas for how to create uvectormath.inc
-   *)
-{$I uvectormath.inc}
-
   // q = q0 + iq1 + jq2 + kq3, with i^2 = j^2 = k^2 = ijk = −1.
   TQuaternion = Record
     Case byte Of
@@ -53,8 +47,6 @@ Type
       1: (w, x, y, z: TBaseType);
       2: (data: Array[0..3] Of TBaseType);
   End;
-
-{$IFDEF UseOperandOverloading}
 
 Operator + (Const a, b: TQuaternion): TQuaternion;
 Operator + (Const a: TQuaternion; Const b: TBaseType): TQuaternion;
@@ -65,8 +57,6 @@ Operator - (Const a: TQuaternion; Const b: TBaseType): TQuaternion;
 Operator * (Const a, b: TQuaternion): TQuaternion;
 Operator * (Const a: TQuaternion; Const b: TBaseType): TQuaternion;
 Operator * (Const a: TBaseType; Const b: TQuaternion): TQuaternion;
-
-{$ENDIF}
 
 // Konstruktoren
 Function Q(q0, q1, q2, q3: TBaseType): TQuaternion;
@@ -94,8 +84,6 @@ Function Print(Const Q: TQuaternion): String;
 Implementation
 
 Uses math;
-
-{$IFDEF UseOperandOverloading}
 
 Operator * (Const a, b: TQuaternion): TQuaternion;
 Begin
@@ -131,8 +119,6 @@ Operator - (Const a: TQuaternion; Const b: TBaseType): TQuaternion;
 Begin
   result := SubScalarFromQ(a, b);
 End;
-
-{$ENDIF}
 
 Function Q(q0, q1, q2, q3: TBaseType): TQuaternion;
 Begin
