@@ -49,6 +49,7 @@ Type
 
     Property Target: TVector3 read fTarget;
     Property Pos: TVector3 read fPos;
+    Property Up: TVector3 read fUp;
 
     Constructor Create(aPos, aTarget, aUp: TVector3);
 
@@ -223,26 +224,26 @@ End;
 
 Procedure TOpenGLCamera.TranslateByView(x, y, z: Single);
 Var
-  forward, right, up, move: TVector3;
+  forward, right, cameraUp, move: TVector3;
 Begin
   forward := NormV3(fTarget - fPos);
   right := NormV3(CrossV3(forward, fUp));
-  up := CrossV3(right, forward);
-  move := right * x + up * y + forward * z;
+  cameraUp := CrossV3(right, forward);
+  move := right * x + cameraUp * y + forward * z;
   fPos := fPos + move;
   fTarget := fTarget + move;
 End;
 
 Procedure TOpenGLCamera.TranslateByWorld(x, y, z: Single);
 Var
-  forward, right, up, move: TVector3;
+  forward, right, cameraUp, move: TVector3;
 Begin
   forward := NormV3(fTarget - fPos);
   right := NormV3(CrossV3(forward, fUp));
-  up := CrossV3(right, forward);
+  cameraUp := CrossV3(right, forward);
   forward := NormV3(CrossV3(right, fDefUp));
-  up := NormV3(fDefUp);
-  move := right * x + up * y + forward * z;
+  cameraUp := NormV3(fDefUp);
+  move := right * x + cameraUp * y + forward * z;
   fPos := fPos + move;
   fTarget := fTarget + move;
 End;
