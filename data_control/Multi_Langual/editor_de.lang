@@ -1,0 +1,11 @@
+[Translation]
+warning_text="Warnung"
+warning_not_saved_yet="Beenden ohne zu speichern verwirft alle Änderungen.~0Möchten sie Beenden ohne zu speichern ?"
+form1.label1.caption="Wähle Sprache :"
+form1.combobox1.items[1]="de"
+form1.combobox1.items[0]="en"
+form1.caption="Multi Language Editor ver. 0.01 by Corpsman support : www.Corpsman.de"
+form1.button3.caption="&Beenden"
+form1.button2.caption="&Speichere alle Sprach Dateien"
+form1.button1.caption="&Lade Sprach Dateien"
+error_language_not_exists="Fehler die gewählte Sprache existiert nicht.~3~0Es wird eine neue Sprachdatei erzeugt. Diese können sie mit dem vorliegenden Program editieren und übersetzen."

@@ -91,6 +91,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | [JSON_Analyzer](data_control/JSON_Analyzer) | demo application for uJSON.pas |
 | [lazcomment](data_control/lazcomment) | designtime component to comment / uncomment code inside the IDE |
 | [LZW](data_control/LZW) | demo application for uLZW.pas (Lempel-Ziv-Welch algorithm) |
+| [Multi_Langual](data_control/Multi_Langual) | demo application for ulangual.pas |
 | [Quadtree](data_control/QuadTree) | unit tests for uquadtree.pas |
 | [Quaternion](data_control/Quaternion) | unit tests for uquaternion.pas |
 | [StableIndexVector](data_control/StableIndexVector) | unit tests for ustableindexvector.pas |
@@ -109,6 +110,7 @@ Collection of classes and examples corresponding to data processing, math and co
 | uimodbus.pas | Modbus server class for Modbus TCP or Modbus RTU |
 | uinterpreter.pas | Pascal Interpreter |
 | uiwrapper.pas | data source wrapper for uimodbus.pas (Lnet or Synapse) | 
+| ulanguage.pas | engine for multilanguage support |
 | ulogger.pas | general data logging framework to be included into own application | 
 | umathsolver.pas | String solver for mathematical expressions like "1+2 shl 3" (need MP-Arith) | 
 | uuncommenter.pas | class to rulebased remove text from text (e.g. when parsing source code) | 

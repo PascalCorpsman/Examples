@@ -1,0 +1,11 @@
+[Translation]
+warning_text="Warning"
+warning_not_saved_yet="Closing without saving will cancel all changes.~3~0Close without saving?"
+Form1.Label1.Caption="Choose Language :"
+Form1.ComboBox1.Items[1]="de"
+Form1.ComboBox1.Items[0]="en"
+Form1.Caption="Multi Language Editor ver. 0.01 by Corpsman support : www.Corpsman.de"
+Form1.Button3.Caption="&Close"
+Form1.Button2.Caption="&Save all loaded language files"
+Form1.Button1.Caption="&Load Language files"
+error_language_not_exists="Error the language you choosed does not exist.~3~0There will be created a new language file, feel free to edit and translate it."
