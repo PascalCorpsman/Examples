@@ -44,11 +44,13 @@ Type
     Button2: TButton;
     CheckBox1: TCheckBox;
     CheckBox2: TCheckBox;
+    CheckBox3: TCheckBox;
     Label1: TLabel;
     Procedure Button1Click(Sender: TObject);
     Procedure Button2Click(Sender: TObject);
     Procedure CheckBox1Change(Sender: TObject);
     Procedure CheckBox2Change(Sender: TObject);
+    Procedure CheckBox3Change(Sender: TObject);
     Procedure FormClose(Sender: TObject; Var CloseAction: TCloseAction);
     Procedure FormCreate(Sender: TObject);
   private
@@ -85,6 +87,8 @@ Procedure TForm1.Button1Click(Sender: TObject);
 Begin
   If c1.Execute Then Begin
     label1.Caption := ColorToString(c1.Color);
+    If c1.AlphaEnabled Then
+      label1.Caption := label1.Caption + Format(' / A=%d', [c1.Alpha]);
   End
   Else Begin
     label1.Caption := '';
@@ -109,6 +113,11 @@ Begin
   Else Begin
     c1.WheelType := wtArtists;
   End;
+End;
+
+Procedure TForm1.CheckBox3Change(Sender: TObject);
+Begin
+  If Assigned(c1) Then c1.AlphaEnabled := CheckBox3.Checked;
 End;
 
 Procedure TForm1.FormClose(Sender: TObject; Var CloseAction: TCloseAction);

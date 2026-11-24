@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uGraphiks.pas                                                   ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.15                                                         *)
+(* Version     : 0.17                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -44,6 +44,8 @@
 (*               0.14 - RGBAtoLuminanz                                        *)
 (*               0.15 - TRGBA is now packed and byte compatible to TBitmap    *)
 (*                      in pf32Bit mode                                       *)
+(*               0.16 - added DownsampleOpaque                               *)
+(*               0.17 - added DownsampleMasked and ComposeBitmapLayers        *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -97,6 +99,11 @@ Type
   End;
 
   PRGBA = ^TRGBA;
+
+  TBitmapLayer = Record
+    Bitmap: TBitmap;
+    Position: TPoint;
+  End;
 
   // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_HSL
   THSL = Record
@@ -234,6 +241,21 @@ Procedure FloodFill(Const Bitmap: TBitmap; StartX, StartY: Integer; DestColor: T
 Procedure Stretchdraw(Const Dest: TBitmap; Destrect: Trect; Const Source: Tbitmap; Mode: TInterpolationMode = imNearestNeighbour (* GTK Default wäre imBilinear *)); overload;
 Procedure Stretchdraw(Const Dest: TCanvas; Destrect: Trect; Const Source: Tbitmap; Mode: TInterpolationMode = imNearestNeighbour (* GTK Default wäre imBilinear *)); overload;
 
+// Averages Factor x Factor pixel blocks without shifting their coordinates.
+// For opaque images only; output alpha is opaque. Dimensions must be nonzero
+// multiples of Factor. Source and Dest may be the same bitmap.
+Procedure DownsampleOpaque(Const Dest, Source: TBitmap; Factor: Integer);
+
+// Averages opaque RGB using a same-sized grayscale coverage mask (red channel).
+// Output has straight alpha; uncovered samples do not contribute their colors.
+// Dimensions must be nonzero multiples of Factor. In-place use is supported.
+Procedure DownsampleMasked(Const Dest, Source, Mask: TBitmap; Factor: Integer);
+
+// Composes straight-alpha layers in order over an opaque background.
+// Layers are clipped to the existing destination size and must not alias Dest.
+Procedure ComposeBitmapLayers(Const Dest: TBitmap; Background: TColor;
+  Const Layers: Array Of TBitmapLayer);
+
 // Glätten Image mit einem Filter der Breite 2 * FilterRadius + 1
 Procedure SmoothRound(Const Image: TBitmap; FilterRadius: integer); // -- Diese Routine ist eigentlich Unsinnig, da durch die Faltung das ganze eh runde Ecken bekommt... (Runder Kernel)
 Procedure Smooth(Const Image: TBitmap; FilterRadius: integer); // (Eckiger Kernel)
@@ -249,7 +271,7 @@ Operator = (a, b: TRGBA): Boolean;
 
 Implementation
 
-Uses sysutils, ufifo; // Exception
+Uses sysutils, ufifo, GraphType;
 
 Function StringToInterpolationMode(Value: String): TInterpolationMode;
 Begin
@@ -1659,6 +1681,174 @@ Begin
   Bitmap.MaskHandle := ImgMaskHandle;
   TempIntfImg.free;
   fifo.free;
+End;
+
+Procedure DownsampleOpaque(Const Dest, Source: TBitmap; Factor: Integer);
+Var
+  SourceImage, DestImage: TLazIntfImage;
+  X, Y, OffsetX, OffsetY, Width, Height: Integer;
+  SumR, SumG, SumB, PixelCount: QWord;
+  Color: TFPColor;
+Begin
+  If (Dest = nil) Or (Source = nil) Then
+    Raise EArgumentException.Create('DownsampleOpaque requires two bitmaps');
+  If Factor <= 0 Then
+    Raise EArgumentException.Create('DownsampleOpaque requires a positive factor');
+  If (Source.Width = 0) Or (Source.Height = 0) Or
+    (Source.Width Mod Factor <> 0) Or (Source.Height Mod Factor <> 0) Then
+    Raise EArgumentException.Create(
+      'DownsampleOpaque requires nonzero dimensions divisible by the factor');
+  Width := Source.Width Div Factor;
+  Height := Source.Height Div Factor;
+  PixelCount := QWord(Factor) * QWord(Factor);
+  SourceImage := Source.CreateIntfImage;
+  Try
+    Dest.SetSize(Width, Height);
+    DestImage := Dest.CreateIntfImage;
+    Try
+      For Y := 0 To Height - 1 Do
+        For X := 0 To Width - 1 Do Begin
+          SumR := 0;
+          SumG := 0;
+          SumB := 0;
+          For OffsetY := 0 To Factor - 1 Do
+            For OffsetX := 0 To Factor - 1 Do Begin
+              Color := SourceImage.Colors[X * Factor + OffsetX,
+                Y * Factor + OffsetY];
+              Inc(SumR, Color.Red);
+              Inc(SumG, Color.Green);
+              Inc(SumB, Color.Blue);
+            End;
+          Color.Red := (SumR + PixelCount Div 2) Div PixelCount;
+          Color.Green := (SumG + PixelCount Div 2) Div PixelCount;
+          Color.Blue := (SumB + PixelCount Div 2) Div PixelCount;
+          Color.Alpha := High(Word);
+          DestImage.Colors[X, Y] := Color;
+        End;
+      Dest.LoadFromIntfImage(DestImage);
+    Finally
+      DestImage.Free;
+    End;
+  Finally
+    SourceImage.Free;
+  End;
+End;
+
+Procedure DownsampleMasked(Const Dest, Source, Mask: TBitmap; Factor: Integer);
+Var
+  SourceImage, MaskImage, DestImage: TLazIntfImage;
+  X, Y, DX, DY, Width, Height: Integer;
+  Alpha, SumAlpha, SumR, SumG, SumB, PixelCount: QWord;
+  Color: TFPColor;
+Begin
+  If (Dest = nil) Or (Source = nil) Or (Mask = nil) Then
+    Raise EArgumentException.Create('DownsampleMasked requires three bitmaps');
+  If Factor <= 0 Then
+    Raise EArgumentException.Create('DownsampleMasked requires a positive factor');
+  If (Source.Width = 0) Or (Source.Height = 0) Or
+    (Source.Width Mod Factor <> 0) Or (Source.Height Mod Factor <> 0) Or
+    (Mask.Width <> Source.Width) Or (Mask.Height <> Source.Height) Then
+    Raise EArgumentException.Create('DownsampleMasked requires matching, nonzero, divisible dimensions');
+  Width := Source.Width Div Factor;
+  Height := Source.Height Div Factor;
+  PixelCount := QWord(Factor) * QWord(Factor);
+  SourceImage := Source.CreateIntfImage;
+  Try
+    MaskImage := Mask.CreateIntfImage;
+    Try
+      DestImage := TLazIntfImage.Create(Width, Height, [riqfRGB, riqfAlpha]);
+      Try
+        For Y := 0 To Height - 1 Do
+          For X := 0 To Width - 1 Do Begin
+            SumAlpha := 0;
+            SumR := 0;
+            SumG := 0;
+            SumB := 0;
+            For DY := 0 To Factor - 1 Do
+              For DX := 0 To Factor - 1 Do Begin
+                Alpha := MaskImage.Colors[X * Factor + DX, Y * Factor + DY].Red;
+                Color := SourceImage.Colors[X * Factor + DX, Y * Factor + DY];
+                Inc(SumAlpha, Alpha);
+                Inc(SumR, QWord(Color.Red) * Alpha);
+                Inc(SumG, QWord(Color.Green) * Alpha);
+                Inc(SumB, QWord(Color.Blue) * Alpha);
+              End;
+            Color := colTransparent;
+            If SumAlpha <> 0 Then Begin
+              Color.Red := (SumR + SumAlpha Div 2) Div SumAlpha;
+              Color.Green := (SumG + SumAlpha Div 2) Div SumAlpha;
+              Color.Blue := (SumB + SumAlpha Div 2) Div SumAlpha;
+              Color.Alpha := (SumAlpha + PixelCount Div 2) Div PixelCount;
+            End;
+            DestImage.Colors[X, Y] := Color;
+          End;
+        Dest.LoadFromIntfImage(DestImage);
+      Finally
+        DestImage.Free;
+      End;
+    Finally
+      MaskImage.Free;
+    End;
+  Finally
+    SourceImage.Free;
+  End;
+End;
+
+Procedure ComposeBitmapLayers(Const Dest: TBitmap; Background: TColor;
+  Const Layers: Array Of TBitmapLayer);
+Var
+  DestImage, SourceImage: TLazIntfImage;
+  I, X, Y, Left, Top, Right, Bottom: Integer;
+  SourceColor, DestColor, BackgroundColor: TFPColor;
+  Alpha, InverseAlpha: QWord;
+Begin
+  If (Dest = nil) Or (Dest.Width = 0) Or (Dest.Height = 0) Then
+    Raise EArgumentException.Create('ComposeBitmapLayers requires a nonempty destination');
+  For I := 0 To High(Layers) Do
+    If (Layers[I].Bitmap = nil) Or (Layers[I].Bitmap = Dest) Then
+      Raise EArgumentException.Create('ComposeBitmapLayers requires nonnil, separate layers');
+  DestImage := Dest.CreateIntfImage;
+  Try
+    BackgroundColor := ColorToFPColor(Graphics.ColorToRGB(Background));
+    BackgroundColor.Alpha := High(Word);
+    DestImage.FillPixels(BackgroundColor);
+    For I := 0 To High(Layers) Do Begin
+      Left := Max(0, Layers[I].Position.X);
+      Top := Max(0, Layers[I].Position.Y);
+      Right := Min(Int64(Dest.Width), Int64(Layers[I].Position.X) + Layers[I].Bitmap.Width);
+      Bottom := Min(Int64(Dest.Height), Int64(Layers[I].Position.Y) + Layers[I].Bitmap.Height);
+      If (Left >= Right) Or (Top >= Bottom) Then Continue;
+      SourceImage := Layers[I].Bitmap.CreateIntfImage;
+      Try
+        For Y := Top To Bottom - 1 Do
+          For X := Left To Right - 1 Do Begin
+            SourceColor := SourceImage.Colors[X - Layers[I].Position.X,
+              Y - Layers[I].Position.Y];
+            Alpha := SourceColor.Alpha;
+            If Alpha = 0 Then Continue;
+            If Alpha = High(Word) Then
+              DestImage.Colors[X, Y] := SourceColor
+            Else Begin
+              InverseAlpha := High(Word) - Alpha;
+              DestColor := DestImage.Colors[X, Y];
+              DestColor.Red := (QWord(SourceColor.Red) * Alpha +
+                QWord(DestColor.Red) * InverseAlpha + High(Word) Div 2) Div High(Word);
+              DestColor.Green := (QWord(SourceColor.Green) * Alpha +
+                QWord(DestColor.Green) * InverseAlpha + High(Word) Div 2) Div High(Word);
+              DestColor.Blue := (QWord(SourceColor.Blue) * Alpha +
+                QWord(DestColor.Blue) * InverseAlpha + High(Word) Div 2) Div High(Word);
+              DestColor.Alpha := High(Word);
+              DestImage.Colors[X, Y] := DestColor;
+            End;
+          End;
+      Finally
+        SourceImage.Free;
+      End;
+    End;
+    Dest.LoadFromIntfImage(DestImage);
+  Finally
+    DestImage.Free;
+  End;
 End;
 
 Procedure Stretchdraw(Const Dest: TBitmap; Destrect: Trect;

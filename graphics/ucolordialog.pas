@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* ucolordialog.pas                                                ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -23,6 +23,7 @@
 (* Known Issues: none                                                         *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
+(*               0.02 - optional alpha, RGB/HSV synchronization, cancel restore*)
 (*                                                                            *)
 (******************************************************************************)
 Unit ucolordialog;
@@ -42,15 +43,7 @@ Type
   { TColorDialog }
 
   TColorDialog = Class(TForm)
-  private
-    FInWeights: Boolean;
-    FInCircle: BOolean;
-    FWheelType: TWheelType;
-    FAngle: Single;
-    FWeights: TVector3;
-    FAngle_old: Single; // Der Alte Winkel, spart Rechenzeit wenn sich der Cursor nur im Dreieck bewegt.
-    Gradient: Array Of TColor;
-    PaintBox1Buffer: TBitmap;
+  published
     PaintBox1: TPaintBox; // Anzeigen des Kreisdiagramms
     PaintBox2: TPaintBox; // Anzeigen der aktuellen Farbe
     Edit1: TEdit;
@@ -69,19 +62,13 @@ Type
     Label5: TLabel;
     Label6: TLabel;
     Label7: TLabel;
-    Function Interpol(value: TVector3; c0, c1, c2: TColor): TColor;
-    Function GradientColor(Value: Single): TColor;
-    Function GetColor: TColor;
-    Procedure SetColor(AValue: TColor); reintroduce;
-    Procedure SetArtistGradient;
-    Procedure SetScienceGradient;
-    Procedure SetWheelType(Value: TWheelType);
-    Procedure Apply_RGB_Color(r, g, b: Byte);
+    LabelAlpha: TLabel;
+    SpinEditAlpha: TSpinEdit;
+    ScrollBarAlpha: TScrollBar;
+    Procedure AlphaChange(Sender: TObject);
+    Procedure ColorNameEditingDone(Sender: TObject);
     Procedure HSV_Change(Sender: TObject);
     Procedure RGB_Change(Sender: TObject);
-    (*
-     * Events für LCL-Componenten
-     *)
     Procedure PaintBox1Paint(Sender: TObject);
     Procedure PaintBox2Paint(Sender: TObject);
     Procedure PaintBox1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -90,19 +77,52 @@ Type
       Y: Integer);
     Procedure PaintBox1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+  private
+    FInWeights: Boolean;
+    FInCircle: Boolean;
+    FUpdatingControls: Boolean;
+    FAlphaEnabled: Boolean;
+    FAlpha: Byte;
+    FColor: TColor;
+    FWheelType: TWheelType;
+    FAngle: Single;
+    FWeights: TVector3;
+    FAngle_old: Single;
+    FShowSimplifiedColors: Boolean;
+    Gradient: Array Of TColor;
+    PaintBox1Buffer: TBitmap;
+    Procedure SetAlphaEnabled(AValue: Boolean);
+    Procedure SetAlpha(AValue: Byte);
+    Procedure SetShowSimplifiedColors(AValue: Boolean);
+    Procedure UpdateControls;
+    Procedure UpdateColorFromSelection;
+    Function Interpol(value: TVector3; c0, c1, c2: TColor): TColor;
+    Function GradientColor(Value: Single): TColor;
+    Function GetColor: TColor;
+    Procedure SetColor(AValue: TColor); reintroduce;
+    Procedure SetArtistGradient;
+    Procedure SetScienceGradient;
+    Procedure SetWheelType(Value: TWheelType);
+    Procedure Apply_RGB_Color(r, g, b: Byte);
   public
-    ShowSimplifiedColors: Boolean; // Zeigt im Farbring die nicht Interpolierten Farben mit an
     AlwaysCenterDialogOnCurrentScreen: Boolean; // Wenn True, wird der Dialog immer auf dem Monitor angezeigt, wo sich der Mauscursor gerade befindet.
+    Property ShowSimplifiedColors: Boolean read FShowSimplifiedColors write SetShowSimplifiedColors;
     Property WheelType: TWheelType read FWheelType write SetWheelType; // Wissenschaftliche Farbenbasis, oder "Heutistische" Farbenbasis
     Constructor Create(TheOwner: TComponent); override;
     Destructor Destroy; override;
     Property Color: TColor read GetColor write SetColor;
+    // Alpha is straight opacity: 0 = transparent, 255 = opaque.
+    // Disabling the UI preserves Alpha; callers use opaque color in that mode.
+    Property AlphaEnabled: Boolean read FAlphaEnabled write SetAlphaEnabled;
+    Property Alpha: Byte read FAlpha write SetAlpha;
     Function Execute: Boolean;
   End;
 
 Implementation
 
-Uses math;
+Uses math, ugraphics;
+
+{$R *.lfm}
 
 Const
   rad_120_degree = 2 * pi / 3; // 120° im Bogenmaß
@@ -212,7 +232,7 @@ Begin
       End;
     End;
     s := round((delta / cc_max) * 100);
-    h := h Mod 360;
+    h := (h Mod 360 + 360) Mod 360;
     s := min(100, max(0, s));
   End;
   v := round(cc_max * 100);
@@ -240,8 +260,9 @@ Var
   q: Double;
   t: Double;
 Begin
-  h_i := Trunc(H / 60);
-  f := Frac(H / 60);
+  h_i := (H Mod 360 + 360) Mod 360;
+  f := Frac(h_i / 60);
+  h_i := h_i Div 60;
   ss := s / 100;
   vv := v / 100;
   p := Vv * (1 - sS);
@@ -305,19 +326,15 @@ End;
 { TColorDialog }
 
 Function TColorDialog.GetColor: TColor;
-Var
-  c: TColor;
 Begin
-  c := GradientColor(fAngle / (2 * pi));
-  result := Interpol(FWeights, c, clblack, clwhite);
+  result := FColor;
 End;
 
 Procedure TColorDialog.SetColor(AValue: TColor);
 Var
   r, g, b: Byte;
 Begin
-  // Besser wäre hier der Code aus RGB_Change
-  RedGreenBlue(avalue, r, g, b);
+  RedGreenBlue(Graphics.ColorToRGB(avalue), r, g, b);
   Apply_RGB_Color(r, g, b);
 End;
 
@@ -328,7 +345,7 @@ Begin
   RedGreenBlue(c0, r[0], g[0], b[0]);
   RedGreenBlue(c1, r[1], g[1], b[1]);
   RedGreenBlue(c2, r[2], g[2], b[2]);
-  result := RGBToColor(
+  result := Graphics.RGBToColor(
     round(value.x * r[0] + value.y * r[1] + value.z * r[2]),
     round(value.x * g[0] + value.y * g[1] + value.z * g[2]),
     round(value.x * b[0] + value.y * b[1] + value.z * b[2])
@@ -344,13 +361,15 @@ Function TColorDialog.GradientColor(Value: Single): TColor;
     RedGreenBlue(c1, r1, g1, b1);
     RedGreenBlue(c2, r2, g2, b2);
     vm1 := 1 - v;
-    result := RGBToColor(round(vm1 * r1 + v * r2), round(vm1 * g1 + v * g2), round(vm1 * b1 + v * b2));
+    result := Graphics.RGBToColor(round(vm1 * r1 + v * r2), round(vm1 * g1 + v * g2), round(vm1 * b1 + v * b2));
   End;
 Var
   i: integer;
 Begin
+  // Wrap the seam, including 2*pi rounded to Single, before indexing.
+  value := value - Floor(value);
   value := value * (length(Gradient) - 1);
-  i := trunc(value);
+  i := min(trunc(value), length(Gradient) - 2);
   value := value - i;
   result := interpol_(value, Gradient[i], Gradient[i + 1]);
 End;
@@ -407,6 +426,12 @@ Begin
   sincos(fAngle - rad_120_degree, s[2], c[2]);
   x0 := SelectColorBoxDim Div 2;
   y0 := SelectColorBoxDim Div 2;
+  ss := s[0] * ((SelectColorBoxDim - 1) / 2);
+  cc := c[0] * ((SelectColorBoxDim - 1) / 2);
+  For i := 0 To 2 Do Begin
+    s[i] := s[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
+    c[i] := c[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
+  End;
   If (FAngle <> FAngle_old) Then Begin // Den Puffer nur bei Bedarf neu Rendern
     FAngle_old := FAngle;
     // Hintergrund
@@ -439,12 +464,6 @@ Begin
         End;
       End;
     End;
-    ss := s[0] * (((SelectColorBoxDim - 1) / 2));
-    cc := c[0] * (((SelectColorBoxDim - 1) / 2));
-    For i := 0 To 2 Do Begin
-      s[i] := s[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
-      c[i] := c[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
-    End;
     // Das Farbdreieck
     RenderTriangleColored(GradientColor(fAngle / (2 * pi)), clblack, clwhite);
     // Anzeige des Spekrtums
@@ -464,32 +483,63 @@ Begin
   PaintBox1.canvas.Pen.Color := clwhite;
   PaintBox1.canvas.Brush.Style := bsClear;
   PaintBox1.canvas.Ellipse(x0 + i - 3, y0 + j - 3, x0 + i + 3, y0 + j + 3);
-  // Die Varbsachen noch Aktualisieren
-  PaintBox2Paint(self);
 End;
 
 Procedure TColorDialog.PaintBox2Paint(Sender: TObject);
 Var
-  c, cc: TColor;
-  a, r, g, b: byte;
-  h, s, v: integer;
+  Checker, Foreground, Preview: TBitmap;
+  Layers: Array[0..1] Of TBitmapLayer;
+  Row: PRGBA;
+  Pixel: TRGBA;
+  x, y: Integer;
 Begin
-  c := GradientColor(fAngle / (2 * pi));
-  cc := Interpol(FWeights, c, clblack, clwhite);
-  PaintBox2.Canvas.Brush.Color := cc;
+  PaintBox2.Canvas.Brush.Style := bsSolid;
+  If FAlphaEnabled Then Begin
+    Checker := Nil;
+    Foreground := Nil;
+    Preview := Nil;
+    Try
+      Checker := TBitmap.Create;
+      Foreground := TBitmap.Create;
+      Preview := TBitmap.Create;
+      Checker.PixelFormat := pf32bit;
+      Foreground.PixelFormat := pf32bit;
+      Checker.SetSize(PaintBox2.Width, PaintBox2.Height);
+      Foreground.SetSize(PaintBox2.Width, PaintBox2.Height);
+      Preview.SetSize(PaintBox2.Width, PaintBox2.Height);
+      Pixel := ugraphics.ColorToRGBA(FColor, FAlpha);
+      For y := 0 To PaintBox2.Height - 1 Do Begin
+        Row := Checker.ScanLine[y];
+        For x := 0 To PaintBox2.Width - 1 Do Begin
+          If ((x Div 8 + y Div 8) Mod 2) = 0 Then
+            Row^ := RGBA(255, 255, 255, 255)
+          Else
+            Row^ := RGBA(192, 192, 192, 255);
+          Inc(Row);
+        End;
+        Row := Foreground.ScanLine[y];
+        For x := 0 To PaintBox2.Width - 1 Do Begin
+          Row^ := Pixel;
+          Inc(Row);
+        End;
+      End;
+      Layers[0].Bitmap := Checker;
+      Layers[0].Position := Point(0, 0);
+      Layers[1].Bitmap := Foreground;
+      Layers[1].Position := Point(0, 0);
+      ComposeBitmapLayers(Preview, clWhite, Layers);
+      PaintBox2.Canvas.Draw(0, 0, Preview);
+    Finally
+      Preview.Free;
+      Foreground.Free;
+      Checker.Free;
+    End;
+    PaintBox2.Canvas.Brush.Style := bsClear;
+  End
+  Else
+    PaintBox2.Canvas.Brush.Color := FColor;
   PaintBox2.Canvas.Pen.Color := clBlack;
   PaintBox2.Canvas.Rectangle(0, 0, PaintBox2.Width, PaintBox2.Height);
-  RedGreenBlue(cc, r, g, b);
-  // Anzeige an den Kontrollelementen
-  a := 0; // Alpha Kanal
-  edit1.text := format('#%0.2X%0.2X%0.2X%0.2X', [a, r, g, b]);
-  RGB_To_HSV(r, g, b, h, s, v);
-  SpinEdit1.Value := h;
-  SpinEdit2.Value := s;
-  SpinEdit3.Value := v;
-  SpinEdit4.Value := r;
-  SpinEdit5.Value := g;
-  SpinEdit6.Value := b;
 End;
 
 Procedure TColorDialog.PaintBox1MouseDown(Sender: TObject;
@@ -498,6 +548,7 @@ Var
   r1, r2, i, j, k: integer;
   S, c: Array[0..2] Of {$IFDEF Win32 }Double{$ELSE}Extended{$ENDIF};
 Begin
+  If Button <> mbLeft Then Exit;
   i := x - SelectColorBoxDim Div 2;
   j := y - SelectColorBoxDim Div 2;
   r1 := SelectColorBoxDim Div 2 - SelectColorWheelWidth;
@@ -529,7 +580,7 @@ Begin
     // Liegt der Punkt Im Kreis Ring ?
     If FInCircle Then Begin
       FAngle := arctan2(j, i) + pi;
-      PaintBox1Paint(Nil);
+      UpdateColorFromSelection;
     End;
     // Liegt der Punkt im Anzeige Dreieck ?
     If FInWeights Then Begin
@@ -564,7 +615,7 @@ Begin
           FWeights := WeightsInTriangle(p, v2(-c[0], -s[0]), v2(-c[1], -s[1]), v2(-c[2], -s[2]));
         End;
       End;
-      PaintBox1Paint(Nil);
+      UpdateColorFromSelection;
     End;
   End;
 End;
@@ -597,6 +648,8 @@ Begin
 End;
 
 Procedure TColorDialog.SetWheelType(Value: TWheelType);
+Var
+  r, g, b: Byte;
 Begin
   If Value <> FWheelType Then Begin
     Case value Of
@@ -604,140 +657,193 @@ Begin
       wtScience: SetScienceGradient;
     End;
     FWheelType := value;
+    RedGreenBlue(FColor, r, g, b);
+    Apply_RGB_Color(r, g, b);
   End;
 End;
 
 Procedure TColorDialog.Apply_RGB_Color(r, g, b: Byte);
+Var
+  Target, c0, c1, Direction, Candidate: TVector3;
+  LowChannel, HighChannel, Span0, Span1, Delta, t, RawT: Double;
+  Error, BestError, Denominator, ColorWeight: Double;
+  i: Integer;
+  cr, cg, cb: Byte;
 Begin
-  // Todo : Konvertierung von RGB nach Weight / Angle
-  FAngle_old := FAngle + 1; // Erzwingen, dass das Bild für Paintbox1 neu erzeugt wird.
-  Paintbox1.Invalidate;
-  //Paintbox2.Invalidate; --\  So werden die SpinEdits in "echtzeit" aktualisiert
-  //                        v
-  Paintbox2.OnPaint(Nil); // Setze alle SpinEdits..
+  // Keep exact RGB independently: some artist-wheel hues have limited brightness.
+  FColor := Graphics.RGBToColor(r, g, b);
+  LowChannel := min(r, min(g, b));
+  HighChannel := max(r, max(g, b));
+  Delta := HighChannel - LowChannel;
+  If Delta = 0 Then
+    FWeights := v3(0, 1 - HighChannel / 255, LowChannel / 255)
+  Else Begin
+    Target := v3((r - LowChannel) / Delta,
+      (g - LowChannel) / Delta, (b - LowChannel) / Delta);
+    BestError := MaxDouble;
+    For i := 0 To length(Gradient) - 2 Do Begin
+      RedGreenBlue(Gradient[i], cr, cg, cb);
+      Span0 := max(cr, max(cg, cb));
+      c0 := v3(cr / Span0, cg / Span0, cb / Span0);
+      RedGreenBlue(Gradient[i + 1], cr, cg, cb);
+      Span1 := max(cr, max(cg, cb));
+      c1 := v3(cr / Span1, cg / Span1, cb / Span1);
+      Direction := c1 - c0;
+      Denominator := DotV3(Direction, Direction);
+      If Denominator = 0 Then t := 0
+      Else t := max(0, min(1, DotV3(Target - c0, Direction) / Denominator));
+      Candidate := c0 + t * Direction;
+      Error := DotV3(Target - Candidate, Target - Candidate);
+      If Error < BestError Then Begin
+        BestError := Error;
+        // Convert interpolation between normalized endpoints back to the raw ring.
+        RawT := t * Span0 / (Span1 * (1 - t) + t * Span0);
+        FAngle := 2 * pi * (i + RawT) / (length(Gradient) - 1);
+      End;
+    End;
+    RedGreenBlue(GradientColor(FAngle / (2 * pi)), cr, cg, cb);
+    ColorWeight := min(1 - LowChannel / 255, Delta / max(cr, max(cg, cb)));
+    FWeights := v3(ColorWeight, max(0, 1 - LowChannel / 255 - ColorWeight),
+      LowChannel / 255);
+  End;
+  FAngle_old := FAngle + 1;
+  UpdateControls;
+  PaintBox1.Invalidate;
+  PaintBox2.Invalidate;
+End;
+
+Procedure TColorDialog.UpdateColorFromSelection;
+Begin
+  FColor := Interpol(FWeights, GradientColor(FAngle / (2 * pi)), clBlack, clWhite);
+  UpdateControls;
+  PaintBox1.Invalidate;
+  PaintBox2.Invalidate;
+End;
+
+Procedure TColorDialog.UpdateControls;
+Var
+  r, g, b: Byte;
+  h, s, v: Integer;
+Begin
+  If FUpdatingControls Then Exit;
+  FUpdatingControls := True;
+  Try
+    RedGreenBlue(FColor, r, g, b);
+    RGB_To_HSV(r, g, b, h, s, v);
+    SpinEdit1.Value := h;
+    SpinEdit2.Value := s;
+    SpinEdit3.Value := v;
+    SpinEdit4.Value := r;
+    SpinEdit5.Value := g;
+    SpinEdit6.Value := b;
+    SpinEditAlpha.Value := FAlpha;
+    ScrollBarAlpha.Position := FAlpha;
+    If FAlphaEnabled Then
+      Edit1.Text := format('#%.2X%.2X%.2X%.2X', [FAlpha, r, g, b])
+    Else
+      Edit1.Text := format('#%.2X%.2X%.2X', [r, g, b]);
+  Finally
+    FUpdatingControls := False;
+  End;
+End;
+
+Procedure TColorDialog.SetAlphaEnabled(AValue: Boolean);
+Begin
+  FAlphaEnabled := AValue;
+  LabelAlpha.Visible := AValue;
+  SpinEditAlpha.Visible := AValue;
+  ScrollBarAlpha.Visible := AValue;
+  If AValue Then Edit1.MaxLength := 9 Else Edit1.MaxLength := 7;
+  UpdateControls;
+  PaintBox2.Invalidate;
+End;
+
+Procedure TColorDialog.SetAlpha(AValue: Byte);
+Begin
+  FAlpha := AValue;
+  UpdateControls;
+  PaintBox2.Invalidate;
+End;
+
+Procedure TColorDialog.SetShowSimplifiedColors(AValue: Boolean);
+Begin
+  FShowSimplifiedColors := AValue;
+  FAngle_old := FAngle + 1;
+  PaintBox1.Invalidate;
+End;
+
+Procedure TColorDialog.AlphaChange(Sender: TObject);
+Begin
+  If FUpdatingControls Or Not FAlphaEnabled Then Exit;
+  If Sender = ScrollBarAlpha Then SetAlpha(ScrollBarAlpha.Position)
+  Else SetAlpha(SpinEditAlpha.Value);
+End;
+
+Procedure TColorDialog.ColorNameEditingDone(Sender: TObject);
+Var
+  ColorText: String;
+  Value: LongWord;
+Begin
+  If FUpdatingControls Then Exit;
+  ColorText := Trim(Edit1.Text);
+  If Not ((length(ColorText) = 7) Or
+    (FAlphaEnabled And (length(ColorText) = 9))) Then Begin
+    UpdateControls;
+    Exit;
+  End;
+  If (ColorText[1] = '#') And
+    TryStrToDWord('$' + Copy(ColorText, 2, length(ColorText)), Value) Then Begin
+    If length(ColorText) = 9 Then FAlpha := Value Shr 24;
+    Apply_RGB_Color((Value Shr 16) And $FF, (Value Shr 8) And $FF, Value And $FF);
+  End
+  Else
+    UpdateControls;
 End;
 
 Procedure TColorDialog.HSV_Change(Sender: TObject);
 Var
   r, g, b: Byte;
 Begin
+  If FUpdatingControls Then Exit;
   // Jemand hat die HSV-Werte Geändert
-  HSV_to_RGB(SpinEdit4.Value, SpinEdit5.Value, SpinEdit6.Value, r, g, b);
+  HSV_to_RGB(SpinEdit1.Value, SpinEdit2.Value, SpinEdit3.Value, r, g, b);
   Apply_RGB_Color(r, g, b);
 End;
 
 Procedure TColorDialog.RGB_Change(Sender: TObject);
 Begin
+  If FUpdatingControls Then Exit;
   // Jemand hat die RGB-Werte Geändert
   Apply_RGB_Color(SpinEdit4.Value, SpinEdit5.Value, SpinEdit6.Value);
 End;
 
 Constructor TColorDialog.Create(TheOwner: TComponent);
-
-  Function SpinCreate(l, t: integer): TSpinEdit;
-  Begin
-    result := TspinEdit.create(self);
-    result.Parent := self;
-    result.left := l;
-    result.top := t;
-  End;
-
-  Function LCreate(l, t: integer; c: String): TLabel;
-  Begin
-    result := TLabel.create(self);
-    result.parent := self;
-    result.left := l;
-    result.Top := t;
-    result.Caption := c;
-  End;
-
 Begin
-  CreateNew(TheOwner);
+  // Suppress OnChange while the static controls are streamed from the resource.
+  FUpdatingControls := True;
+  Inherited Create(TheOwner);
   AlwaysCenterDialogOnCurrentScreen := true;
   FInWeights := false;
   FInCircle := false;
-  ShowSimplifiedColors := false;
-  caption := 'Select color';
-  self.width := 490;
-  self.height := 290;
+  FAlpha := 255;
+  FColor := clBlack;
   left := (Screen.Width - self.Width) Div 2;
   top := (Screen.Height - self.Height) Div 2;
-  BorderIcons := [biSystemMenu];
-  PaintBox1 := TPaintBox.Create(self);
-  PaintBox1.Parent := Self;
-  PaintBox1.Width := SelectColorBoxDim;
-  PaintBox1.Height := SelectColorBoxDim;
-  PaintBox1.Left := 10;
-  PaintBox1.Top := 10;
   PaintBox1Buffer := TBitmap.create;
   PaintBox1Buffer.width := SelectColorBoxDim;
   PaintBox1Buffer.Height := SelectColorBoxDim;
-  PaintBox1.OnPaint := @PaintBox1Paint;
-  PaintBox1.OnMouseDown := @PaintBox1MouseDown;
-  PaintBox1.OnMouseUp := @PaintBox1MouseUp;
-  PaintBox1.OnMouseMove := @PaintBox1MouseMove;
-  // Init des Gradienten
-  FWheelType := wtScience;
-  SetWheelType(wtArtists);
+  FWheelType := wtArtists;
+  SetArtistGradient;
   FAngle := 0;
-  FAngle_old := 1; // Hauptsache Anders
+  FAngle_old := 1;
   FWeights := v3(0, 1, 0);
-  PaintBox2 := TPaintBox.Create(self);
-  PaintBox2.Parent := self;
-  PaintBox2.Height := 40;
-  PaintBox2.Width := SelectColorBoxDim;
-  PaintBox2.Left := 10;
-  PaintBox2.Top := PaintBox1.Top + SelectColorBoxDim + 10;
-  PaintBox2.OnPaint := @PaintBox2Paint;
-  edit1 := tedit.create(self);
-  edit1.parent := self;
-  edit1.left := 272;
-  edit1.Top := 152;
-  Button1 := TButton.Create(self);
-  button1.parent := self;
-  button1.left := 320;
-  button1.Top := 248;
-  button1.Caption := 'Cancel';
-  button1.ModalResult := mrCancel;
-  Button2 := TButton.Create(self);
-  button2.parent := self;
-  button2.left := 405;
-  button2.Top := 248;
-  button2.Caption := 'OK';
-  button2.ModalResult := mrOK;
-  // HSV
-  SpinEdit1 := SpinCreate(272, 23);
-  SpinEdit1.MaxValue := 360;
-  SpinEdit1.OnChange := @HSV_Change;
-  SpinEdit2 := SpinCreate(272, 56);
-  SpinEdit2.MaxValue := 100;
-  SpinEdit2.OnChange := @HSV_Change;
-  SpinEdit3 := SpinCreate(272, 88);
-  SpinEdit2.MaxValue := 100;
-  SpinEdit3.OnChange := @HSV_Change;
-  // RGB
-  SpinEdit4 := SpinCreate(430, 23);
-  SpinEdit4.MaxValue := 255;
-  SpinEdit4.OnChange := @RGB_Change;
-  SpinEdit5 := SpinCreate(430, 56);
-  SpinEdit5.MaxValue := 255;
-  SpinEdit5.OnChange := @RGB_Change;
-  SpinEdit6 := SpinCreate(430, 88);
-  SpinEdit6.MaxValue := 255;
-  SpinEdit6.OnChange := @RGB_Change;
-  Label1 := LCreate(194, 31, 'Hue:');
-  Label2 := LCreate(194, 64, 'Saturation:');
-  Label3 := LCreate(194, 96, 'Value:');
-  Label4 := LCreate(352, 31, 'Red:');
-  Label5 := LCreate(352, 64, 'Green:');
-  Label6 := LCreate(352, 96, 'Blue:');
-  Label7 := LCreate(194, 160, 'Color name:');
-{$WARNING Es fehlt noch der Scrollbar fuer die Opazitaet}
+  FUpdatingControls := False;
+  SetAlphaEnabled(False);
 End;
 
 Destructor TColorDialog.Destroy;
 Begin
-  PaintBox1.OnPaint := Nil;
+  If Assigned(PaintBox1) Then PaintBox1.OnPaint := Nil;
   PaintBox1Buffer.free;
   Inherited Destroy;
 End;
@@ -746,7 +852,18 @@ Function TColorDialog.Execute: Boolean;
 Var
   i: Integer;
   r: TRect;
+  SavedColor: TColor;
+  SavedAlpha: Byte;
+  SavedAngle: Single;
+  SavedWeights: TVector3;
 Begin
+  SavedColor := FColor;
+  SavedAlpha := FAlpha;
+  SavedAngle := FAngle;
+  SavedWeights := FWeights;
+  FInWeights := False;
+  FInCircle := False;
+  UpdateControls;
   FAngle_old := FAngle - 1; // Erzwingen, dass ein Repaint gemacht wird.
   PaintBox1.Invalidate;
   PaintBox2.Invalidate;
@@ -767,7 +884,23 @@ Begin
       top := (screen.height - self.height) Div 2;
     End;
   End;
-  result := ShowModal = mrok;
+  result := False;
+  Try
+    result := ShowModal = mrok;
+  Finally
+    FInWeights := False;
+    FInCircle := False;
+    If Not result Then Begin
+      FColor := SavedColor;
+      FAlpha := SavedAlpha;
+      FAngle := SavedAngle;
+      FWeights := SavedWeights;
+      FAngle_old := FAngle + 1;
+      UpdateControls;
+      PaintBox1.Invalidate;
+      PaintBox2.Invalidate;
+    End;
+  End;
 End;
 
 End.
