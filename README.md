@@ -136,6 +136,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | [Graphics](graphics/Graphics) | unit tests for ugraphics.pas |
 | [LineEdit](graphics/LineEdit) | Demo application for ulineedit.pas |
 | [Playingcards](graphics/Playingcards) | Demo application for uplayingcard.pas |
+| [RadialTreeMenu](graphics/Radialtreemenu) | Demo and tests to uradialtreemenu.pas |
 | [SimpleChart](graphics/SimpleChart) | Demo application for usimplechart.pas |
 | [SunburstChart](graphics/SunburstChart) | Demo application for usunburstchart.pas |
 | [Yeargrid](graphics/Yeargrid) | Demo application for uyeargrid.pas |
@@ -146,6 +147,7 @@ Collection of classes and examples corresponding to graphic / image processing
 | ugraphics.pas | collection of algorithms to manipulate images and do color calculations |
 | ugwavi.pas | Class to create .avi files out of images and waves |
 | ulineedit.pas | Class to edit a segmented transfer function |
+| uradialtreemenu.pas | LCL-Component to display a radial tree menu popup (can replace TPopupMenu) |
 | usimplechart.pas | a Tchart like component to create images with containing pointseries (especially designed to be part of a console application) |
 | usunburstchart.pas | LCL-Component to display a sunburstchart diagram |
 | uyeargrid.pas | LCL-Component to display a year on the formular |

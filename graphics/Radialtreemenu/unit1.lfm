@@ -1,0 +1,104 @@
+object Form1: TForm1
+  Left = 363
+  Height = 499
+  Top = 119
+  Width = 846
+  Caption = 'Form1'
+  ClientHeight = 499
+  ClientWidth = 846
+  Position = poScreenCenter
+  LCLVersion = '5.99.0.0'
+  OnCreate = FormCreate
+  object Memo1: TMemo
+    Left = 384
+    Height = 256
+    Top = 232
+    Width = 448
+    Lines.Strings = (
+      'Memo1'
+    )
+    ScrollBars = ssBoth
+    TabOrder = 0
+    WordWrap = False
+  end
+  object TreeView1: TTreeView
+    Left = 8
+    Height = 480
+    Top = 8
+    Width = 361
+    TabOrder = 1
+  end
+  object Panel1: TPanel
+    Left = 632
+    Height = 100
+    Top = 8
+    Width = 200
+    Caption = 'Panel1'
+    TabOrder = 2
+  end
+  object Panel2: TPanel
+    Left = 632
+    Height = 100
+    Top = 120
+    Width = 200
+    Caption = 'Panel2'
+    TabOrder = 3
+  end
+  object Button1: TButton
+    Left = 376
+    Height = 25
+    Top = 8
+    Width = 75
+    Caption = 'Add Node'
+    TabOrder = 4
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 376
+    Height = 25
+    Top = 40
+    Width = 75
+    Caption = 'Del Node'
+    TabOrder = 5
+    OnClick = Button2Click
+  end
+  object Edit1: TEdit
+    Left = 464
+    Height = 23
+    Top = 8
+    Width = 144
+    TabOrder = 6
+    Text = 'Edit1'
+  end
+  object Button3: TButton
+    Left = 376
+    Height = 25
+    Top = 72
+    Width = 75
+    Caption = 'Clear'
+    TabOrder = 7
+    OnClick = Button3Click
+  end
+  object PopupMenu1: TPopupMenu
+    Left = 768
+    Top = 40
+    object MenuItem1: TMenuItem
+      Caption = 'Hallo Welt'
+    end
+    object MenuItem2: TMenuItem
+      Caption = 'MenuItem2'
+      object MenuItem3: TMenuItem
+        Caption = 'MenuItem3'
+      end
+      object MenuItem4: TMenuItem
+        Caption = 'MenuItem4'
+        object MenuItem6: TMenuItem
+          Caption = 'MenuItem6'
+        end
+      end
+      object MenuItem5: TMenuItem
+        Caption = 'MenuItem5'
+      end
+    end
+  end
+end

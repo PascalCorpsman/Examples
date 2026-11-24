@@ -8,3 +8,4 @@ Feature:
 - Simplified and Gradient color selection
 - RGB and HSV color selection
 - Color preview in HTML-Style
+- Alpha channel
