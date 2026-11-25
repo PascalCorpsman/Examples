@@ -73,6 +73,9 @@ Type
     Click (OnClick, Action, AutoCheck). The click is dropped if the item or
     menu is destroyed in OnClose or the tree changed while the popup was open.
     Opening a branch by hover calls its Click once, as native submenus do.
+    A single enabled root is open from the start; a branch root gets its
+    Click when the popup is shown. The center where several roots meet is
+    neutral: hovering or clicking it selects nothing.
     Handlers that modify the tree close the popup; fill dynamic trees in OnPopup.
     Hover/preview callbacks are not implemented yet. }
   TRadialTreeMenu = Class(TPopupMenu)
@@ -106,10 +109,10 @@ Type
     Procedure Clear;
     Procedure PopUp(X, Y: Integer); override;
     // Counts prepared sectors (each with both color states), not hover paints.
-    Property CachedSectorRenderCount: QWord Read GetCachedSectorRenderCount;
+    Property CachedSectorRenderCount: QWord read GetCachedSectorRenderCount;
     // Sector images currently held. Images of removed or changed items are
     // released when the next popup is prepared, or with the menu.
-    Property CachedSectorCount: Integer Read GetCachedSectorCount;
+    Property CachedSectorCount: Integer read GetCachedSectorCount;
   End;
 
 Implementation
@@ -117,17 +120,20 @@ Implementation
 Uses
   SysUtils, Controls, Graphics, uvectormath, ugraphics, LCLType, LCLIntf, LCLVersion,
   InterfaceBase, LCLPlatformDef
-  {$IFDEF LCLGTK3}
+{$IFDEF LCLGTK3}
   , Gtk3Widgets, Gtk3Objects, LazGtk3, LazGdk3, LazCairo1,
   LazGLib2, LazGObject2, LazGdkPixbuf2
-  {$ENDIF}
-  {$IFDEF LCLGTK2}
+{$ENDIF}
+{$IFDEF LCLGTK2}
   , Gtk2, Gdk2, Gtk2Proc
-  {$ENDIF}
+{$ENDIF}
   ;
 
 Const
   RenderScale = 4;
+  // HitTest results that are not sector indices.
+  HitOutside = -1;
+  HitCenter = -2;
 
 Type
   TRadialSectorImage = Class;
@@ -175,34 +181,39 @@ Type
     FItems: Array Of TMenuItem;
     FSelectedItem: TMenuItem;
     FPath: Array Of Integer;
+    FRootCount: Integer;
+    // A single root branch opens with the popup; its Click follows on show.
+    FRootClickPending: Boolean;
     FCenter: Integer;
     FScale: Double;
     FMask, FImage: TBitmap;
     FCache: TRadialRenderCache;
-    {$IFNDEF LCLGTK3}
+{$IFNDEF LCLGTK3}
     FShadowRefreshed: Boolean;
-    {$ENDIF}
-    {$IFDEF LCLGTK3}
+{$ENDIF}
+{$IFDEF LCLGTK3}
     FSeat: PGdkSeat;
     FDrawSignal: gulong;
     Procedure GrabPointer(Data: PtrInt);
     Procedure ReleasePointer;
     Procedure ApplyInputShape;
     Class Function DrawNative(Widget: PGtkWidget; Context: Pcairo_t;
-      Data: gpointer): gboolean; cdecl; static;
-    {$ENDIF}
-    {$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
+      Data: gpointer): gboolean; cdecl;
+    static;
+{$ENDIF}
+{$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
     FGrabQueued: Boolean;
     Procedure GrabPointer(Data: PtrInt);
     Procedure ReleasePointer;
-    {$ENDIF}
-    {$IFDEF LCLGTK2}
+{$ENDIF}
+{$IFDEF LCLGTK2}
     FPointerGrabbed: Boolean;
     Procedure GrabPointer(Data: PtrInt);
     Procedure ReleasePointer;
     Class Function InputMapped(Widget: PGtkWidget; Event: PGdkEvent;
-      Data: Pointer): LongInt; cdecl; static;
-    {$ENDIF}
+      Data: Pointer): LongInt; cdecl;
+    static;
+{$ENDIF}
     Function AddSector(AInnerRadius, AOuterRadius: Integer;
       AStartAngle, ASweep: Double; Const ACaption: String;
       ALevel, AParentIndex: Integer; AEnabled: Boolean): Integer;
@@ -215,33 +226,33 @@ Type
       AOffset: TPoint);
     Function HitTest(X, Y: Integer): Integer;
     Function IsBranch(SectorIndex: Integer): Boolean;
-    {$IFNDEF LCLGTK3}
+{$IFNDEF LCLGTK3}
     Procedure RefreshCompositorShadow;
-    {$ENDIF}
+{$ENDIF}
     Procedure WindowShown(Sender: TObject);
     Procedure WindowHidden(Sender: TObject);
     Procedure WindowDeactivated(Sender: TObject);
   protected
-    {$IF defined(LCLGTK3) or defined(LCLGTK2)}
+{$IF defined(LCLGTK3) or defined(LCLGTK2)}
     Procedure CreateWnd; override;
-    {$ENDIF}
+{$ENDIF}
     Procedure Paint; override;
     Procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     Procedure MouseDown(Button: TMouseButton; Shift: TShiftState;
       X, Y: Integer); override;
-    {$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
+{$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
     Procedure MouseUp(Button: TMouseButton; Shift: TShiftState;
       X, Y: Integer); override;
-    {$ENDIF}
+{$ENDIF}
     Procedure KeyDown(Var Key: Word; Shift: TShiftState); override;
   public
-    {$IF defined(LCLGTK3) or defined(LCLGTK2)}
+{$IF defined(LCLGTK3) or defined(LCLGTK2)}
     Procedure DestroyWnd; override;
-    {$ENDIF}
+{$ENDIF}
     Constructor Create(AOwner: TComponent); override;
     Destructor Destroy; override;
     Function HasItems: Boolean;
-    Property SelectedItem: TMenuItem Read FSelectedItem;
+    Property SelectedItem: TMenuItem read FSelectedItem;
   End;
 
   // Outlives OnClose handlers that destroy the clicked item or its menu.
@@ -254,15 +265,15 @@ Type
 
 Procedure TClickGuard.Notification(AComponent: TComponent; Operation: TOperation);
 Begin
-  If (Operation = opRemove) And (AComponent = Item) Then Item := nil;
-  inherited Notification(AComponent, Operation);
+  If (Operation = opRemove) And (AComponent = Item) Then Item := Nil;
+  Inherited Notification(AComponent, Operation);
 End;
 
 Destructor TRadialSectorImage.Destroy;
 Begin
   Bitmaps[False].Free;
   Bitmaps[True].Free;
-  inherited Destroy;
+  Inherited Destroy;
 End;
 
 Function TRadialSectorImage.Matches(Const Sector: TRadialMenuSector): Boolean;
@@ -274,7 +285,7 @@ End;
 
 Constructor TRadialRenderCache.Create;
 Begin
-  inherited Create;
+  Inherited Create;
   Sectors := TList.Create;
   Font := TFont.Create;
 End;
@@ -283,11 +294,12 @@ Destructor TRadialRenderCache.Destroy;
 Var
   I: Integer;
 Begin
-  If Sectors <> nil Then
-    For I := 0 To Sectors.Count - 1 Do TObject(Sectors[I]).Free;
+  If Sectors <> Nil Then
+    For I := 0 To Sectors.Count - 1 Do
+      TObject(Sectors[I]).Free;
   Sectors.Free;
   Font.Free;
-  inherited Destroy;
+  Inherited Destroy;
 End;
 
 Procedure TRadialRenderCache.BeginUpdate(AScale: Double);
@@ -303,7 +315,8 @@ Begin
     (SelectedColor <> Graphics.ColorToRGB(clMenuHighlight)) Or
     (SelectedText <> Graphics.ColorToRGB(clHighlightText)) Or
     (DisabledText <> Graphics.ColorToRGB(clGrayText)) Then Begin
-    For I := 0 To Sectors.Count - 1 Do TObject(Sectors[I]).Free;
+    For I := 0 To Sectors.Count - 1 Do
+      TObject(Sectors[I]).Free;
     Sectors.Clear;
   End;
   Scale := AScale;
@@ -319,7 +332,8 @@ Begin
   BorderRGB.G := (3 * MenuRGB.G + TextRGB.G) Div 4;
   BorderRGB.B := (3 * MenuRGB.B + TextRGB.B) Div 4;
   BorderColor := RGBToColor(BorderRGB);
-  For I := 0 To Sectors.Count - 1 Do TRadialSectorImage(Sectors[I]).Used := False;
+  For I := 0 To Sectors.Count - 1 Do
+    TRadialSectorImage(Sectors[I]).Used := False;
 End;
 
 Procedure TRadialRenderCache.EndUpdate;
@@ -344,7 +358,7 @@ Begin
       Exit;
     End;
   End;
-  Result := nil;
+  Result := Nil;
 End;
 
 Function IsSectorItem(Item: TMenuItem): Boolean;
@@ -368,9 +382,9 @@ End;
 
 Constructor TRadialMenuForm.Create(AOwner: TComponent);
 Var
-  Depth: Integer;
+  Depth, I: Integer;
 Begin
-  inherited CreateNew(AOwner);
+  Inherited CreateNew(AOwner);
   Caption := 'RadialTreeMenu';
   BorderStyle := bsNone;
   Position := poDesigned;
@@ -393,7 +407,16 @@ Begin
   OnHide := @WindowHidden;
   OnDeactivate := @WindowDeactivated;
   BuildMenu(TRadialTreeMenu(AOwner).Items, -Pi / 2, 2 * Pi, -1, 0);
-  If TRadialTreeMenu(AOwner).FRenderCache = nil Then
+  For I := 0 To High(FAllSectors) Do
+    If FAllSectors[I].Level = 0 Then Inc(FRootCount);
+  // A context popup is centered on the pointer, so a single root lies below
+  // it. The root is open from the first frame, as if it had been hovered.
+  If (FRootCount = 1) And FAllSectors[0].Enabled Then Begin
+    SetLength(FPath, 1);
+    FPath[0] := 0;
+    FRootClickPending := IsBranch(0);
+  End;
+  If TRadialTreeMenu(AOwner).FRenderCache = Nil Then
     TRadialTreeMenu(AOwner).FRenderCache := TRadialRenderCache.Create;
   FCache := TRadialRenderCache(TRadialTreeMenu(AOwner).FRenderCache);
   PrepareImages;
@@ -409,25 +432,26 @@ Destructor TRadialMenuForm.Destroy;
 Begin
   Application.RemoveAsyncCalls(Self);
   ReleasePointer;
-  {$IF defined(LCLGTK3) or defined(LCLGTK2)}
+{$IF defined(LCLGTK3) or defined(LCLGTK2)}
   If HandleAllocated Then DestroyHandle;
-  {$ENDIF}
+{$ENDIF}
   FMask.Free;
   FImage.Free;
-  inherited Destroy;
+  Inherited Destroy;
 End;
 
 {$IFDEF LCLGTK3}
+
 Procedure TRadialMenuForm.CreateWnd;
 Var
   NativeWidget: PGtkWidget;
   NativeWindow: PGdkWindow;
   Visual: PGdkVisual;
 Begin
-  inherited CreateWnd;
+  Inherited CreateWnd;
   NativeWidget := gtk_widget_get_toplevel(TGtk3Widget(Handle).Widget);
   Visual := gdk_screen_get_rgba_visual(gtk_widget_get_screen(NativeWidget));
-  If (Visual = nil) Or
+  If (Visual = Nil) Or
     (Not gdk_screen_is_composited(gtk_widget_get_screen(NativeWidget))) Then
     Raise EInvalidOperation.Create('GTK3 radial popup requires RGBA compositing');
   // LCL realizes the widget during handle creation. Change its visual before
@@ -441,7 +465,7 @@ Begin
   NativeWindow := gtk_widget_get_window(NativeWidget);
   gdk_window_set_override_redirect(NativeWindow, True);
   FDrawSignal := g_signal_connect_data(NativeWidget, 'draw',
-    TGCallback(@DrawNative), Self, nil, G_CONNECT_DEFAULT);
+    TGCallback(@DrawNative), Self, Nil, G_CONNECT_DEFAULT);
 End;
 
 Procedure TRadialMenuForm.DestroyWnd;
@@ -455,7 +479,7 @@ Begin
     g_signal_handler_disconnect(NativeWidget, FDrawSignal);
     FDrawSignal := 0;
   End;
-  inherited DestroyWnd;
+  Inherited DestroyWnd;
 End;
 
 Class Function TRadialMenuForm.DrawNative(Widget: PGtkWidget;
@@ -473,10 +497,17 @@ Begin
   cairo_new_path(Context);
   For I := 0 To High(Window.FSectors) Do Begin
     With Window.FSectors[I] Do Begin
-      cairo_move_to(Context, Polygon[0].x, Polygon[0].y);
-      For J := 1 To High(Polygon) Do
-        cairo_line_to(Context, Polygon[J].x, Polygon[J].y);
-      cairo_close_path(Context);
+      If (Abs(Sweep - 2 * Pi) <= 1E-10) And (InnerRadius > 0) Then Begin
+        cairo_arc(Context, Window.FCenter, Window.FCenter,
+          OuterRadius * Window.FScale, 0, 2 * Pi);
+        cairo_close_path(Context);
+      End
+      Else Begin
+        cairo_move_to(Context, Polygon[0].x, Polygon[0].y);
+        For J := 1 To High(Polygon) Do
+          cairo_line_to(Context, Polygon[J].x, Polygon[J].y);
+        cairo_close_path(Context);
+      End;
     End;
   End;
   cairo_clip(Context);
@@ -523,13 +554,13 @@ Begin
   NativeWidget := TGtk3Widget(Handle).GetContainerWidget;
   NativeWindow := gtk_widget_get_window(NativeWidget);
   Seat := gdk_display_get_default_seat(gtk_widget_get_display(NativeWidget));
-  If (NativeWindow = nil) Or (Seat = nil) Then Begin
+  If (NativeWindow = Nil) Or (Seat = Nil) Then Begin
     ModalResult := mrCancel;
     Raise EInvalidOperation.Create('GTK3 popup has no native window or input seat');
   End;
   Status := gdk_seat_grab(Seat, NativeWindow,
     [GDK_SEAT_CAPABILITY_POINTER, GDK_SEAT_CAPABILITY_KEYBOARD],
-    False, nil, nil, nil, nil);
+    False, Nil, Nil, Nil, Nil);
   If Status <> GDK_GRAB_SUCCESS Then Begin
     ModalResult := mrCancel;
     Raise EInvalidOperation.CreateFmt('GTK3 popup input grab failed (status %d)',
@@ -540,21 +571,22 @@ End;
 
 Procedure TRadialMenuForm.ReleasePointer;
 Begin
-  If FSeat <> nil Then Begin
+  If FSeat <> Nil Then Begin
     gdk_seat_ungrab(FSeat);
-    FSeat := nil;
+    FSeat := Nil;
   End;
 End;
 {$ENDIF}
 
 {$IFDEF LCLGTK2}
+
 Procedure TRadialMenuForm.CreateWnd;
 Var
   NativeWidget: PGtkWidget;
 Begin
-  inherited CreateWnd;
+  Inherited CreateWnd;
   NativeWidget := gtk_widget_get_toplevel(PGtkWidget(Handle));
-  If NativeWidget = nil Then
+  If NativeWidget = Nil Then
     Raise EInvalidOperation.Create('GTK2 popup has no input client');
   ConnectSignalAfter(PGtkObject(NativeWidget), 'map-event', @InputMapped,
     Self, GDK_STRUCTURE_MASK);
@@ -580,18 +612,18 @@ Var
 Begin
   If (Not Visible) Or (ModalResult <> 0) Or FPointerGrabbed Then Exit;
   NativeWidget := GetDefaultMouseCaptureWidget(PGtkWidget(Handle));
-  If NativeWidget = nil Then Begin
+  If NativeWidget = Nil Then Begin
     ModalResult := mrCancel;
     Raise EInvalidOperation.Create('GTK2 popup has no input client');
   End;
   NativeWindow := NativeWidget^.window;
-  If NativeWindow = nil Then Begin
+  If NativeWindow = Nil Then Begin
     ModalResult := mrCancel;
     Raise EInvalidOperation.Create('GTK2 popup has no native input window');
   End;
   Status := gdk_pointer_grab(NativeWindow, False,
     GDK_POINTER_MOTION_MASK Or GDK_BUTTON_PRESS_MASK Or GDK_BUTTON_RELEASE_MASK,
-    nil, nil, GDK_CURRENT_TIME);
+    Nil, Nil, GDK_CURRENT_TIME);
   If Status <> GDK_GRAB_SUCCESS Then Begin
     ModalResult := mrCancel;
     Raise EInvalidOperation.CreateFmt('GTK2 popup pointer grab failed (status %d)',
@@ -622,11 +654,12 @@ Procedure TRadialMenuForm.DestroyWnd;
 Begin
   Application.RemoveAsyncCalls(Self);
   ReleasePointer;
-  inherited DestroyWnd;
+  Inherited DestroyWnd;
 End;
 {$ENDIF}
 
 {$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
+
 Procedure TRadialMenuForm.GrabPointer(Data: PtrInt);
 Begin
   If (Not Visible) Or (ModalResult <> mrNone) Then Exit;
@@ -645,7 +678,7 @@ End;
 Procedure TRadialMenuForm.MouseUp(Button: TMouseButton; Shift: TShiftState;
   X, Y: Integer);
 Begin
-  inherited MouseUp(Button, Shift, X, Y);
+  Inherited MouseUp(Button, Shift, X, Y);
   // Qt releases every capture when a button is released on a form.
   Application.QueueAsyncCall(@GrabPointer, 0);
 End;
@@ -672,17 +705,31 @@ Begin
     OuterRadius := AOuterRadius;
     StartAngle := AStartAngle;
     Sweep := ASweep;
-    SetLength(Polygon, 2 * (Steps + 1));
-    For I := 0 To Steps Do Begin
-      Angle := StartAngle + Sweep * I / Steps;
-      Polygon[I].x := FCenter + Cos(Angle) * OuterRadius * FScale;
-      Polygon[I].y := FCenter + Sin(Angle) * OuterRadius * FScale;
-      Angle := StartAngle + Sweep * (Steps - I) / Steps;
-      Polygon[Steps + 1 + I].x := FCenter + Cos(Angle) * InnerRadius * FScale;
-      Polygon[Steps + 1 + I].y := FCenter + Sin(Angle) * InnerRadius * FScale;
+    If Abs(ASweep - 2 * Pi) <= 1E-10 Then Begin
+      // A complete sector has no radial boundary. A full ring is represented
+      // by its outer circle; InnerRadius and Sweep mark the hole and are used
+      // separately by rendering, clipping, masking and hit-testing.
+      SetLength(Polygon, Steps + 1);
+      For I := 0 To Steps Do Begin
+        Angle := 2 * Pi * I / Steps;
+        Polygon[I].x := FCenter + Cos(Angle) * OuterRadius * FScale;
+        Polygon[I].y := FCenter + Sin(Angle) * OuterRadius * FScale;
+      End;
+    End
+    Else Begin
+      SetLength(Polygon, 2 * (Steps + 1));
+      For I := 0 To Steps Do Begin
+        Angle := StartAngle + Sweep * I / Steps;
+        Polygon[I].x := FCenter + Cos(Angle) * OuterRadius * FScale;
+        Polygon[I].y := FCenter + Sin(Angle) * OuterRadius * FScale;
+        Angle := StartAngle + Sweep * (Steps - I) / Steps;
+        Polygon[Steps + 1 + I].x := FCenter + Cos(Angle) * InnerRadius * FScale;
+        Polygon[Steps + 1 + I].y := FCenter + Sin(Angle) * InnerRadius * FScale;
+      End;
     End;
     Angle := StartAngle + Sweep / 2;
     Radius := (InnerRadius + OuterRadius) / 2 * FScale;
+    If InnerRadius = 0 Then Radius := OuterRadius * FScale / 2;
     LabelPosition := Point(Round(FCenter + Cos(Angle) * Radius),
       Round(FCenter + Sin(Angle) * Radius));
   End;
@@ -730,7 +777,7 @@ Begin
   Margin := Round(FScale) + 2;
   For I := 0 To High(FAllSectors) Do Begin
     Image := FCache.Find(FAllSectors[I]);
-    If Image = nil Then Begin
+    If Image = Nil Then Begin
       Image := TRadialSectorImage.Create;
       Try
         Image.Key := FAllSectors[I];
@@ -768,9 +815,11 @@ Var
   Source, Mask: TBitmap;
   Points: Array Of TPoint;
   Offset: TPoint;
+  OuterRect, InnerRect: TRect;
+  CX, CY, R: Double;
   I: Integer;
 Begin
-  Points := nil;
+  Points := Nil;
   Offset := Point(FCenter + Image.Bounds.Left, FCenter + Image.Bounds.Top);
   Source := TBitmap.Create;
   Try
@@ -786,20 +835,40 @@ Begin
       Source.Canvas.FillRect(Rect(0, 0, Source.Width, Source.Height));
       Mask.Canvas.Brush.Color := clBlack;
       Mask.Canvas.FillRect(Rect(0, 0, Mask.Width, Mask.Height));
-      SetLength(Points, Length(Image.Key.Polygon));
-      For I := 0 To High(Points) Do Begin
-        Points[I].X := Round((Image.Key.Polygon[I].X - Offset.X) * RenderScale);
-        Points[I].Y := Round((Image.Key.Polygon[I].Y - Offset.Y) * RenderScale);
-      End;
       Source.Canvas.Pen.Color := FCache.BorderColor;
       Source.Canvas.Pen.Width := Round(2 * FScale * RenderScale);
       Source.Canvas.Brush.Color := FCache.MenuColor;
       If Selected Then Source.Canvas.Brush.Color := FCache.SelectedColor;
-      Source.Canvas.Polygon(Points);
       Mask.Canvas.Pen.Color := clWhite;
       Mask.Canvas.Brush.Color := clWhite;
       Mask.Canvas.Pen.Width := Source.Canvas.Pen.Width;
-      Mask.Canvas.Polygon(Points);
+      If (Abs(Image.Key.Sweep - 2 * Pi) <= 1E-10) And
+        (Image.Key.InnerRadius > 0) Then Begin
+        CX := (FCenter - Offset.X) * RenderScale;
+        CY := (FCenter - Offset.Y) * RenderScale;
+        R := Image.Key.OuterRadius * FScale * RenderScale;
+        OuterRect := Rect(Round(CX - R), Round(CY - R),
+          Round(CX + R), Round(CY + R));
+        R := Image.Key.InnerRadius * FScale * RenderScale;
+        InnerRect := Rect(Round(CX - R), Round(CY - R),
+          Round(CX + R), Round(CY + R));
+        Source.Canvas.Ellipse(OuterRect);
+        Source.Canvas.Brush.Color := FCache.BorderColor;
+        Source.Canvas.Ellipse(InnerRect);
+        Mask.Canvas.Ellipse(OuterRect);
+        Mask.Canvas.Pen.Color := clBlack;
+        Mask.Canvas.Brush.Color := clBlack;
+        Mask.Canvas.Ellipse(InnerRect);
+      End
+      Else Begin
+        SetLength(Points, Length(Image.Key.Polygon));
+        For I := 0 To High(Points) Do Begin
+          Points[I].X := Round((Image.Key.Polygon[I].X - Offset.X) * RenderScale);
+          Points[I].Y := Round((Image.Key.Polygon[I].Y - Offset.Y) * RenderScale);
+        End;
+        Source.Canvas.Polygon(Points);
+        Mask.Canvas.Polygon(Points);
+      End;
       // Windows GDI text output clears the alpha channel. The caption is
       // therefore drawn on the opaque image; coverage becomes alpha afterwards.
       DownsampleOpaque(Source, Source, RenderScale);
@@ -829,13 +898,15 @@ Var
   PreviousSectors: Array Of Integer;
   Points: Array Of TPoint;
   Layers: Array Of TBitmapLayer;
+  OuterRect: TRect;
 Begin
-  PreviousSectors := nil;
-  Points := nil;
-  Layers := nil;
+  PreviousSectors := Nil;
+  Points := Nil;
+  Layers := Nil;
   SetLength(PreviousSectors, Length(FSectors));
-  For I := 0 To High(FSectors) Do PreviousSectors[I] := FSectors[I].Index;
-  FSectors := nil;
+  For I := 0 To High(FSectors) Do
+    PreviousSectors[I] := FSectors[I].Index;
+  FSectors := Nil;
   For I := 0 To High(FAllSectors) Do Begin
     SectorVisible := FAllSectors[I].Level = 0;
     If Not SectorVisible And (FAllSectors[I].Level <= Length(FPath)) Then
@@ -857,11 +928,25 @@ Begin
   SetLength(Layers, Length(FSectors));
   For I := 0 To High(FSectors) Do Begin
     If ShapeChanged Then Begin
-      SetLength(Points, Length(FSectors[I].Polygon));
-      For J := 0 To High(Points) Do Points[J] := FSectors[I].Polygon[J];
-      FMask.Canvas.Brush.Color := clWhite;
-      FMask.Canvas.Pen.Color := clWhite;
-      FMask.Canvas.Polygon(Points);
+      If (Abs(FSectors[I].Sweep - 2 * Pi) <= 1E-10) And
+        (FSectors[I].InnerRadius > 0) Then Begin
+        OuterRect := Rect(
+          FCenter - Round(FSectors[I].OuterRadius * FScale),
+          FCenter - Round(FSectors[I].OuterRadius * FScale),
+          FCenter + Round(FSectors[I].OuterRadius * FScale),
+          FCenter + Round(FSectors[I].OuterRadius * FScale));
+        FMask.Canvas.Brush.Color := clWhite;
+        FMask.Canvas.Pen.Color := clWhite;
+        FMask.Canvas.Ellipse(OuterRect);
+      End
+      Else Begin
+        SetLength(Points, Length(FSectors[I].Polygon));
+        For J := 0 To High(Points) Do
+          Points[J] := FSectors[I].Polygon[J];
+        FMask.Canvas.Brush.Color := clWhite;
+        FMask.Canvas.Pen.Color := clWhite;
+        FMask.Canvas.Polygon(Points);
+      End;
     End;
     Selected := (FSectors[I].Level < Length(FPath)) And
       (FPath[FSectors[I].Level] = FSectors[I].Index);
@@ -871,12 +956,12 @@ Begin
   End;
   ComposeBitmapLayers(FImage, FCache.MenuColor, Layers);
   If HandleAllocated Then Begin
-    {$IFDEF LCLGTK3}
+{$IFDEF LCLGTK3}
     If ShapeChanged Then ApplyInputShape;
     gtk_widget_queue_draw(TGtk3Widget(Handle).Widget);
-    {$ELSE}
+{$ELSE}
     If ShapeChanged Then SetShape(FMask);
-    {$ENDIF}
+{$ENDIF}
   End;
   Invalidate;
 End;
@@ -886,16 +971,39 @@ Procedure TRadialMenuForm.DrawCaption(Const Sector: TRadialMenuSector;
 Var
   Points: Array Of TPoint;
   I: Integer;
-  ClipRegion: HRGN;
+  ClipRegion, InnerRegion: HRGN;
+  OuterRect, InnerRect: TRect;
+  CX, CY, OuterR, InnerR: Integer;
   Style: TTextStyle;
 Begin
-  Points := nil;
-  SetLength(Points, Length(Sector.Polygon));
-  For I := 0 To High(Points) Do Begin
-    Points[I].X := Round(Sector.Polygon[I].X) - AOffset.X;
-    Points[I].Y := Round(Sector.Polygon[I].Y) - AOffset.Y;
+  Points := Nil;
+  ClipRegion := 0;
+  InnerRegion := 0;
+  If (Abs(Sector.Sweep - 2 * Pi) <= 1E-10) And
+    (Sector.InnerRadius > 0) Then Begin
+    CX := FCenter - AOffset.X;
+    CY := FCenter - AOffset.Y;
+    OuterR := Round(Sector.OuterRadius * FScale);
+    InnerR := Round(Sector.InnerRadius * FScale);
+    OuterRect := Rect(CX - OuterR, CY - OuterR, CX + OuterR, CY + OuterR);
+    InnerRect := Rect(CX - InnerR, CY - InnerR, CX + InnerR, CY + InnerR);
+    ClipRegion := CreateEllipticRgn(OuterRect.Left, OuterRect.Top,
+      OuterRect.Right, OuterRect.Bottom);
+    InnerRegion := CreateEllipticRgn(InnerRect.Left, InnerRect.Top,
+      InnerRect.Right, InnerRect.Bottom);
+    If (ClipRegion = 0) Or (InnerRegion = 0) Then
+      Raise EInvalidOperation.Create('Cannot create the ring caption clip region');
+    If CombineRgn(ClipRegion, ClipRegion, InnerRegion, RGN_DIFF) = ERROR Then
+      Raise EInvalidOperation.Create('Cannot subtract the ring hole from the clip region');
+  End
+  Else Begin
+    SetLength(Points, Length(Sector.Polygon));
+    For I := 0 To High(Points) Do Begin
+      Points[I].X := Round(Sector.Polygon[I].X) - AOffset.X;
+      Points[I].Y := Round(Sector.Polygon[I].Y) - AOffset.Y;
+    End;
+    ClipRegion := CreatePolygonRgn(@Points[0], Length(Points), WINDING);
   End;
-  ClipRegion := CreatePolygonRgn(@Points[0], Length(Points), WINDING);
   If ClipRegion = 0 Then
     Raise EInvalidOperation.Create('Cannot create the caption clip region');
   Try
@@ -921,6 +1029,7 @@ Begin
       Dest.Canvas.RestoreHandleState;
     End;
   Finally
+    If InnerRegion <> 0 Then DeleteObject(InnerRegion);
     DeleteObject(ClipRegion);
   End;
 End;
@@ -929,33 +1038,47 @@ Function TRadialMenuForm.HitTest(X, Y: Integer): Integer;
 Var
   I: Integer;
   P: TVector2;
+  DX, DY, Distance: Double;
 Begin
+  // Several roots meet at the center, which therefore belongs to none of them.
+  If (FRootCount > 1) And (X = FCenter) And (Y = FCenter) Then Exit(HitCenter);
   P.x := X;
   P.y := Y;
-  For I := High(FSectors) Downto 0 Do
-    If PointInPolygon(P, FSectors[I].Polygon) Then Exit(I);
-  Result := -1;
+  For I := High(FSectors) Downto 0 Do Begin
+    If (Abs(FSectors[I].Sweep - 2 * Pi) <= 1E-10) And
+      (FSectors[I].InnerRadius > 0) Then Begin
+      DX := X - FCenter;
+      DY := Y - FCenter;
+      Distance := Sqrt(DX * DX + DY * DY);
+      If (Distance >= FSectors[I].InnerRadius * FScale) And
+        (Distance <= FSectors[I].OuterRadius * FScale) Then Exit(I);
+    End
+    Else If PointInPolygon(P, FSectors[I].Polygon) Then
+      Exit(I);
+  End;
+  Result := HitOutside;
 End;
 
 Procedure TRadialMenuForm.Paint;
 Begin
-  {$IFNDEF LCLGTK3}
+{$IFNDEF LCLGTK3}
   Canvas.Draw(0, 0, FImage);
-  {$ENDIF}
-  {$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
+{$ENDIF}
+{$IF not defined(LCLGTK2) and not defined(LCLGTK3)}
   // Capture needs a window that is on screen; OnShow fires before that. Qt
   // would otherwise capture a widget that drops pointer motion.
   If Not FGrabQueued Then Begin
     FGrabQueued := True;
     Application.QueueAsyncCall(@GrabPointer, 0);
   End;
-  {$ENDIF}
+{$ENDIF}
 End;
 
 {$IFNDEF LCLGTK3}
 // Marco/Metacity give shaped windows no shadow, but decide when the window is
 // created, before its shape exists, and then keep a rectangular shadow. Call
 // this once the window is on screen.
+
 Procedure TRadialMenuForm.RefreshCompositorShadow;
 Var
   Hole: TRect;
@@ -994,7 +1117,7 @@ Var
   Hit, Level, Index: Integer;
   Opened: Boolean;
 Begin
-  inherited MouseMove(Shift, X, Y);
+  Inherited MouseMove(Shift, X, Y);
   // A pending close must not open branches or notify their items.
   If ModalResult <> mrNone Then Exit;
   Hit := HitTest(X, Y);
@@ -1017,13 +1140,13 @@ Procedure TRadialMenuForm.MouseDown(Button: TMouseButton;
 Var
   Hit: Integer;
 Begin
-  inherited MouseDown(Button, Shift, X, Y);
+  Inherited MouseDown(Button, Shift, X, Y);
   // A pending close, e.g. after a tree mutation, must not become a selection.
   If ModalResult <> mrNone Then Exit;
   Hit := HitTest(X, Y);
-  If (Button = mbRight) Or (Hit < 0) Then
+  If (Button = mbRight) Or (Hit = HitOutside) Then
     ModalResult := mrCancel
-  Else If (Button = mbLeft) And FSectors[Hit].Enabled And
+  Else If (Button = mbLeft) And (Hit >= 0) And FSectors[Hit].Enabled And
     Not IsBranch(FSectors[Hit].Index) Then Begin
     FSelectedItem := FItems[FSectors[Hit].Index];
     ModalResult := mrOK;
@@ -1032,7 +1155,7 @@ End;
 
 Procedure TRadialMenuForm.KeyDown(Var Key: Word; Shift: TShiftState);
 Begin
-  inherited KeyDown(Key, Shift);
+  Inherited KeyDown(Key, Shift);
   If Key = VK_ESCAPE Then Begin
     Key := 0;
     ModalResult := mrCancel;
@@ -1041,15 +1164,21 @@ End;
 
 Procedure TRadialMenuForm.WindowShown(Sender: TObject);
 Begin
-  {$IFNDEF LCLGTK2}
+{$IFNDEF LCLGTK2}
   ActivePopupMenu := TRadialTreeMenu(Owner);
-  {$ENDIF}
-  {$IFDEF LCLGTK3}
+{$ENDIF}
+{$IFDEF LCLGTK3}
   ApplyInputShape;
   Application.QueueAsyncCall(@GrabPointer, 0);
-  {$ELSE}
+{$ELSE}
   SetShape(FMask);
-  {$ENDIF}
+{$ENDIF}
+  // Runs before any input, so no hover can open a child first. Must stay the
+  // last statement: the handler may change the tree or close the menu.
+  If FRootClickPending And (ModalResult = mrNone) Then Begin
+    FRootClickPending := False;
+    FItems[0].Click;
+  End;
 End;
 
 Procedure TRadialMenuForm.WindowHidden(Sender: TObject);
@@ -1068,25 +1197,25 @@ Begin
   If Assigned(FWindow) Then
     FWindow.ModalResult := mrCancel
   Else
-    inherited DoClose;
+    Inherited DoClose;
 End;
 
 Destructor TRadialTreeMenu.Destroy;
 Begin
   FRenderCache.Free;
-  inherited Destroy;
+  Inherited Destroy;
 End;
 
 Function TRadialTreeMenu.GetCachedSectorRenderCount: QWord;
 Begin
   Result := 0;
-  If FRenderCache <> nil Then Result := TRadialRenderCache(FRenderCache).RenderCount;
+  If FRenderCache <> Nil Then Result := TRadialRenderCache(FRenderCache).RenderCount;
 End;
 
 Function TRadialTreeMenu.GetCachedSectorCount: Integer;
 Begin
   Result := 0;
-  If FRenderCache <> nil Then Result := TRadialRenderCache(FRenderCache).Sectors.Count;
+  If FRenderCache <> Nil Then Result := TRadialRenderCache(FRenderCache).Sectors.Count;
 End;
 
 Function CreateRadialItem(AParent: TMenuItem; AOwner: TComponent;
@@ -1109,7 +1238,7 @@ End;
 
 Procedure TRadialTreeMenuItem.Release(Item: TMenuItem);
 Begin
-  If (Item = nil) Or (IndexOf(Item) < 0) Then
+  If (Item = Nil) Or (IndexOf(Item) < 0) Then
     Raise EMenuError.Create('Release requires a direct child of this item');
   Remove(Item);
   Item.Free;
@@ -1122,7 +1251,7 @@ End;
 
 Procedure TRadialTreeMenu.Release(Item: TMenuItem);
 Begin
-  If (Item = nil) Or (Item = Items) Then
+  If (Item = Nil) Or (Item = Items) Then
     Raise EMenuError.Create('Release requires an attached menu element');
   If Item.GetParentMenu <> Self Then
     Raise EMenuError.Create('Cannot release an element outside this menu');
@@ -1145,7 +1274,7 @@ End;
 Procedure TRadialTreeMenu.DoChange(Source: TMenuItem; Rebuild: Boolean);
 Begin
   CancelForMutation;
-  inherited DoChange(Source, Rebuild);
+  Inherited DoChange(Source, Rebuild);
 End;
 
 Procedure TRadialTreeMenu.Notification(AComponent: TComponent;
@@ -1156,10 +1285,10 @@ Begin
   If Operation = opRemove Then
     For I := 0 To High(FItemStates) Do
       If FItemStates[I].Item = AComponent Then Begin
-        FItemStates[I].Item := nil;
+        FItemStates[I].Item := Nil;
         CancelForMutation;
       End;
-  inherited Notification(AComponent, Operation);
+  Inherited Notification(AComponent, Operation);
 End;
 
 Procedure TRadialTreeMenu.WatchItems(AParent: TMenuItem);
@@ -1186,7 +1315,7 @@ Var
   I: Integer;
 Begin
   For I := 0 To High(FItemStates) Do
-    If FItemStates[I].Item <> nil Then
+    If FItemStates[I].Item <> Nil Then
       FItemStates[I].Item.RemoveFreeNotification(Self);
   SetLength(FItemStates, 0);
 End;
@@ -1215,7 +1344,7 @@ Procedure TRadialTreeMenu.CheckForMutation(Sender: TObject; Var Done: Boolean);
 Var
   Index: Integer;
 Begin
-  If (FWindow = nil) Or (FWindow.ModalResult <> mrNone) Then Exit;
+  If (FWindow = Nil) Or (FWindow.ModalResult <> mrNone) Then Exit;
   Index := 0;
   If Not ItemsUnchanged(Items, Index) Or (Index <> Length(FItemStates)) Then Begin
     CancelForMutation;
@@ -1230,12 +1359,12 @@ Var
   Guard: TClickGuard;
 Begin
   If Assigned(FWindow) Then Exit;
-  Clicked := nil;
+  Clicked := Nil;
   If Assigned(ActivePopupMenu) Then ActivePopupMenu.Close;
   // PopupPoint is writable for descendants only since Lazarus 4.0.
-  {$IF LCL_FULLVERSION >= 4000000}
+{$IF LCL_FULLVERSION >= 4000000}
   SetPopupPoint(Point(X, Y));
-  {$ENDIF}
+{$ENDIF}
   DoPopup(Self);
   FWindow := TRadialMenuForm.Create(Self);
   Try
@@ -1258,24 +1387,27 @@ Begin
   Finally
     Application.RemoveOnIdleHandler(@CheckForMutation);
     UnwatchItems;
-    If ActivePopupMenu = Self Then ActivePopupMenu := nil;
+    If ActivePopupMenu = Self Then ActivePopupMenu := Nil;
     FreeAndNil(FWindow);
   End;
-  If Clicked = nil Then Begin
+  If Clicked = Nil Then Begin
     DoClose;
     Exit;
   End;
   // OnClose may destroy the item or this menu; only the guard is used afterwards.
-  Guard := TClickGuard.Create(nil);
+  Guard := TClickGuard.Create(Nil);
   Try
     Guard.Item := Clicked;
     Clicked.FreeNotification(Guard);
     DoClose;
-    If Guard.Item <> nil Then Guard.Item.Click;
+    If Guard.Item <> Nil Then Guard.Item.Click;
   Finally
     Guard.Free;
   End;
 End;
 
 End.
+
+
+
 
