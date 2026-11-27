@@ -120,7 +120,7 @@ Type
 
 Implementation
 
-Uses math, ugraphics;
+Uses math, FPImage, IntfGraphics, GraphType, ugraphics;
 
 {$R *.lfm}
 
@@ -426,8 +426,9 @@ Begin
   sincos(fAngle - rad_120_degree, s[2], c[2]);
   x0 := SelectColorBoxDim Div 2;
   y0 := SelectColorBoxDim Div 2;
-  ss := s[0] * ((SelectColorBoxDim - 1) / 2);
-  cc := c[0] * ((SelectColorBoxDim - 1) / 2);
+  r2 := SelectColorBoxDim Div 2 - 1;
+  ss := s[0] * r2;
+  cc := c[0] * r2;
   For i := 0 To 2 Do Begin
     s[i] := s[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
     c[i] := c[i] * ((SelectColorBoxDim / 2) - 1 - SelectColorWheelWidth);
@@ -437,13 +438,9 @@ Begin
     // Hintergrund
     PaintBox1Buffer.canvas.Brush.Color := clBtnFace;
     PaintBox1Buffer.canvas.Brush.Style := bsSolid;
-    PaintBox1Buffer.canvas.Pen.Color := clblack;
-    PaintBox1Buffer.canvas.Pen.Style := psDot;
-    PaintBox1Buffer.Canvas.Rectangle(0, 0, SelectColorBoxDim, SelectColorBoxDim);
-    PaintBox1Buffer.canvas.Pen.Style := psSolid;
+    PaintBox1Buffer.Canvas.FillRect(0, 0, SelectColorBoxDim, SelectColorBoxDim);
     // Der Ring
     r1 := SelectColorBoxDim Div 2 - SelectColorWheelWidth - 1;
-    r2 := SelectColorBoxDim Div 2 - 1;
     For i := -r2 To r2 Do Begin
       For j := -r2 To r2 Do Begin
         // Liegt der Punkt Im Kreis Ring ?
@@ -474,6 +471,8 @@ Begin
       round(x0 - cc),
       round(y0 - ss)
       );
+    PaintBox1Buffer.Canvas.Brush.Color := clBlack;
+    PaintBox1Buffer.Canvas.FrameRect(0, 0, SelectColorBoxDim, SelectColorBoxDim);
   End;
   // Alles Raus
   PaintBox1.Canvas.Draw(0, 0, PaintBox1Buffer);
@@ -489,8 +488,8 @@ Procedure TColorDialog.PaintBox2Paint(Sender: TObject);
 Var
   Checker, Foreground, Preview: TBitmap;
   Layers: Array[0..1] Of TBitmapLayer;
-  Row: PRGBA;
-  Pixel: TRGBA;
+  Image: TLazIntfImage;
+  LightTile, DarkTile, Pixel: TFPColor;
   x, y: Integer;
 Begin
   PaintBox2.Canvas.Brush.Style := bsSolid;
@@ -502,26 +501,25 @@ Begin
       Checker := TBitmap.Create;
       Foreground := TBitmap.Create;
       Preview := TBitmap.Create;
-      Checker.PixelFormat := pf32bit;
-      Foreground.PixelFormat := pf32bit;
-      Checker.SetSize(PaintBox2.Width, PaintBox2.Height);
-      Foreground.SetSize(PaintBox2.Width, PaintBox2.Height);
       Preview.SetSize(PaintBox2.Width, PaintBox2.Height);
-      Pixel := ugraphics.ColorToRGBA(FColor, FAlpha);
-      For y := 0 To PaintBox2.Height - 1 Do Begin
-        Row := Checker.ScanLine[y];
-        For x := 0 To PaintBox2.Width - 1 Do Begin
-          If ((x Div 8 + y Div 8) Mod 2) = 0 Then
-            Row^ := RGBA(255, 255, 255, 255)
-          Else
-            Row^ := RGBA(192, 192, 192, 255);
-          Inc(Row);
-        End;
-        Row := Foreground.ScanLine[y];
-        For x := 0 To PaintBox2.Width - 1 Do Begin
-          Row^ := Pixel;
-          Inc(Row);
-        End;
+      Image := TLazIntfImage.Create(Preview.Width, Preview.Height, [riqfRGB, riqfAlpha]);
+      Try
+        LightTile := ColorToFPColor(clWhite);
+        DarkTile := ColorToFPColor(clSilver);
+        For y := 0 To Image.Height - 1 Do
+          For x := 0 To Image.Width - 1 Do
+            If ((x Div 8 + y Div 8) Mod 2) = 0 Then
+              Image.Colors[x, y] := LightTile
+            Else
+              Image.Colors[x, y] := DarkTile;
+        Checker.LoadFromIntfImage(Image);
+
+        Pixel := ColorToFPColor(Graphics.ColorToRGB(FColor));
+        Pixel.Alpha := FAlpha * 257;
+        Image.FillPixels(Pixel);
+        Foreground.LoadFromIntfImage(Image);
+      Finally
+        Image.Free;
       End;
       Layers[0].Bitmap := Checker;
       Layers[0].Position := Point(0, 0);
