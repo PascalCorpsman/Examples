@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uradialtreemenu.pas                                             22.11.2026 *)
 (*                                                                            *)
-(* Version     : 0.01                                                         *)
+(* Version     : 0.02                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -38,6 +38,7 @@
 (*                 property is not updated.                                   *)
 (*                                                                            *)
 (* History     : 0.01 - initial version                                       *)
+(*               0.02 - Add opional Hover Event                               *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -56,6 +57,8 @@ Type
     Function Add(Const ACaption: String): TRadialTreeMenuItem; reintroduce; overload;
     Procedure Release(Item: TMenuItem);
   End;
+
+  TRadialItemHoverEvent = Procedure(Sender: TObject; Item: TMenuItem) Of Object;
 
   { Add creates menu-owned roots; Item.Add creates parent-owned children.
     Release destroys an attached element and its subtree; native Remove/Delete
@@ -77,7 +80,9 @@ Type
     Click when the popup is shown. The center where several roots meet is
     neutral: hovering or clicking it selects nothing.
     Handlers that modify the tree close the popup; fill dynamic trees in OnPopup.
-    Hover/preview callbacks are not implemented yet. }
+    OnItemHover reports changes to the enabled leaf under the pointer. Nil
+    means no leaf; use OnClose to clear any preview when the popup closes.
+    Hover handlers should only update the host preview, not mutate the menu. }
   TRadialTreeMenu = Class(TPopupMenu)
   private
     Type
@@ -91,6 +96,7 @@ Type
     FWindow: TForm;
     FItemStates: Array Of TItemState;
     FRenderCache: TObject;
+    FOnItemHover: TRadialItemHoverEvent;
     Function GetCachedSectorRenderCount: QWord;
     Function GetCachedSectorCount: Integer;
     Procedure CancelForMutation;
@@ -113,6 +119,7 @@ Type
     // Sector images currently held. Images of removed or changed items are
     // released when the next popup is prepared, or with the menu.
     Property CachedSectorCount: Integer read GetCachedSectorCount;
+    Property OnItemHover: TRadialItemHoverEvent read FOnItemHover write FOnItemHover;
   End;
 
 Implementation
@@ -180,6 +187,7 @@ Type
     // Parallel to FAllSectors; only valid while the menu tree is unchanged.
     FItems: Array Of TMenuItem;
     FSelectedItem: TMenuItem;
+    FHoveredItem: TMenuItem;
     FPath: Array Of Integer;
     FRootCount: Integer;
     // A single root branch opens with the popup; its Click follows on show.
@@ -1116,23 +1124,35 @@ Procedure TRadialMenuForm.MouseMove(Shift: TShiftState; X, Y: Integer);
 Var
   Hit, Level, Index: Integer;
   Opened: Boolean;
+  Hovered, Branch: TMenuItem;
+  RadialMenu: TRadialTreeMenu;
 Begin
   Inherited MouseMove(Shift, X, Y);
   // A pending close must not open branches or notify their items.
   If ModalResult <> mrNone Then Exit;
   Hit := HitTest(X, Y);
-  If Hit < 0 Then Exit;
-  If Not FSectors[Hit].Enabled Then Exit;
-  Level := FSectors[Hit].Level;
-  Index := FSectors[Hit].Index;
-  If (Length(FPath) = Level + 1) And (FPath[Level] = Index) Then Exit;
-  // Returning from a descendant keeps the branch open; that is not a new opening.
-  Opened := (Length(FPath) <= Level) Or (FPath[Level] <> Index);
-  SetLength(FPath, Level + 1);
-  FPath[Level] := Index;
-  Rebuild;
+  Hovered := Nil;
+  Branch := Nil;
+  If (Hit >= 0) And FSectors[Hit].Enabled Then Begin
+    Level := FSectors[Hit].Level;
+    Index := FSectors[Hit].Index;
+    If Not IsBranch(Index) Then Hovered := FItems[Index];
+    If (Length(FPath) <> Level + 1) Or (FPath[Level] <> Index) Then Begin
+      Opened := (Length(FPath) <= Level) Or (FPath[Level] <> Index);
+      If Opened And IsBranch(Index) Then Branch := FItems[Index];
+      SetLength(FPath, Level + 1);
+      FPath[Level] := Index;
+      Rebuild;
+    End;
+  End;
+  If FHoveredItem <> Hovered Then Begin
+    FHoveredItem := Hovered;
+    RadialMenu := TRadialTreeMenu(Owner);
+    If Assigned(RadialMenu.OnItemHover) Then
+      RadialMenu.OnItemHover(RadialMenu, Hovered);
+  End;
   // Must stay the last statement: the handler may change the tree or close the menu.
-  If Opened And IsBranch(Index) Then FItems[Index].Click;
+  If (ModalResult = mrNone) And Assigned(Branch) Then Branch.Click;
 End;
 
 Procedure TRadialMenuForm.MouseDown(Button: TMouseButton;
