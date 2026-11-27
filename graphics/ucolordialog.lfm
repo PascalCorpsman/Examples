@@ -1,0 +1,193 @@
+object ColorDialog: TColorDialog
+  Left = 347
+  Height = 290
+  Top = 109
+  Width = 510
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'Select color'
+  ClientHeight = 290
+  ClientWidth = 510
+  Position = poScreenCenter
+  LCLVersion = '5.99.0.0'
+  object PaintBox1: TPaintBox
+    Left = 10
+    Height = 170
+    Top = 10
+    Width = 170
+    OnMouseDown = PaintBox1MouseDown
+    OnMouseMove = PaintBox1MouseMove
+    OnMouseUp = PaintBox1MouseUp
+    OnPaint = PaintBox1Paint
+  end
+  object PaintBox2: TPaintBox
+    Left = 10
+    Height = 40
+    Top = 190
+    Width = 170
+    OnPaint = PaintBox2Paint
+  end
+  object Label1: TLabel
+    Left = 194
+    Height = 16
+    Top = 27
+    Width = 26
+    Caption = 'Hue:'
+  end
+  object Label2: TLabel
+    Left = 194
+    Height = 16
+    Top = 60
+    Width = 64
+    Caption = 'Saturation:'
+  end
+  object Label3: TLabel
+    Left = 194
+    Height = 16
+    Top = 92
+    Width = 35
+    Caption = 'Value:'
+  end
+  object Label4: TLabel
+    Left = 352
+    Height = 16
+    Top = 27
+    Width = 26
+    Caption = 'Red:'
+  end
+  object Label5: TLabel
+    Left = 352
+    Height = 16
+    Top = 60
+    Width = 38
+    Caption = 'Green:'
+  end
+  object Label6: TLabel
+    Left = 352
+    Height = 16
+    Top = 92
+    Width = 28
+    Caption = 'Blue:'
+  end
+  object Label7: TLabel
+    Left = 194
+    Height = 16
+    Top = 156
+    Width = 70
+    Caption = 'Color name:'
+  end
+  object SpinEdit1: TSpinEdit
+    Left = 272
+    Height = 30
+    Top = 23
+    Width = 70
+    MaxValue = 360
+    TabOrder = 0
+    OnChange = HSV_Change
+  end
+  object SpinEdit2: TSpinEdit
+    Left = 272
+    Height = 30
+    Top = 56
+    Width = 70
+    MaxValue = 100
+    TabOrder = 1
+    OnChange = HSV_Change
+  end
+  object SpinEdit3: TSpinEdit
+    Left = 272
+    Height = 30
+    Top = 88
+    Width = 70
+    MaxValue = 100
+    TabOrder = 2
+    OnChange = HSV_Change
+  end
+  object SpinEdit4: TSpinEdit
+    Left = 430
+    Height = 30
+    Top = 23
+    Width = 70
+    MaxValue = 255
+    TabOrder = 3
+    OnChange = RGB_Change
+  end
+  object SpinEdit5: TSpinEdit
+    Left = 430
+    Height = 30
+    Top = 56
+    Width = 70
+    MaxValue = 255
+    TabOrder = 4
+    OnChange = RGB_Change
+  end
+  object SpinEdit6: TSpinEdit
+    Left = 430
+    Height = 30
+    Top = 88
+    Width = 70
+    MaxValue = 255
+    TabOrder = 5
+    OnChange = RGB_Change
+  end
+  object Edit1: TEdit
+    Left = 272
+    Height = 30
+    Top = 152
+    Width = 120
+    TabOrder = 6
+    OnEditingDone = ColorNameEditingDone
+  end
+  object LabelAlpha: TLabel
+    Left = 194
+    Height = 16
+    Top = 193
+    Width = 48
+    Caption = 'Opacity:'
+    Visible = False
+  end
+  object SpinEditAlpha: TSpinEdit
+    Left = 272
+    Height = 30
+    Top = 189
+    Width = 70
+    MaxValue = 255
+    TabOrder = 7
+    Value = 255
+    Visible = False
+    OnChange = AlphaChange
+  end
+  object ScrollBarAlpha: TScrollBar
+    Left = 194
+    Height = 17
+    Top = 221
+    Width = 306
+    LargeChange = 16
+    Max = 255
+    PageSize = 0
+    Position = 255
+    TabOrder = 8
+    Visible = False
+    OnChange = AlphaChange
+  end
+  object Button1: TButton
+    Left = 340
+    Height = 25
+    Top = 253
+    Width = 75
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 9
+  end
+  object Button2: TButton
+    Left = 425
+    Height = 25
+    Top = 253
+    Width = 75
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 10
+  end
+end

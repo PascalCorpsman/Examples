@@ -45,6 +45,7 @@
       <Unit>
         <Filename Value="..\ucolordialog.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="ColorDialog"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
