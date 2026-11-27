@@ -1,7 +1,7 @@
 (******************************************************************************)
 (* uJSON.pas                                                       ??.??.???? *)
 (*                                                                            *)
-(* Version     : 0.16                                                         *)
+(* Version     : 0.17                                                         *)
 (*                                                                            *)
 (* Author      : Uwe Schächterle (Corpsman)                                   *)
 (*                                                                            *)
@@ -20,8 +20,7 @@
 (*               implementation, nor anything other that could happen         *)
 (*               or go wrong, use at your own risk.                           *)
 (*                                                                            *)
-(* Known Issues: Wenn der zu Parsende Text kein Gültiges JSON ist,            *)
-(*               entstehen Speicherlöcher !                                   *)
+(* Known Issues: The parser does not enforce all JSON syntax rules.           *)
 (*                                                                            *)
 (* History     : 0.01 - Initial version                                       *)
 (*               0.02 = In Array's erlauben, dass anstatt eines Nodes auch    *)
@@ -47,6 +46,13 @@
 (*                      FIX: linebreak on TJSONNodeObj.ToString               *)
 (*               0.16 = Multi Dimensional JSON Array's                        *)
 (*                      Compact feature for ToString                          *)
+(*               0.17 = Free partial trees on syntax errors, require object   *)
+(*                      separators, and decode Unicode escapes as UTF-8       *)
+(*                      Preserve scalar JSON values and escape control bytes; *)
+(*                      reject negative array indices in FindPath             *)
+(*                      Preserve literal quotes when cloning array strings    *)
+(*                      Reject comments outside strings when disabled         *)
+(*                      Validate unquoted values and reject invalid strings   *)
 (*                                                                            *)
 (******************************************************************************)
 Unit uJSON;
@@ -288,6 +294,7 @@ Type
 
     Function NextToken(EatToken: Boolean): String;
     Procedure Eat(Token: String);
+    Function ReadUnicodeEscape(Var Index: Integer): UTF8String;
 
     Function ParseHelper(): TJSONObj;
     Function ParseNode(): TJSONNode;
@@ -321,31 +328,35 @@ Begin
 End;
 
 Function StringToJsonString(Data: String): String;
+Var
+  Builder: TStringBuilder;
+  I: SizeInt;
+  C: Char;
 Begin
-  (*
-   * Konvertiert einen string in einen JSON String, durch geeignetes ersetzen der
-   * nicht erlaubten Zeichen
-   *
-   * " Double quote
-   * \ Backslash character
-   * / solidor
-   * \b Backspace (ascii code 08)
-   * \f Form feed (ascii code 0C)
-   * \n New line
-   * \r Carriage return
-   * \t Tab
-   * \u4 hexadecimal digit -- Unicode Zeichen
-   *)
-  Data := StringReplace(Data, '\', '\\', [rfReplaceAll]);
-  Data := StringReplace(Data, '"', '\"', [rfReplaceAll]);
-  Data := StringReplace(Data, '/', '\/', [rfReplaceAll]);
-  Data := StringReplace(Data, #8, '\b', [rfReplaceAll]);
-  Data := StringReplace(Data, #13#10, '\r', [rfReplaceAll]);
-  Data := StringReplace(Data, #13, '\f', [rfReplaceAll]);
-  Data := StringReplace(Data, #10, '\n', [rfReplaceAll]);
-  Data := StringReplace(Data, #9, '\t', [rfReplaceAll]);
-  // TODO: Rauskriegen wie wir das mit UTF8 Zeichen machen ...
-  result := '"' + Data + '"';
+  Builder := TStringBuilder.Create(Length(Data) + 2);
+  Try
+    Builder.Append('"');
+    For I := 1 To Length(Data) Do Begin
+      C := Data[I];
+      Case C Of
+        '"', '\', '/': Builder.Append('\').Append(C);
+        #8: Builder.Append('\b');
+        #9: Builder.Append('\t');
+        #10: Builder.Append('\n');
+        #12: Builder.Append('\f');
+        #13: Builder.Append('\r');
+        Else
+          If C < #32 Then
+            Builder.Append('\u00').Append(IntToHex(Ord(C), 2))
+          Else
+            Builder.Append(C);
+      End;
+    End;
+    Builder.Append('"');
+    Result := Builder.ToString;
+  Finally
+    Builder.Free;
+  End;
 End;
 
 { TJSONComment }
@@ -429,9 +440,13 @@ Begin
 End;
 
 Function TJSONTerminal.Clone: TJSONObj;
+Var
+  Terminal: TJSONTerminal;
 Begin
-  Result := TJSONTerminal.Create(Value);
-  (result As TJSONTerminal).IsString := fIsString;
+  Terminal := TJSONTerminal.Create('');
+  Terminal.Value := Value;
+  Terminal.IsString := IsString;
+  Result := Terminal;
 End;
 
 { TJSONObj }
@@ -499,7 +514,7 @@ Begin
   elem := LowerCase(elem);
   If (elem = '') And (pos('[', APath) = 1) Then Begin
     i := strtointdef(copy(APath, 2, pos(']', APath) - 2), -1);
-    If (i <> -1) And (i <= high(fobjs)) Then Begin
+    If (i >= 0) And (i <= high(fobjs)) Then Begin
       elem := copy(APath, pos(']', APath) + 1, length(APath));
       If (elem <> '') And (elem[1] = '.') Then Begin
         // Eigentlich muss beim Zugriff nach [] zwingend ein Punkt kommen,
@@ -745,10 +760,56 @@ Begin
   atoken := NextToken(true);
   atoken := LowerCase(atoken);
   Token := LowerCase(Token);
-  If (atoken <> Token) Then Begin
+  If (atoken <> Token) Or (fparsedataptr = 0) Or
+    (fparsedata[fparsedataptr] = '"') Then Begin
     nop;
     Raise Exception.Create('Expected token : "' + Token + '" got "' + atoken + '" [Line: ' + inttostr(faLine) + ']');
   End;
+End;
+
+Function TJSONParser.ReadUnicodeEscape(Var Index: Integer): UTF8String;
+Var
+  Units: UnicodeString;
+
+  Procedure InvalidEscape;
+  Begin
+    Raise Exception.Create('Invalid Unicode escape [Line: ' + IntToStr(faLine) + ']');
+  End;
+
+  Function ReadCodeUnit: WideChar;
+  Var
+    I, Value: Integer;
+    Digit: Char;
+  Begin
+    If Index > Length(fparsedata) - 3 Then InvalidEscape;
+    Value := 0;
+    For I := 1 To 4 Do Begin
+      Digit := fparsedata[Index];
+      Inc(Index);
+      Value := Value * 16;
+      Case Digit Of
+        '0'..'9': Inc(Value, Ord(Digit) - Ord('0'));
+        'a'..'f': Inc(Value, Ord(Digit) - Ord('a') + 10);
+        'A'..'F': Inc(Value, Ord(Digit) - Ord('A') + 10);
+        Else InvalidEscape;
+      End;
+    End;
+    Result := WideChar(Value);
+  End;
+
+Begin
+  Units := ReadCodeUnit;
+  If (Units[1] >= #$D800) And (Units[1] <= #$DBFF) Then Begin
+    If (Index >= Length(fparsedata)) Or
+      (fparsedata[Index] <> '\') Or (fparsedata[Index + 1] <> 'u') Then
+      InvalidEscape;
+    Inc(Index, 2);
+    SetLength(Units, 2);
+    Units[2] := ReadCodeUnit;
+    If (Units[2] < #$DC00) Or (Units[2] > #$DFFF) Then InvalidEscape;
+  End
+  Else If (Units[1] >= #$DC00) And (Units[1] <= #$DFFF) Then InvalidEscape;
+  Result := UTF8Encode(Units);
 End;
 
 Function TJSONParser.NextToken(EatToken: Boolean): String;
@@ -759,10 +820,11 @@ Function TJSONParser.NextToken(EatToken: Boolean): String;
 Const
   tokens: Set Of char = ['[', ']', '{', '}', ':', ',']; // In JSON sind alle separierenden Tokens zum Glück 1 Byte groß ;)
 Var
-  aindex: integer;
+  aindex, I: integer;
   achar: char;
   inString, skipnext, ignorenext, interpretnext: Boolean;
   res: String;
+  Encoded: UTF8String;
 Begin
   aindex := fparsedataptr + 1;
   If (aindex > length(fparsedata)) Then Begin // Wir haben über das Ende der Datei hinausgelesen
@@ -786,15 +848,25 @@ Begin
   End;
   // Weitersuchen, so lange bis wir einen Token finden oder der String zuende ist.
   // Ausnahme in Strings, werden Tokens ignoriert!
-  While (((Not (achar In tokens)) Or (inString)) And (aindex < length(fparsedata))) Do Begin
+  While (aindex <= Length(fparsedata)) And ((Not (achar In tokens)) Or inString) Do Begin
+    If (Not SupportJSON5Comments) And (Not inString) And
+      (achar = '/') And (aindex < Length(fparsedata)) And
+      (fparsedata[aindex + 1] In ['/', '*']) Then
+      Raise Exception.Create('Comments are disabled [Line: ' + IntToStr(faLine) + ']');
+    If inString And (achar < #32) Then
+      Raise Exception.Create('Unescaped control character in string [Line: ' + IntToStr(faLine) + ']');
     If ((achar = '"') And (Not ignorenext)) Then Begin
       inString := Not inString;
       skipnext := true;
       If (Not inString) Then Begin // Der String ist fertig, also ist das Token auch abgeschlossen
         If (EatToken) Then Begin
           fparsedataptr := aindex;
+          result := res;
+        End
+        Else Begin
+          // A quoted token is never a structural delimiter.
+          result := '"';
         End;
-        result := res;
         exit;
       End;
     End;
@@ -808,29 +880,24 @@ Begin
         End;
       End
       Else Begin
-        (*
-         * " Double quote
-         * \ Backslash character
-         * / solidor
-         * b Backspace (ascii code 08)
-         * f Form feed (ascii code 0C)
-         * n New line
-         * r Carriage return
-         * t Tab
-         * u4 hexadecimal digit
-         *)
-        If (achar = 'b') Then achar := chr($08);
-        If (achar = 'f') Then achar := chr($0C);
-        If (achar = 'n') Then achar := chr($0A);
-        If (achar = 'r') Then Begin
-          res := res + chr($0C);
-          achar := chr($0A);
-        End;
-        If (achar = 't') Then achar := chr($09);
-        If (achar = 'u') Then Begin
-          //todo: das Auswerten des Unicode Zeichens fehlt noch !!
-          achar := ' '; // Das Zeichen bauen wir um zu einem Leerzeichen -> nicht richtig, aber so können wir es "überlesen"
-          aindex := aindex + 4; // Die 4 Zeichen welche nachfolgen und das UTF16 Zeichen bilden ignorieren wir mal ..
+        Case achar Of
+          '"', '\', '/': ;
+          'b': achar := #8;
+          'f': achar := #12;
+          'n': achar := #10;
+          'r': achar := #13;
+          't': achar := #9;
+          'u': Begin
+            Inc(aindex);
+            Encoded := ReadUnicodeEscape(aindex);
+            // Append UTF-8 bytes without converting to the system code page.
+            For I := 1 To Length(Encoded) Do
+              res := res + Encoded[I];
+            Dec(aindex);
+            skipnext := true;
+          End;
+          Else
+            Raise Exception.Create('Invalid string escape [Line: ' + IntToStr(faLine) + ']');
         End;
         interpretnext := false;
       End;
@@ -845,8 +912,17 @@ Begin
     End;
     skipnext := false;
     aindex := aindex + 1;
+    If aindex > Length(fparsedata) Then Break;
     achar := fparsedata[aindex];
+    If (Not inString) And (res <> '') And ((achar <= #32) Or (achar = '"')) Then Break;
     If EatToken And (achar = #10) Then inc(faLine); // TODO: unter MAC wäre das ein Problem ..
+  End;
+  If aindex > Length(fparsedata) Then Begin
+    If inString Then
+      Raise Exception.Create('Unterminated string [Line: ' + IntToStr(faLine) + ']');
+    If EatToken Then fparsedataptr := Length(fparsedata);
+    Result := res;
+    Exit;
   End;
   If (res = '') Then Begin // Wir haben nur Leerzeichen überlesen und eigentlich direkt wieder ein Token gelesen.
     If (EatToken) Then Begin
@@ -873,17 +949,20 @@ Begin
   // TODO: Der TUnCommenter muss wieder raus und von "Hand" in Nexttoken implementiert werden -> dann stimmen die faLines wieder !
   If SupportJSON5Comments Then Begin
     uc := TUnCommenter.Create;
-    uc.AddRule('//', '', true);
-    uc.AddRule('/*', '*/', False);
-    uc.StringLiteral := '"';
+    Try
+      uc.AddRule('//', '', true);
+      uc.AddRule('/*', '*/', False);
+      uc.StringLiteral := '"';
 {$IFDEF Windows}
-    // Theoretisch könnte es sein das das Programm unter Windows läuft aber einen Linux CRT Bekommt,
-    // Dann würde Lineweis nicht funktionieren, dafür bräuchte es dann ein Stringreplace .. das #10 in #13#10 umbaut
-    // Unter Linux ist es egal, weil der JSON Parser alles < #32 eh weg wirft. und #10 in #13#10 enthalten ist.
-    data := StringReplace(data, #10, LineEnding, [rfReplaceAll]);
+      // Theoretisch könnte es sein das das Programm unter Windows läuft aber einen Linux CRT Bekommt,
+      // Dann würde Lineweis nicht funktionieren, dafür bräuchte es dann ein Stringreplace .. das #10 in #13#10 umbaut
+      // Unter Linux ist es egal, weil der JSON Parser alles < #32 eh weg wirft. und #10 in #13#10 enthalten ist.
+      data := StringReplace(data, #10, LineEnding, [rfReplaceAll]);
 {$ENDIF}
-    data := uc.Uncomment(data);
-    uc.free;
+      data := uc.Uncomment(data);
+    Finally
+      uc.Free;
+    End;
   End;
   fparsedata := Data;
   fparsedataptr := 0;
@@ -912,27 +991,32 @@ Var
   ntoken: String;
 Begin
   Obj := TJSONArray.Create;
-  Eat('[');
-  ntoken := NextToken(false);
-  While ((ntoken <> '') And (ntoken <> ']')) Do Begin
+  Try
+    Eat('[');
     ntoken := NextToken(false);
-    If ntoken = '{' Then Begin
-      Obj.AddObj(ParseNode());
-    End
-    Else Begin
-      If ntoken = '[' Then Begin
-        obj.addobj(ParseArray());
+    While ((ntoken <> '') And (ntoken <> ']')) Do Begin
+      ntoken := NextToken(false);
+      If ntoken = '{' Then Begin
+        Obj.AddObj(ParseNode());
       End
       Else Begin
-        Obj.AddObj(ParseString());
+        If ntoken = '[' Then Begin
+          obj.addobj(ParseArray());
+        End
+        Else Begin
+          Obj.AddObj(ParseString());
+        End;
+      End;
+      ntoken := NextToken(false);
+      If (ntoken <> ']') Then Begin
+        Eat(',');
       End;
     End;
-    ntoken := NextToken(false);
-    If (ntoken <> ']') Then Begin
-      Eat(',');
-    End;
+    Eat(']');
+  Except
+    Obj.Free;
+    Raise;
   End;
-  Eat(']');
   result := Obj;
 End;
 
@@ -952,6 +1036,44 @@ Begin
   result := Obj;
 End;
 
+Function IsJSONNumber(Const Token: String): Boolean;
+Var
+  I: SizeInt;
+
+  Function ConsumeDigits: Boolean;
+  Var
+    Start: SizeInt;
+  Begin
+    Start := I;
+    While (I <= Length(Token)) And (Token[I] In ['0'..'9']) Do Inc(I);
+    Result := I > Start;
+  End;
+
+Begin
+  I := 1;
+  If (I <= Length(Token)) And (Token[I] = '-') Then Inc(I);
+  If (I <= Length(Token)) And (Token[I] = '0') Then
+    Inc(I)
+  Else If Not ConsumeDigits Then Exit(False);
+  If (I <= Length(Token)) And (Token[I] = '.') Then Begin
+    Inc(I);
+    If Not ConsumeDigits Then Exit(False);
+  End;
+  If (I <= Length(Token)) And (Token[I] In ['e', 'E']) Then Begin
+    Inc(I);
+    If (I <= Length(Token)) And (Token[I] In ['+', '-']) Then Inc(I);
+    If Not ConsumeDigits Then Exit(False);
+  End;
+  Result := I > Length(Token);
+End;
+
+Procedure RequireJSONLiteral(Const Token: String; Line: Integer);
+Begin
+  If (Token <> 'true') And (Token <> 'false') And (Token <> 'null') And
+    (Not IsJSONNumber(Token)) Then
+    Raise Exception.Create('Invalid JSON value [Line: ' + IntToStr(Line) + ']');
+End;
+
 Function TJSONParser.ParseNode(): TJSONNode;
 Var
   Obj: TJSONNode;
@@ -960,45 +1082,56 @@ Var
   Value: TJSONValue;
 Begin
   Obj := TJSONNode.Create;
-  Eat('{');
-  ntoken := NextToken(false);
-  While (ntoken <> '') And (ntoken <> '}') Do Begin
-    valuename := NextToken(true);
-    Eat(':');
+  Try
+    Eat('{');
     ntoken := NextToken(false);
-    If (ntoken = '[') Then Begin // Der Wert des Nodes ist ein Array von Nodes
-      Obj.AddObj(TJSONNodeObj.Create(valuename, ParseArray()));
-    End
-    Else Begin
-      If (ntoken = '{') Then Begin // Der Wert des Nodes ist ein Node
-        Obj.AddObj(TJSONNodeObj.Create(valuename, ParseNode()));
+    While (ntoken <> '') And (ntoken <> '}') Do Begin
+      valuename := NextToken(true);
+      Eat(':');
+      ntoken := NextToken(false);
+      If (ntoken = '[') Then Begin // Der Wert des Nodes ist ein Array von Nodes
+        Obj.AddObj(TJSONNodeObj.Create(valuename, ParseArray()));
       End
       Else Begin
-        // Der Wert ist einfach nur wieder ein String / Integer / ..
-        ntoken := NextToken(true);
-        isstring := fparsedata[fparsedataptr] = '"';
-        If ((Not isstring) And (LowerCase(ntoken) = 'null')) Then Begin // Ein Node mit einem Nil Objekt
-          ntoken := '';
+        If (ntoken = '{') Then Begin // Der Wert des Nodes ist ein Node
+          Obj.AddObj(TJSONNodeObj.Create(valuename, ParseNode()));
+        End
+        Else Begin
+          // Der Wert ist einfach nur wieder ein String / Integer / ..
+          ntoken := NextToken(true);
+          isstring := (fparsedataptr > 0) And (fparsedata[fparsedataptr] = '"');
+          If Not isstring Then Begin
+            RequireJSONLiteral(ntoken, faLine);
+            If ntoken = 'null' Then ntoken := '';
+          End;
+          Value := TJSONValue.Create(valuename, ntoken, isstring);
+          Obj.AddObj(Value);
         End;
-        Value := TJSONValue.Create(valuename, ntoken, isstring);
-        Obj.AddObj(Value);
+      End;
+      ntoken := NextToken(false);
+      If (ntoken <> '') And (ntoken <> '}') Then Begin
+        Eat(',');
       End;
     End;
-    ntoken := NextToken(false);
-    If (ntoken = ',') Then Begin
-      Eat(',');
-    End;
+    Eat('}');
+  Except
+    Obj.Free;
+    Raise;
   End;
-  Eat('}');
   result := Obj;
 End;
 
 Function TJSONParser.ParseString(): TJSONTerminal;
 Var
-  obj: TJSONTerminal;
+  Token: String;
+  IsString: Boolean;
 Begin
-  obj := TJSONTerminal.Create(NextToken(true));
-  result := obj;
+  Token := NextToken(true);
+  IsString := (fparsedataptr > 0) And (fparsedata[fparsedataptr] = '"');
+  If Not IsString Then RequireJSONLiteral(Token, faLine);
+  Result := TJSONTerminal.Create('');
+  Result.Value := Token;
+  Result.IsString := IsString;
 End;
 
 { TJSONValue }
@@ -1013,22 +1146,14 @@ End;
 
 Function TJSONValue.ToString(FrontSpace: String; Compact: Boolean): String;
 Begin
-  If compact Then Begin
-    If fvalueIsString Then Begin
-      result := StringToJsonString(fName) + ':' + StringToJsonString(fvalue);
-    End
-    Else Begin
-      result := StringToJsonString(fName) + ':' + fvalue;
-    End;
-  End
-  Else Begin
-    If fvalueIsString Then Begin
-      result := FrontSpace + StringToJsonString(fName) + ':' + StringToJsonString(fvalue);
-    End
-    Else Begin
-      result := FrontSpace + StringToJsonString(fName) + ':' + fvalue;
-    End;
-  End;
+  Result := StringToJsonString(fName) + ':';
+  If fvalueIsString Then
+    Result := Result + StringToJsonString(fvalue)
+  Else If fvalue = '' Then
+    Result := Result + 'null'
+  Else
+    Result := Result + fvalue;
+  If Not Compact Then Result := FrontSpace + Result;
 End;
 
 Function TJSONValue.Clone: TJSONObj;
